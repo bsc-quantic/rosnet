@@ -24,29 +24,40 @@ class Tensor(object):
     J: array-like of int (shape of distributed indexes)
     """
 
-    def __init__(self, shape, block_rank: int):
+    def __init__(self, blocks, shape, block_rank):
         self._shape = shape
-        self._block_rank = block_rank
         self._I = shape[0:block_rank]
         self._J = shape[block_rank:]
+        self._blocks = blocks
 
     @staticmethod
-    def zeros(shape, block_rank: int = 2):
-        t = Tensor(shape, block_rank)
-        matrix_shape = (prod(shape[0:block_rank]),
-                        prod(shape[block_rank:]))
-        block_size = (t.block_size, 1)
-        t._matrix = dislib.zeros(matrix_shape, block_size)
-        return t
+    def zeros(shape, block_rank, dtype=None):
+        return Tensor.full(0, shape, block_rank, dtype)
 
     @staticmethod
-    def rand(shape, block_rank: int = 2):
-        t = Tensor(shape, block_rank)
-        matrix_shape = (reduce(shape[0:block_rank]),
-                        prod(shape[block_rank:]))
-        block_size = (t.block_size, 1)
-        t._matrix = dislib.random_array(matrix_shape, block_size)
-        return t
+    def ones(shape, block_rank, dtype=None):
+        return Tensor.full(1, shape, block_rank, dtype)
+
+    @staticmethod
+    def full(value, shape, block_rank, dtype=None):
+        assert len(shape) >= block_rank
+
+        block_shape = shape[block_rank:]
+        n_blocks = prod(block_shape)
+        blocks = [kernel._block_full(block_shape, 0, dtype)
+                  for _ in range(n_blocks)]
+
+        return Tensor(blocks, shape, block_rank)
+
+    @staticmethod
+    def rand(shape, block_rank):
+        assert len(shape) >= block_rank
+
+        block_shape = shape[block_rank:]
+        n_blocks = prod(block_shape)
+        blocks = [kernel._block_rand(block_shape) for _ in range(n_blocks)]
+
+        return Tensor(blocks, shape, block_rank)
 
     @property
     def shape(self):
@@ -58,7 +69,7 @@ class Tensor(object):
 
     @property
     def block_rank(self):
-        return self._block_rank
+        return len(self.I)
 
     @block_rank.setter
     def _(self):
@@ -98,10 +109,10 @@ class Tensor(object):
         a, b = min(a, b), max(a, b)
 
         # distributed case
-        if a >= self._block_rank and b >= self._block_rank:
+        if a >= self.block_rank and b >= self.block_rank:
             self._permute_dist(a, b)
         # local case
-        elif a < self._block_rank and b < self._block_rank:
+        elif a < self.block_rank and b < self.block_rank:
             self._permute_local(a, b)
         # hybrid case
         else:
@@ -112,15 +123,15 @@ class Tensor(object):
     # TODO work when dim(a) != dim(b). should change the dislib.Array structure?
     def _permute_dist(self, a: int, b: int):
         """ Permute index `a` with `b` when both indexes are distributed """
-        assert self._block_rank <= a < len(self.rank)
-        assert self._block_rank <= b < len(self.rank)
+        assert self.block_rank <= a < len(self.rank)
+        assert self.block_rank <= b < len(self.rank)
 
         if self.shape[a] != self.shape[b]:
             raise NotImplementedError(
                 "_permute_dist not implemented when dim(a) != dim(b)")
 
-        a = a - self._block_rank
-        b = b - self._block_rank
+        a = a - self.block_rank
+        b = b - self.block_rank
 
         stride = self._stride_dist()
         def linear(c): return sum([i * j for i, j in zip(c, stride)])
@@ -155,15 +166,15 @@ class Tensor(object):
                 bb = linear(cb)
 
                 # swap blocks
-                self._matrix._blocks[0][ba], self._matrix._blocks[0][bb] = self._matrix._blocks[0][bb], self._matrix._blocks[0][ba]
+                self._blocks[ba], self._blocks[bb] = self._blocks[bb], self._blocks[ba]
 
     def _permute_local(self, a, b):
         """ Permute index `a` with `b` when both indexes are local """
-        assert 0 <= a < self._block_rank
-        assert 0 <= b < self._block_rank
+        assert 0 <= a < self.block_rank
+        assert 0 <= b < self.block_rank
 
         # distribute permutation of blocks
-        for block in self._matrix._blocks[0]:
+        for block in self._blocks:
             kernel._block_permute(block, self.I, a, b)
 
     def _permute_hybrid(self, a, b):
@@ -176,7 +187,7 @@ class Tensor(object):
         print("\tstrides_J = %s" % str(list(strides_J)))
         print("\t%s" % str(type(strides_J)))
 
-        b = b - self._block_rank
+        b = b - self.block_rank
 
         # traverse U space
         for u in self._u_space(b):
@@ -192,13 +203,14 @@ class Tensor(object):
             blocks_linear = [sum(coord * stride for coord, stride in zip(
                 block_coord, strides_J)) for block_coord in blocks_coord]
 
-            blocks = [self._matrix._blocks[0][i] for i in blocks_linear]
+            blocks = [self._blocks[i] for i in blocks_linear]
             kernel._block_merge_split(blocks, self.I, a)
 
     def _permute_shape(self, a, b):
         self._shape[a], self._shape[b] = self._shape[b], self._shape[a]
-        self._I = self._shape[0:self._block_rank]
-        self._J = self._shape[self._block_rank:]
+        block_rank = self.block_rank
+        self._I = self._shape[0:block_rank]
+        self._J = self._shape[block_rank:]
 
     def _stride_local(self):
         return list(accumulate([1] + self.I[:-1], lambda x, y: x * y))
