@@ -5,15 +5,7 @@ import dislib
 import numpy as np
 from itertools import product, tee, accumulate, chain
 from dislib.data.array import Array
-from functools import reduce
-
-try:
-    from math import prod
-except ImportError:
-    import operator
-
-    def prod(x):
-        return reduce(operator.mul, x, 1)
+from dislib_tensor.utils import prod
 
 
 class Tensor(object):

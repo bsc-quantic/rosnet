@@ -1,10 +1,19 @@
 from typing import List
+from functools import reduce
 
 
 def isunique(l: List) -> bool:
-    """ Checks whether all the elements in `l` are unique in `l`.
-    """
+    """ Checks whether all the elements in `l` are unique in `l` """
     return len(set(l)) == len(l)
+
+
+try:
+    from math import prod
+except ImportError:
+    import operator
+
+    def prod(x):
+        return reduce(operator.mul, x, 1)
 
 # def coord(s):
 #     c = [s // stride[-1]]
