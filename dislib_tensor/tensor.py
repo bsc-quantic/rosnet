@@ -6,12 +6,14 @@ import numpy as np
 from itertools import product, tee, accumulate, chain
 from dislib.data.array import Array
 from functools import reduce
-import operator
 
+try:
+    from math import prod
+except ImportError:
+    import operator
 
-# from math import prod
-def prod(x):
-    return reduce(operator.mul, x, 1)
+    def prod(x):
+        return reduce(operator.mul, x, 1)
 
 
 class Tensor(object):
