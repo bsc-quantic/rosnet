@@ -79,7 +79,7 @@ class Tensor(object):
 
     @block_rank.setter
     def _(self):
-        return NotImplemented("")
+        return NotImplementedError("")
 
     @property
     def block_size(self):
