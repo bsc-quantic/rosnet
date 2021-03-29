@@ -1,0 +1,17 @@
+{
+	"name": "Python 3",
+	"image": "compss/compss:latest",
+	"settings": {
+		"terminal.integrated.shell.linux": "/bin/bash",
+		"python.pythonPath": "/usr/bin/python3.6",
+		"python.linting.enabled": true,
+		"python.linting.pylintEnabled": true
+	},
+	"remoteEnv": {
+		"PYTHONPATH": "${containerEnv:PYTHONPATH}:/opt/COMPSs/Bindings/python/3/pycompss",
+	},
+	"extensions": [
+		"ms-python.python"
+	],
+	"postCreateCommand": "",
+}
