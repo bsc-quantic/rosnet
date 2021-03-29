@@ -83,7 +83,7 @@ class Tensor(object):
         return NotImplementedError("")
 
     @property
-    def block_size(self):
+    def block_volume(self):
         return prod(self.I)
 
     @property
