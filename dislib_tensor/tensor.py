@@ -1,10 +1,9 @@
 from typing import List, Tuple
-from pycompss.api.task import task
-from pycompss.api.parameter import Type, Depth, INOUT, COLLECTION_INOUT
 import dislib
 import numpy as np
 from itertools import product, tee, accumulate, chain
 from dislib.data.array import Array
+from dislib_tensor import kernel
 from dislib_tensor.utils import prod
 
 
@@ -165,7 +164,7 @@ class Tensor(object):
 
         # distribute permutation of blocks
         for block in self._matrix._blocks[0]:
-            _block_permute(block, self.I, a, b)
+            kernel._block_permute(block, self.I, a, b)
 
     def _permute_hybrid(self, a, b):
         """ Permute index `a` with `b` when `a` is local and `b` is distributed """
@@ -194,7 +193,7 @@ class Tensor(object):
                 block_coord, strides_J)) for block_coord in blocks_coord]
 
             blocks = [self._matrix._blocks[0][i] for i in blocks_linear]
-            _block_merge_split(blocks, self.I, a)
+            kernel._block_merge_split(blocks, self.I, a)
 
     def _permute_shape(self, a, b):
         self._shape[a], self._shape[b] = self._shape[b], self._shape[a]
@@ -224,46 +223,3 @@ class Tensor(object):
             raise TypeError("Invalid type for _u_space: %s" % str(type(b)))
 
         return product(*[range(i) for i in U])
-
-
-@ task(block=INOUT)
-def _block_permute(block, shape, a, b):
-    rank = len(shape)
-    permutator = list(range(rank))
-    permutator[a], permutator[b] = b, a
-
-    block = np.reshape(block, shape, order='F')
-    block = np.transpose(block, permutator)
-    block = np.reshape(block, (prod(shape),), order='F')
-
-
-@ task(blocks={Type: COLLECTION_INOUT, Depth: 1})
-def _block_merge_split(blocks, block_shape, a):
-    print("[DEBUG] _block_merge_split:")
-    print("\ta = %s" % str(a))
-    print("\tblock_shape = %s" % block_shape)
-    print("\tlen(blocks) = %s" % len(blocks))
-
-    # merge blocks
-    print("\tmerge blocks:")
-    superblock = np.block(blocks).reshape((-1, len(blocks)), order='F')
-    print("\t\t1 - shape(superblock) = %s" % str(superblock.shape))
-    superblock = np.reshape(superblock, block_shape + [len(blocks)], order='F')
-    print("\t\t2 - shape(superblock) = %s" % str(superblock.shape))
-
-    # permute indexes
-    print("\tpermute indexes:")
-    permutator = list(range(len(block_shape) + 1))
-    permutator[a], permutator[-1] = permutator[-1], permutator[a]
-    print("\t\tpermutator = %s" % str(permutator))
-    superblock = np.transpose(superblock, permutator)
-    print("\t\tshape(superblock) = %s" % str(superblock.shape))
-
-    # split blocks
-    print("\tsplit blocks:")
-    blocks = np.split(
-        superblock, superblock.shape[-1], axis=len(superblock.shape)-1)
-    blocks = [np.reshape(block, (prod(block.shape),), order='F')
-              for block in blocks]
-    print("\t\tlen(blocks) = %s" % str(len(blocks)))
-    print("\t\tblocks[0].shape = %s" % str(blocks[0].shape))
