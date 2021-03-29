@@ -1,4 +1,5 @@
 from typing import List, Tuple
+from pycompss.api.api import compss_delete_object
 import dislib
 import numpy as np
 from itertools import product, tee, accumulate, chain
@@ -24,11 +25,16 @@ class Tensor(object):
     J: array-like of int (shape of distributed indexes)
     """
 
-    def __init__(self, blocks, shape, block_rank):
+    def __init__(self, blocks, shape, block_rank, delete=True):
         self._shape = shape
         self._I = shape[0:block_rank]
         self._J = shape[block_rank:]
         self._blocks = blocks
+        self._delete = delete
+
+    def __del__(self):
+        if self._delete:
+            [compss_delete_object(block) for block in self._blocks]
 
     @staticmethod
     def zeros(shape, block_rank, dtype=None):
