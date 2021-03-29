@@ -8,10 +8,10 @@
 		"python.linting.pylintEnabled": true
 	},
 	"remoteEnv": {
-		"PYTHONPATH": "${containerEnv:PYTHONPATH}:/opt/COMPSs/Bindings/python/3/pycompss",
+		"PYTHONPATH": "/opt/COMPSs/Bindings/python/3/:${containerEnv:PYTHONPATH}",
 	},
 	"extensions": [
-		"ms-python.python"
-	],
-	"postCreateCommand": "",
+		"ms-python.python",
+		"VisualStudioExptTeam.vscodeintellicode",
+	]
 }
