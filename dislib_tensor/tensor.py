@@ -19,10 +19,11 @@ class Tensor(object):
 
     Attributes
     ----------
-    sign: array-like of str TODO
-    shape: array-like of int
-    I: array-like of int (shape of local indexes)
-    J: array-like of int (shape of distributed indexes)
+    _shape: array-like of int
+    _I: array-like of int (shape of local indexes)
+    _J: array-like of int (shape of distributed indexes)
+    _blocks: list of pyCOMPSs Futures
+    _delete: bool
     """
 
     def __init__(self, blocks, shape, block_rank, delete=True):
