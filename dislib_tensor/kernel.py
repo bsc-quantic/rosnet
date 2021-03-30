@@ -5,7 +5,7 @@ from dislib_tensor.utils import prod
 
 
 @ task(block=INOUT)
-def _block_permute(block, shape, a, b):
+def _block_transpose(block, shape, a, b):
     rank = len(shape)
     permutator = list(range(rank))
     permutator[a], permutator[b] = b, a
@@ -29,8 +29,8 @@ def _block_merge_split(blocks, block_shape, a):
     superblock = np.reshape(superblock, block_shape + [len(blocks)], order='F')
     print("\t\t2 - shape(superblock) = %s" % str(superblock.shape))
 
-    # permute indexes
-    print("\tpermute indexes:")
+    # transpose indexes
+    print("\ttranspose indexes:")
     permutator = list(range(len(block_shape) + 1))
     permutator[a], permutator[-1] = permutator[-1], permutator[a]
     print("\t\tpermutator = %s" % str(permutator))

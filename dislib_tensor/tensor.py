@@ -107,41 +107,44 @@ class Tensor(object):
     def volume(self):
         return prod(self.shape)
 
-    def permute(self, a, b):
+    def transpose(self, a, b):
         """ Permute index `a` with `b` """
         if not isinstance(a, int) or not isinstance(b, int):
-            raise TypeError("Invalid type for _permute_dist args: a=%s, b=%s" % str(
+            raise TypeError("Invalid type for _transpose_dist args: a=%s, b=%s" % str(
                 type(a)) % str(type(b)))
         assert 0 <= a < self.rank
         assert 0 <= b < self.rank
 
-        # identify permutation => do nothing
+        # identity transposition => do nothing
         if a == b:
             return
 
         a, b = min(a, b), max(a, b)
 
         # distributed case
-        if a >= self.block_rank and b >= self.block_rank:
-            self._permute_dist(a, b)
+        if a >= self.block_rank:  # and b >= self.block_rank:
+            self._transpose_dist(a, b)
         # local case
-        elif a < self.block_rank and b < self.block_rank:
-            self._permute_local(a, b)
+        elif b < self.block_rank:  # a < self.block_rank and
+            self._transpose_local(a, b)
         # hybrid case
         else:
-            self._permute_hybrid(a, b)
+            self._transpose_hybrid(a, b)
+
+        self._transpose_shape(a, b)
+
 
         self._permute_shape(a, b)
 
     # TODO work when dim(a) != dim(b). should change the dislib.Array structure?
-    def _permute_dist(self, a: int, b: int):
+    def _transpose_dist(self, a: int, b: int):
         """ Permute index `a` with `b` when both indexes are distributed """
         assert self.block_rank <= a < len(self.rank)
         assert self.block_rank <= b < len(self.rank)
 
         if self.shape[a] != self.shape[b]:
             raise NotImplementedError(
-                "_permute_dist not implemented when dim(a) != dim(b)")
+                "_transpose_dist not implemented when dim(a) != dim(b)")
 
         a = a - self.block_rank
         b = b - self.block_rank
@@ -181,20 +184,20 @@ class Tensor(object):
                 # swap blocks
                 self._blocks[ba], self._blocks[bb] = self._blocks[bb], self._blocks[ba]
 
-    def _permute_local(self, a, b):
+    def _transpose_local(self, a, b):
         """ Permute index `a` with `b` when both indexes are local """
         assert 0 <= a < self.block_rank
         assert 0 <= b < self.block_rank
 
         # distribute permutation of blocks
         for block in self._blocks:
-            kernel._block_permute(block, self.I, a, b)
+            kernel._block_transpose(block, self.I, a, b)
 
-    def _permute_hybrid(self, a, b):
+    def _transpose_hybrid(self, a, b):
         """ Permute index `a` with `b` when `a` is local and `b` is distributed """
         strides_J = self._stride_dist()
 
-        print("[DEBUG] _permute_hybrid:")
+        print("[DEBUG] _transpose_hybrid:")
         print("\tlocal -> a = %s" % str(a))
         print("\tdist -> b = %s" % str(b))
         print("\tstrides_J = %s" % str(list(strides_J)))
@@ -219,7 +222,7 @@ class Tensor(object):
             blocks = [self._blocks[i] for i in blocks_linear]
             kernel._block_merge_split(blocks, self.I, a)
 
-    def _permute_shape(self, a, b):
+    def _transpose_shape(self, a, b):
         self._shape[a], self._shape[b] = self._shape[b], self._shape[a]
         block_rank = self.block_rank
         self._I = self._shape[0:block_rank]
