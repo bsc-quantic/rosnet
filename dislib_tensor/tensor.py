@@ -37,6 +37,12 @@ class Tensor(object):
         if self._delete:
             [compss_delete_object(block) for block in self._blocks]
 
+    def __str__(self):
+        return "Tensor(blocks=(...), shape=%r, block_rank=%r)" % (self.shape, self.block_rank)
+
+    def __repr__(self):
+        return "Tensor(blocks=(...), shape=%r, block_rank=%r)" % (self.shape, self.block_rank)
+
     @staticmethod
     def zeros(shape, block_rank, dtype=None):
         return Tensor.full(0, shape, block_rank, dtype)
