@@ -55,3 +55,8 @@ def _block_full(shape, value, dtype, order='F'):
 @task(returns=np.array)
 def _block_rand(shape):
     return np.random.random_sample(shape)
+
+
+@task(block=INOUT)
+def _block_set_value(block, idx, value):
+    block[idx] = value

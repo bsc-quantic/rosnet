@@ -45,6 +45,33 @@ class Tensor(object):
     def __repr__(self):
         return "Tensor(blocks=(...), shape=%r, block_rank=%r)" % (self.shape, self.block_rank)
 
+    def __getitem__(self, arg):
+        if isinstance(arg, list) and isinstance(arg[0], int):
+            if len(arg) != self.rank:
+                raise IndexError("Invalid indexing information: arg=%s" % arg)
+
+            local_id, dist_id = arg[:self.block_rank], arg[self.block_rank:]
+            strides_J = self._stride_dist()
+            dist_id = sum(c * s for c, s in zip(dist_id, strides_J))
+
+            block = compss_wait_on(self._blocks[dist_id], write=False)
+            return block[local_id]
+
+        raise IndexError("Invalid indexing information: %s" % arg)
+
+    def __setitem__(self, key, value):
+        if isinstance(key, list) and isinstance(key[0], int):
+            if len(key) != self.rank:
+                raise IndexError("Invalid indexing information: key=%s" % key)
+
+            local_id, dist_id = arg[:self.block_rank], arg[self.block_rank:]
+            strides_J = self._stride_dist()
+            dist_id = sum(c * s for c, s in zip(dist_id, strides_J))
+
+            kernel._block_set_value(self._blocks[dist_id], local_id, value)
+
+        raise IndexError("Invalid indexing information: %s" % key)
+
     @staticmethod
     def zeros(shape, block_rank, dtype=None):
         return Tensor.full(0, shape, block_rank, dtype)
