@@ -100,7 +100,8 @@ class Tensor(object):
         block_shape = shape[block_rank:]
         n_blocks = prod(block_shape)
 
-        blocks = [kernel._block_rand(block_shape) for _ in range(n_blocks)]
+        with TaskGroup(self._tensorid, False):
+            blocks = [kernel._block_rand(block_shape) for _ in range(n_blocks)]
 
         return Tensor(blocks, shape, block_rank)
 
