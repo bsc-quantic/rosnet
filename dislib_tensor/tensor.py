@@ -310,3 +310,34 @@ class Tensor(object):
             raise TypeError("Invalid type for _u_space: %s" % str(type(b)))
 
         return product(*[range(i) for i in U])
+
+
+def transpose(a: Tensor, axes) -> Tensor:
+    if not isinstance(a, Tensor):
+        raise TypeError("Invalid argument type: a=%s" % type(a))
+
+    if not isinstance(axes, tuple) or not isinstance(axes, list):
+        raise TypeError("Invalid argument type: axes=%s" % type(axes))
+
+    raise NotImplementedError("")
+
+
+def tensordot(a: Tensor, b: Tensor, axes) -> Tensor:
+    if not isinstance(a, Tensor) or not isinstance(b, Tensor):
+        raise TypeError("Invalid argument type: a=%s, b= %s" %
+                        (type(a), type(b)))
+
+    axes_a, axes_b = axes
+    if len(axes_a) != axes_b:
+        raise ValueError("Invalid value type: axes=%s" % axes)
+    t = len(axes_a)
+
+    # TODO do transpositions
+    raise NotImplementedError("")
+
+    # TODO transform to dislib.Array and perform matrix multiplication
+    matrix_a = a.matrix(t)
+    matrix_b = b.matrix()  # TODO
+
+    #  TODO transform back to Tensor
+    raise NotImplementedError("")
