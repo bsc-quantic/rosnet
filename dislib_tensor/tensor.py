@@ -170,6 +170,31 @@ class Tensor(object):
 
         self._transpose_shape(a, b)
 
+    def matrix(self, t: int):
+        """ Returns a `dislib.data.array.Array` representing the matrix view of the tensor """
+        # Block is 1D if t >= self.block_rank
+        # Block List is 1D if t <= self.block_rank
+        assert 0 <= t < self.rank
+
+        shape = (self.shape[:t], self.shape[t:])
+        if t < self.block_rank:
+            # Blocks are 2D chunks and Block List is 1D
+            reg_shape = (prod(self.I[:t]), prod(self.I[t:]))
+            blocks = [self._blocks]
+        elif t == self.block_rank:
+            # Blocks are 1D chunks and Block List is 1D
+            reg_shape = (prod(self.I), 1)
+            blocks = [self._blocks]
+        else:
+            # Blocks are 1D chunks and Block List is 2D
+            reg_shape = (prod(self.I), 1)
+            blocks = np.array(self._blocks).reshape(
+                (prod(self.J[:t - self.block_rank], prod(self.J[t-self.block_rank:])))).tolist()
+
+        n_blocks = (shape[0] // reg_shape[0], shape[1] // reg_shape[1])
+
+        return Array(blocks, reg_shape, reg_shape, shape, False, False)
+
     # TODO work when dim(a) != dim(b). should change the dislib.Array structure?
     def _transpose_dist(self, a: int, b: int):
         """ Permute index `a` with `b` when both indexes are distributed """
