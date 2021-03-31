@@ -1,8 +1,7 @@
 from typing import List, Tuple
-from pycompss.api.api import compss_delete_object
-import dislib
+from pycompss.api.api import compss_delete_object, compss_barrier_group, compss_wait_on, TaskGroup
 import numpy as np
-from itertools import product, tee, accumulate, chain
+from itertools import product, accumulate, count
 from dislib.data.array import Array
 from dislib_tensor import kernel
 from dislib_tensor.utils import prod
@@ -26,12 +25,15 @@ class Tensor(object):
     _delete: bool
     """
 
+    __newid = count().next
+
     def __init__(self, blocks, shape, block_rank, delete=True):
         self._shape = shape
         self._I = shape[0:block_rank]
         self._J = shape[block_rank:]
         self._blocks = blocks
         self._delete = delete
+        self._tensorid = Tensor.__newid()
 
     def __del__(self):
         if self._delete:
@@ -57,8 +59,10 @@ class Tensor(object):
 
         block_shape = shape[block_rank:]
         n_blocks = prod(block_shape)
-        blocks = [kernel._block_full(block_shape, 0, dtype)
-                  for _ in range(n_blocks)]
+
+        with TaskGroup(self._tensorid, False):
+            blocks = [kernel._block_full(block_shape, 0, dtype)
+                      for _ in range(n_blocks)]
 
         return Tensor(blocks, shape, block_rank)
 
@@ -68,6 +72,7 @@ class Tensor(object):
 
         block_shape = shape[block_rank:]
         n_blocks = prod(block_shape)
+
         blocks = [kernel._block_rand(block_shape) for _ in range(n_blocks)]
 
         return Tensor(blocks, shape, block_rank)
@@ -107,6 +112,9 @@ class Tensor(object):
     def volume(self):
         return prod(self.shape)
 
+    def sync(self):
+        compss_barrier_group(self._tensorid)
+
     def transpose(self, a, b):
         """ Permute index `a` with `b` """
         if not isinstance(a, int) or not isinstance(b, int):
@@ -121,20 +129,18 @@ class Tensor(object):
 
         a, b = min(a, b), max(a, b)
 
-        # distributed case
-        if a >= self.block_rank:  # and b >= self.block_rank:
-            self._transpose_dist(a, b)
-        # local case
-        elif b < self.block_rank:  # a < self.block_rank and
-            self._transpose_local(a, b)
-        # hybrid case
-        else:
-            self._transpose_hybrid(a, b)
+        with TaskGroup(self._tensorid, False):
+            # distributed case
+            if a >= self.block_rank:  # and b >= self.block_rank:
+                self._transpose_dist(a, b)
+            # local case
+            elif b < self.block_rank:  # a < self.block_rank and
+                self._transpose_local(a, b)
+            # hybrid case
+            else:
+                self._transpose_hybrid(a, b)
 
         self._transpose_shape(a, b)
-
-
-        self._permute_shape(a, b)
 
     # TODO work when dim(a) != dim(b). should change the dislib.Array structure?
     def _transpose_dist(self, a: int, b: int):
