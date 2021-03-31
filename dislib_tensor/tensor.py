@@ -4,7 +4,7 @@ import numpy as np
 from itertools import product, accumulate, count
 from dislib.data.array import Array
 from dislib_tensor import kernel
-from dislib_tensor.utils import prod
+from dislib_tensor.utils import prod, space
 
 
 class Tensor(object):
@@ -309,7 +309,7 @@ class Tensor(object):
         else:
             raise TypeError("Invalid type for _u_space: %s" % str(type(b)))
 
-        return product(*[range(i) for i in U])
+        return space(U)
 
 
 def transpose(a: Tensor, axes) -> Tensor:

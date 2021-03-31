@@ -1,10 +1,16 @@
 from typing import List
 from functools import reduce
+from itertools import product
 
 
 def isunique(l: List) -> bool:
     """ Checks whether all the elements in `l` are unique in `l` """
     return len(set(l)) == len(l)
+
+
+def space(s: list):
+    """ Generates an iterator through the Cartesian space of dimensionality `s` """
+    return product(*[range(i) for i in s])
 
 
 try:
