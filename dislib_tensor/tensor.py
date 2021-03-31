@@ -143,6 +143,7 @@ class Tensor(object):
     def sync(self):
         compss_barrier_group(self._tensorid)
 
+    # TODO impl with args (self, axes)
     def transpose(self, a, b):
         """ Permute index `a` with `b` """
         if not isinstance(a, int) or not isinstance(b, int):
