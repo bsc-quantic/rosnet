@@ -27,13 +27,13 @@ class Tensor(object):
 
     __newid = count().next
 
-    def __init__(self, blocks, shape, block_rank, delete=True):
+    def __init__(self, blocks, shape, block_rank, delete=True, tensorid=None):
         self._shape = shape
         self._I = shape[0:block_rank]
         self._J = shape[block_rank:]
         self._blocks = blocks
         self._delete = delete
-        self._tensorid = Tensor.__newid()
+        self._tensorid = tensorid if tensorid != None else Tensor.__newid()
 
     def __del__(self):
         if self._delete:
@@ -87,11 +87,12 @@ class Tensor(object):
         block_shape = shape[block_rank:]
         n_blocks = prod(block_shape)
 
-        with TaskGroup(self._tensorid, False):
+        tensorid = Tensor.__newid()
+        with TaskGroup(tensorid, False):
             blocks = [kernel._block_full(block_shape, 0, dtype)
                       for _ in range(n_blocks)]
 
-        return Tensor(blocks, shape, block_rank)
+        return Tensor(blocks, shape, block_rank, True, tensorid)
 
     @staticmethod
     def rand(shape, block_rank):
@@ -100,10 +101,11 @@ class Tensor(object):
         block_shape = shape[block_rank:]
         n_blocks = prod(block_shape)
 
-        with TaskGroup(self._tensorid, False):
+        tensorid = Tensor.__newid()
+        with TaskGroup(tensorid, False):
             blocks = [kernel._block_rand(block_shape) for _ in range(n_blocks)]
 
-        return Tensor(blocks, shape, block_rank)
+        return Tensor(blocks, shape, block_rank, True, tensorid)
 
     @property
     def shape(self):
