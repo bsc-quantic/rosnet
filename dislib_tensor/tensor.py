@@ -64,7 +64,7 @@ class Tensor(object):
             if len(key) != self.rank:
                 raise IndexError("Invalid indexing information: key=%s" % key)
 
-            local_id, dist_id = arg[:self.block_rank], arg[self.block_rank:]
+            local_id, dist_id = key[:self.block_rank], key[self.block_rank:]
             strides_J = self._stride_dist()
             dist_id = sum(c * s for c, s in zip(dist_id, strides_J))
 
