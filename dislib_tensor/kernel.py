@@ -4,15 +4,10 @@ from pycompss.api.parameter import Type, Depth, INOUT, COLLECTION_INOUT
 from dislib_tensor.utils import prod
 
 
+# NOTE np.transpose returns a view, does not perform the transformation
 @ task(block=INOUT)
-def _block_transpose(block, shape, a, b):
-    rank = len(shape)
-    permutator = list(range(rank))
-    permutator[a], permutator[b] = b, a
-
-    block = np.reshape(block, shape, order='F')
+def _block_transpose(block: np.ndarray, permutator):
     block = np.transpose(block, permutator)
-    block = np.reshape(block, (prod(shape),), order='F')
 
 
 @ task(blocks={Type: COLLECTION_INOUT, Depth: 1})
