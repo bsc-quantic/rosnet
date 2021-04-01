@@ -180,7 +180,8 @@ def transpose(a: Tensor, axes) -> Tensor:
     if not isinstance(axes, tuple) or not isinstance(axes, list):
         raise TypeError("Invalid argument type: axes=%s" % type(axes))
 
-    raise NotImplementedError("")
+    a.transpose(axes)
+    return a
 
 
 def tensordot(a: Tensor, b: Tensor, axes) -> Tensor:
