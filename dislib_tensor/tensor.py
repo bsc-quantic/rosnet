@@ -47,6 +47,15 @@ class Tensor(object):
             raise TypeError(
                 "Invalid argument type: tensorid=%s and must be int" % type(tensorid))
 
+        if not all(s % bs == 0 for s, bs in zip(self.shape, self.block_shape)):
+            raise ValueError("Invalid argument value: shape=%s must be divisible by block_shape=%s" % (
+                shape, block_shape))
+
+        grid = tuple(s // bs for s, bs in zip(self.shape, self.block_shape))
+        if blocks.shape != grid:
+            raise ValueError("Invalid argument value: blocks.shape=%s and grid=%s should be equal" % (
+                blocks.shape, grid))
+
         self._shape = shape
         self._block_shape = block_shape
         self._blocks = blocks
