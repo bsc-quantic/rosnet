@@ -69,8 +69,8 @@ class Tensor(object):
             if len(arg) != self.rank:
                 raise IndexError("Invalid indexing information: arg=%s" % arg)
 
-            grid_id = [i // s for i, s in zip(arg, self.shape)]
-            block_id = [i % s for i, s in zip(arg, self.shape)]
+            grid_id = [i // s for i, s in zip(arg, self.block_shape)]
+            block_id = [i % s for i, s in zip(arg, self.block_shape)]
             block = compss_wait_on(self._blocks[grid_id], write=False)
             return block[block_id]
 
@@ -81,8 +81,8 @@ class Tensor(object):
             if len(key) != self.rank:
                 raise IndexError("Invalid indexing information: key=%s" % key)
 
-            grid_id = [i // s for i, s in zip(key, self.shape)]
-            block_id = [i % s for i, s in zip(key, self.shape)]
+            grid_id = [i // s for i, s in zip(key, self.block_shape)]
+            block_id = [i % s for i, s in zip(key, self.block_shape)]
             kernel._block_set_value(self._blocks[grid_id], block_id, value)
 
         raise IndexError("Invalid indexing information: %s" % key)
