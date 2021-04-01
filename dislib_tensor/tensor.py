@@ -140,8 +140,12 @@ class Tensor(object):
         return prod(self.block_shape)
 
     @property
+    def grid(self):
+        return self._blocks.shape
+
+    @property
     def block_num(self):
-        raise NotImplementedError("")
+        raise prod(self.grid)
 
     def volume(self):
         return prod(self.shape)
