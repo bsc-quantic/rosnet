@@ -137,8 +137,8 @@ class Tensor(object):
         return self._block_shape
 
     @block_shape.setter
-    def _(self):
-        return NotImplementedError("")
+    def _(self, value):
+        self.rechunk(value)
 
     @property
     def rank(self):
@@ -168,6 +168,9 @@ class Tensor(object):
 
         for a, b in zip(range(self.rank), axes):
             self._shape[a], self._shape[b] = self._shape[b], self._shape[a]
+
+    def rechunk(self, shape):
+        raise NotImplementedError("coming soon!")
 
 
 def transpose(a: Tensor, axes) -> Tensor:
