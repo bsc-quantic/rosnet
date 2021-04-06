@@ -1,9 +1,10 @@
 from pycompss.api.api import compss_delete_object, compss_barrier_group, compss_wait_on, TaskGroup
 import numpy as np
-from itertools import product, count
+from itertools import product, count, repeat
 from dislib.data.array import Array
 from dislib_tensor import kernel
-from dislib_tensor.utils import prod
+from dislib_tensor.utils import prod, isunique, space
+from copy import copy
 
 
 class Tensor(object):
@@ -172,6 +173,23 @@ class Tensor(object):
     def rechunk(self, shape):
         raise NotImplementedError("coming soon!")
 
+    def _getblocks(self, idx: list) -> list:
+        if len(idx) != self.rank:
+            raise TypeError(
+                "Invalid indexing: idx must have as many elements as the rank of the tensor")
+
+        # find range elements
+        axes = list(map(lambda x: x[1], filter(
+            lambda x: isinstance(x[1], slice) or isinstance(x[1], range), enumerate(idx))))
+
+        # if no ranges, directly return the block
+        if axes == []:
+            return [self.grid[idx]]
+
+        coords = [i if isinstance(i, slice) or isinstance(i, range) else repeat(
+            i, times=1) for i in idx]
+        return [self.grid[coord] for coord in product(*coords)]
+
 
 def transpose(a: Tensor, axes) -> Tensor:
     if not isinstance(a, Tensor):
@@ -186,13 +204,53 @@ def transpose(a: Tensor, axes) -> Tensor:
 
 def tensordot(a: Tensor, b: Tensor, axes) -> Tensor:
     if not isinstance(a, Tensor) or not isinstance(b, Tensor):
-        raise TypeError("Invalid argument type: a=%s, b= %s" %
+        raise TypeError("Invalid argument type: a=%s, b=%s" %
                         (type(a), type(b)))
 
-    axes_a, axes_b = axes
-    if len(axes_a) != axes_b:
-        raise ValueError("Invalid value type: axes=%s" % axes)
-    t = len(axes_a)
+    if not isinstance(axes, tuple) or not isinstance(axes, list):
+        raise TypeError(
+            "Invalid argument type: axes=%s and should be Tuple or List" % type(axes))
 
-    # TODO
-    raise NotImplementedError("")
+    if not isunique(axes[0]) or not isunique(axes[1]):
+        raise ValueError("axes must not be repeated")
+
+    if any(a.block_shape[axe_a] != b.block_shape[axe_b] for axe_a, axe_b in zip(*axes)):
+        raise ValueError(
+            "Cannnot contract Tensors with incompatible block-shape on contraction indexes")
+
+    shape_a = copy(a.shape)
+    del shape_a[axes[0]]
+    shape_b = copy(b.shape)
+    del shape_b[axes[1]]
+    shape = shape_a + shape_b
+
+    block_shape_a = copy(a.block_shape)
+    del block_shape_a[axes[0]]
+    block_shape_b = copy(b.block_shape)
+    del block_shape_b[axes[1]]
+    block_shape = block_shape_a + block_shape_b
+
+    grid = [s // bs for s, bs in zip(shape, block_shape)]
+    blocks = np.ndarray(grid, dtype=object)
+
+    def coordrange(t: Tensor, coord: list, axes: tuple) -> list:
+        c = copy(coord)
+        axes = sorted(axes)
+        for ax in axes:
+            c.insert(ax, range(t.grid[ax]))
+        return c
+
+    # for each block in C
+    blocks = []
+    for coord in space(grid):
+        # get all blocks in grid-a/grid-b with coord-a/coord-b + range(contraction indexes)
+        coord_a, coord_b = coord[:len(shape_a)], coord[len(shape_a):]
+        axes_a, axes_b = sorted(axes[0]), sorted(axes[1])
+        blocks_a = a._getblocks(coordrange(a, coord_a, axes_a))
+        blocks_b = b._getblocks(coordrange(b, coord_b, axes_b))
+
+        # block in C is equal to the sum of contractions of blocks
+        blocks.append(kernel._block_tensordot(blocks_a, blocks_b, axes))
+    blocks = np.array(blocks).reshape(grid)
+
+    return Tensor(blocks, shape, block_shape)

@@ -55,3 +55,8 @@ def _block_rand(shape):
 @task(block=INOUT)
 def _block_set_value(block, idx, value):
     block[idx] = value
+
+
+@task(a={Type: COLLECTION_IN, Depth: 1}, b={Type: COLLECTION_IN, Depth: 1}, returns=np.ndarray)
+def _block_tensordot(a, b, axes):
+    return sum(np.tensordot(ba, bb, axes) for ba, bb in zip(a, b))
