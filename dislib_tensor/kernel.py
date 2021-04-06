@@ -1,6 +1,6 @@
 import numpy as np
 from pycompss.api.task import task
-from pycompss.api.parameter import Type, Depth, INOUT, COLLECTION_INOUT
+from pycompss.api.parameter import Type, Depth, INOUT, COLLECTION_INOUT, COLLECTION_IN
 from dislib_tensor.utils import prod
 
 
