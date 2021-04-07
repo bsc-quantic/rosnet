@@ -13,7 +13,7 @@ while (( "$#" )); do
 			NUM_NODES=$2
 			shift 2
 			;;
-		-t=*|--exec_time=*)
+		-*=*|--*=*)
 			echo "Error: Unsupported ="
 			exit 1
 			;;
