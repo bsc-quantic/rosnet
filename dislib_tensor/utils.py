@@ -20,12 +20,3 @@ except ImportError:
 
     def prod(x):
         return reduce(operator.mul, x, 1)
-
-# def coord(s):
-#     c = [s // stride[-1]]
-#     mod = s % stride[-1]
-#     for stride_j in reversed(stride[:-1]):
-#         c.append(mod // stride_j)
-#         mod = mod % stride_j
-#     c.reverse()
-#     return c
