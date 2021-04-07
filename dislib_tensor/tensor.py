@@ -66,7 +66,7 @@ class Tensor(object):
 
     def __del__(self):
         if self._delete:
-            for block in np.nditer(self._blocks, flags=['refs_ok']):
+            for block in self._blocks.flat:
                 compss_delete_object(block)
 
     def __str__(self):
@@ -169,7 +169,7 @@ class Tensor(object):
             raise ValueError("axes must be a unique list: %s" % axes)
 
         # transpose blocks
-        for block in np.nditer(self._blocks):
+        for block in self._blocks.flat:
             kernel._block_transpose(block, axes)
 
         # tranpose grid
