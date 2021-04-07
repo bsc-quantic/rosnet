@@ -44,15 +44,15 @@ class Tensor(object):
         if not isinstance(delete, bool):
             raise TypeError(
                 "Invalid argument type: delete=%s and must be bool" % type(delete))
-        if not isinstance(tensorid, int):
+        if not isinstance(tensorid, str):
             raise TypeError(
-                "Invalid argument type: tensorid=%s and must be int" % type(tensorid))
+                "Invalid argument type: tensorid=%s and must be str" % type(tensorid))
 
-        if not all(s % bs == 0 for s, bs in zip(self.shape, self.block_shape)):
+        if not all(s % bs == 0 for s, bs in zip(shape, block_shape)):
             raise ValueError("Invalid argument value: shape=%s must be divisible by block_shape=%s" % (
                 shape, block_shape))
 
-        grid = tuple(s // bs for s, bs in zip(self.shape, self.block_shape))
+        grid = tuple(s // bs for s, bs in zip(shape, block_shape))
         if blocks.shape != grid:
             raise ValueError("Invalid argument value: blocks.shape=%s and grid=%s should be equal" % (
                 blocks.shape, grid))
@@ -61,8 +61,8 @@ class Tensor(object):
         self._block_shape = block_shape
         self._blocks = blocks
         self._delete = delete
-        self._tensorid = tensorid if tensorid != None else next(
-            Tensor.__newid)
+        self._tensorid = tensorid if tensorid != None else str(
+            next(Tensor.__newid))
 
     def __del__(self):
         if self._delete:
@@ -108,26 +108,26 @@ class Tensor(object):
 
     @staticmethod
     def full(value, shape, block_shape, dtype=None):
-        grid = [s // bs for s, bs in zip(shape, block_shape)]
+        grid = tuple(s // bs for s, bs in zip(shape, block_shape))
 
-        tensorid = next(Tensor.__newid)
+        tensorid = str(next(Tensor.__newid))
         with TaskGroup(tensorid, False):
             blocks = [kernel._block_full(block_shape, value, dtype)
                       for _ in range(prod(grid))]
 
-        blocks = np.array(blocks).reshape(shape)
+        blocks = np.array(blocks).reshape(grid)
         return Tensor(blocks, shape, block_shape, True, tensorid)
 
     @staticmethod
     def rand(shape, block_shape):
-        grid = [s // bs for s, bs in zip(shape, block_shape)]
+        grid = tuple(s // bs for s, bs in zip(shape, block_shape))
 
-        tensorid = next(Tensor.__newid)
+        tensorid = str(next(Tensor.__newid))
         with TaskGroup(tensorid, False):
             blocks = [kernel._block_rand(block_shape)
                       for _ in range(prod(grid))]
 
-        blocks = np.array(blocks).reshape(shape)
+        blocks = np.array(blocks).reshape(grid)
         return Tensor(blocks, shape, block_shape, True, tensorid)
 
     @property
