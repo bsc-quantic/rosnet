@@ -165,6 +165,9 @@ class Tensor(object):
         compss_barrier_group(self._tensorid)
 
     def transpose(self, axes):
+        if not isunique(axes):
+            raise ValueError("axes must be a unique list: %s" % axes)
+
         # transpose blocks
         for block in np.nditer(self._blocks):
             kernel._block_transpose(block, axes)
