@@ -164,11 +164,17 @@ class Tensor(object):
         compss_barrier_group(self._tensorid)
 
     def transpose(self, axes):
+        # transpose blocks
         for block in np.nditer(self._blocks):
             kernel._block_transpose(block, axes)
 
+        # tranpose grid
+        self._blocks = np.transpose(self._blocks, axes)
+
+        # transpose shapes
         for a, b in zip(range(self.rank), axes):
             self._shape[a], self._shape[b] = self._shape[b], self._shape[a]
+            self._block_shape[a], self._block_shape[b] = self._block_shape[b], self._block_shape[a]
 
     def rechunk(self, shape):
         raise NotImplementedError("coming soon!")
