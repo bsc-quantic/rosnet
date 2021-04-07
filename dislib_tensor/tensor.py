@@ -29,7 +29,7 @@ class Tensor(object):
     _delete: bool
     """
 
-    __newid = count().next
+    __newid = count()
 
     def __init__(self, blocks, shape, block_shape, delete=True, tensorid=None):
         if not isinstance(blocks, np.ndarray):
@@ -61,7 +61,8 @@ class Tensor(object):
         self._block_shape = block_shape
         self._blocks = blocks
         self._delete = delete
-        self._tensorid = tensorid if tensorid != None else Tensor.__newid()
+        self._tensorid = tensorid if tensorid != None else next(
+            Tensor.__newid)
 
     def __del__(self):
         if self._delete:
@@ -109,7 +110,7 @@ class Tensor(object):
     def full(value, shape, block_shape, dtype=None):
         grid = [s // bs for s, bs in zip(shape, block_shape)]
 
-        tensorid = Tensor.__newid()
+        tensorid = next(Tensor.__newid)
         with TaskGroup(tensorid, False):
             blocks = [kernel._block_full(block_shape, value, dtype)
                       for _ in range(prod(grid))]
@@ -121,7 +122,7 @@ class Tensor(object):
     def rand(shape, block_shape):
         grid = [s // bs for s, bs in zip(shape, block_shape)]
 
-        tensorid = Tensor.__newid()
+        tensorid = next(Tensor.__newid)
         with TaskGroup(tensorid, False):
             blocks = [kernel._block_rand(block_shape)
                       for _ in range(prod(grid))]
