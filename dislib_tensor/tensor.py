@@ -66,7 +66,7 @@ class Tensor(object):
 
     def __del__(self):
         if self._delete:
-            for block in np.nditer(self._blocks):
+            for block in np.nditer(self._blocks, flags=['refs_ok']):
                 compss_delete_object(block)
 
     def __str__(self):
