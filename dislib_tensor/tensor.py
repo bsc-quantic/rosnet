@@ -173,9 +173,8 @@ class Tensor(object):
         self._blocks = np.transpose(self._blocks, axes)
 
         # transpose shapes
-        for a, b in zip(range(self.rank), axes):
-            self._shape[a], self._shape[b] = self._shape[b], self._shape[a]
-            self._block_shape[a], self._block_shape[b] = self._block_shape[b], self._block_shape[a]
+        self._shape = [self._shape[i] for i in axes]
+        self._block_shape = [self._block_shape[i] for i in axes]
 
     def rechunk(self, shape):
         raise NotImplementedError("coming soon!")
