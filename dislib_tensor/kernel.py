@@ -1,6 +1,6 @@
 import numpy as np
 from pycompss.api.task import task
-from pycompss.api.parameter import Type, Depth, INOUT, COLLECTION_INOUT, COLLECTION_IN
+from pycompss.api.parameter import Type, Depth, IN, INOUT, COLLECTION_INOUT, COLLECTION_IN
 from dislib_tensor.utils import prod
 
 
@@ -60,3 +60,8 @@ def _block_set_value(block, idx, value):
 @task(a={Type: COLLECTION_IN, Depth: 1}, b={Type: COLLECTION_IN, Depth: 1}, returns=np.ndarray)
 def _block_tensordot(a, b, axes):
     return sum(np.tensordot(ba, bb, axes) for ba, bb in zip(a, b))
+
+
+@task(block=IN, returns=np.ndarray)
+def _block_pass_block(block):
+    return block

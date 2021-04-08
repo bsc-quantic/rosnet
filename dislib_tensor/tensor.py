@@ -99,6 +99,19 @@ class Tensor(object):
         raise IndexError("Invalid indexing information: %s" % key)
 
     @staticmethod
+    def array(arr: np.ndarray, block_shape):
+        shape = arr.shape
+        grid = [s // bs for s, bs in zip(shape, block_shape)]
+
+        tensorid = str(next(Tensor.__newid))
+        with TaskGroup(tensorid, False):
+            blocks = [kernel._block_pass_block(
+                block) for block in np.split(arr, block_shape)]
+
+        blocks = np.array(blocks).reshape(grid)
+        return Tensor(blocks, shape, block_shape, True, tensorid)
+
+    @staticmethod
     def zeros(shape, block_shape, dtype=None):
         return Tensor.full(0, shape, block_shape, dtype)
 
