@@ -76,13 +76,15 @@ class Tensor(object):
         return "Tensor(blocks=(...), shape=%r, block_shape=%r)" % (self.shape, self.block_shape)
 
     def __getitem__(self, arg):
+        if isinstance(arg, tuple):
+            arg = list(arg)
         if isinstance(arg, list) and isinstance(arg[0], int):
             if len(arg) != self.rank:
                 raise IndexError("Invalid indexing information: arg=%s" % arg)
 
-            grid_id = [i // s for i, s in zip(arg, self.block_shape)]
-            block_id = [i % s for i, s in zip(arg, self.block_shape)]
-            block = compss_wait_on(self._blocks[grid_id], write=False)
+            grid_id = tuple(i // s for i, s in zip(arg, self.block_shape))
+            block_id = tuple(i % s for i, s in zip(arg, self.block_shape))
+            block = compss_wait_on(self._blocks[grid_id], to_write=False)
             return block[block_id]
 
         raise IndexError("Invalid indexing information: %s" % arg)
