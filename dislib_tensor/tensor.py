@@ -106,12 +106,17 @@ class Tensor(object):
         grid = [s // bs for s, bs in zip(shape, block_shape)]
 
         tensorid = str(next(Tensor.__newid))
+        blocks = []
         with TaskGroup(tensorid, False):
-            blocks = [kernel._block_pass_block(
-                block) for block in np.split(arr, block_shape)]
+            for bidx in space(grid):
+                idx_begin = [x*y for x, y in zip(block_shape, bidx)]
+                idx_end = [x+y for x, y in zip(block_shape, idx_begin)]
+                idx = tuple(slice(b, e) for b, e in zip(idx_begin, idx_end))
+                block = arr[idx]
+                blocks.append(kernel._block_pass_block(block))
 
         blocks = np.array(blocks).reshape(grid)
-        return Tensor(blocks, shape, block_shape, True, tensorid)
+        return Tensor(blocks, list(shape), block_shape, True, tensorid)
 
     @staticmethod
     def zeros(shape, block_shape, dtype=None):
