@@ -65,3 +65,8 @@ def _block_tensordot(a, b, axes):
 @task(block=IN, returns=np.ndarray)
 def _block_pass_block(block):
     return block
+
+
+@task(block=IN)
+def _block_getitem(block: np.ndarray, idx: tuple):
+    return block[idx]

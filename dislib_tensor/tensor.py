@@ -84,8 +84,7 @@ class Tensor(object):
 
             grid_id = tuple(i // s for i, s in zip(arg, self.block_shape))
             block_id = tuple(i % s for i, s in zip(arg, self.block_shape))
-            block = compss_wait_on(self._blocks[grid_id], to_write=False)
-            return block[block_id]
+            return compss_wait_on(kernel._block_getitem(self._blocks[grid_id], block_id), to_write=False)
 
         raise IndexError("Invalid indexing information: %s" % arg)
 
