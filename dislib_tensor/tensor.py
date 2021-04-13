@@ -84,7 +84,7 @@ class Tensor(object):
 
             grid_id = tuple(i // s for i, s in zip(arg, self.block_shape))
             block_id = tuple(i % s for i, s in zip(arg, self.block_shape))
-            return compss_wait_on(kernel._block_getitem(self._blocks[grid_id], block_id), to_write=False)
+            return compss_wait_on(kernel.block_getitem(self._blocks[grid_id], block_id), to_write=False)
 
         raise IndexError("Invalid indexing information: %s" % arg)
 
@@ -95,7 +95,7 @@ class Tensor(object):
 
             grid_id = [i // s for i, s in zip(key, self.block_shape)]
             block_id = [i % s for i, s in zip(key, self.block_shape)]
-            kernel._block_set_value(self._blocks[grid_id], block_id, value)
+            kernel.block_setitem(self._blocks[grid_id], block_id, value)
 
         raise IndexError("Invalid indexing information: %s" % key)
 
@@ -112,7 +112,7 @@ class Tensor(object):
                 idx_end = [x+y for x, y in zip(block_shape, idx_begin)]
                 idx = tuple(slice(b, e) for b, e in zip(idx_begin, idx_end))
                 block = arr[idx]
-                blocks.append(kernel._block_pass_block(block))
+                blocks.append(kernel.block_pass(block))
 
         blocks = np.array(blocks).reshape(grid)
         return Tensor(blocks, list(shape), block_shape, True, tensorid)
@@ -131,7 +131,7 @@ class Tensor(object):
 
         tensorid = str(next(Tensor.__newid))
         with TaskGroup(tensorid, False):
-            blocks = [kernel._block_full(block_shape, value, dtype)
+            blocks = [kernel.block_full(block_shape, value, dtype)
                       for _ in range(prod(grid))]
 
         blocks = np.array(blocks).reshape(grid)
@@ -143,7 +143,7 @@ class Tensor(object):
 
         tensorid = str(next(Tensor.__newid))
         with TaskGroup(tensorid, False):
-            blocks = [kernel._block_rand(block_shape)
+            blocks = [kernel.block_rand(block_shape)
                       for _ in range(prod(grid))]
 
         blocks = np.array(blocks).reshape(grid)
@@ -189,7 +189,7 @@ class Tensor(object):
 
         # transpose blocks
         for block in self._blocks.flat:
-            kernel._block_transpose(block, axes)
+            kernel.block_transpose(block, axes)
 
         # tranpose grid
         self._blocks = np.transpose(self._blocks, axes)
@@ -280,7 +280,7 @@ def tensordot(a: Tensor, b: Tensor, axes) -> Tensor:
         blocks_b = b._getblocks(coordrange(b, coord_b, axes_b))
 
         # block in C is equal to the sum of contractions of blocks
-        blocks.append(kernel._block_tensordot(blocks_a, blocks_b, axes))
+        blocks.append(kernel.block_tensordot(blocks_a, blocks_b, axes))
     blocks = np.array(blocks).reshape(grid)
 
     return Tensor(blocks, shape, block_shape)

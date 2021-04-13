@@ -6,13 +6,13 @@ from dislib_tensor.utils import prod
 
 # NOTE np.transpose returns a view, does not perform the transformation
 @ task(block=INOUT)
-def _block_transpose(block: np.ndarray, permutator):
+def block_transpose(block: np.ndarray, permutator):
     block = np.transpose(block, permutator)
 
 
 @ task(blocks={Type: COLLECTION_INOUT, Depth: 1})
-def _block_merge_split(blocks, block_shape, a):
-    print("[DEBUG] _block_merge_split:")
+def block_merge_split(blocks, block_shape, a):
+    print("[DEBUG] block_merge_split:")
     print("\ta = %s" % str(a))
     print("\tblock_shape = %s" % block_shape)
     print("\tlen(blocks) = %s" % len(blocks))
@@ -43,30 +43,30 @@ def _block_merge_split(blocks, block_shape, a):
 
 
 @task(returns=np.array)
-def _block_full(shape, value, dtype, order='F'):
+def block_full(shape, value, dtype, order='F'):
     return np.full(shape, value, dtype, order)
 
 
 @task(returns=np.array)
-def _block_rand(shape):
+def block_rand(shape):
     return np.random.random_sample(shape)
 
 
 @task(block=INOUT)
-def _block_set_value(block, idx, value):
+def block_setitem(block, idx, value):
     block[idx] = value
 
 
 @task(a={Type: COLLECTION_IN, Depth: 1}, b={Type: COLLECTION_IN, Depth: 1}, returns=np.ndarray)
-def _block_tensordot(a, b, axes):
+def block_tensordot(a, b, axes):
     return sum(np.tensordot(ba, bb, axes) for ba, bb in zip(a, b))
 
 
 @task(block=IN, returns=np.ndarray)
-def _block_pass_block(block):
+def block_pass(block):
     return block
 
 
 @task(block=IN)
-def _block_getitem(block: np.ndarray, idx: tuple):
+def block_getitem(block: np.ndarray, idx: tuple):
     return block[idx]
