@@ -247,15 +247,17 @@ def tensordot(a: Tensor, b: Tensor, axes) -> Tensor:
             "Cannnot contract Tensors with incompatible block-shape on contraction indexes")
 
     shape_a = copy(a.shape)
-    del shape_a[axes[0]]
     shape_b = copy(b.shape)
-    del shape_b[axes[1]]
+    for i, j in zip(*axes):
+        del shape_a[i]
+        del shape_b[j]
     shape = shape_a + shape_b
 
     block_shape_a = copy(a.block_shape)
-    del block_shape_a[axes[0]]
     block_shape_b = copy(b.block_shape)
-    del block_shape_b[axes[1]]
+    for i, j in zip(*axes):
+        del block_shape_a[i]
+        del block_shape_b[j]
     block_shape = block_shape_a + block_shape_b
 
     grid = [s // bs for s, bs in zip(shape, block_shape)]
