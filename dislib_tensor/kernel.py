@@ -28,6 +28,16 @@ def block_merge_split(blocks, block_shape, a):
               for block in blocks]
 
 
+@task(block=IN, returns={Type: COLLECTION_OUT, Depth: 1})
+def block_split(block: np.ndarray, axis: int):
+    return np.split(block, block.shape[axis], axis)
+
+
+@task(blocks=COLLECTION_IN, returns=np.ndarray)
+def block_merge(blocks, axis: int):
+    return np.stack(blocks, axis)
+
+
 @task(returns=np.array)
 def block_full(shape, value, dtype, order='F'):
     return np.full(shape, value, dtype, order)
