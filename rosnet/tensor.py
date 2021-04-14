@@ -187,8 +187,9 @@ class Tensor(object):
             raise ValueError("axes must be a unique list: %s" % axes)
 
         # transpose blocks
-        for block in self._blocks.flat:
-            kernel.block_transpose(block, axes)
+        for i in range(self._blocks.size):
+            self._blocks.flat[i] = kernel.block_transpose(
+                self._blocks.flat[i], axes)
 
         # tranpose grid
         self._blocks = np.transpose(self._blocks, axes)

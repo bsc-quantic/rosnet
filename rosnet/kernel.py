@@ -5,9 +5,9 @@ from rosnet.utils import prod
 
 
 # NOTE np.transpose returns a view, does not perform the transformation
-@task(block=INOUT)
+@task(block=IN, returns=np.ndarray)
 def block_transpose(block: np.ndarray, permutator):
-    block = np.transpose(block, permutator)
+    return np.transpose(block, permutator)
 
 
 @task(blocks={Type: COLLECTION_INOUT, Depth: 1})
