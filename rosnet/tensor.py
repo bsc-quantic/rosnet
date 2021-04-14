@@ -1,7 +1,6 @@
 from pycompss.api.api import compss_delete_object, compss_barrier_group, compss_wait_on, TaskGroup
 import numpy as np
 from itertools import product, count, repeat
-from dislib.data.array import Array
 from rosnet import kernel
 from rosnet.utils import prod, isunique, space
 from copy import copy
