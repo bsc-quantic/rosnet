@@ -70,10 +70,10 @@ class Tensor(object):
                 compss_delete_object(block)
 
     def __str__(self):
-        return "Tensor(blocks=(...), shape=%r, block_shape=%r)" % (self.shape, self.block_shape)
+        return "Tensor(blocks=(...), shape=%r, grid=%r, block_shape=%r)" % (self.shape, self.grid, self.block_shape)
 
     def __repr__(self):
-        return "Tensor(blocks=(...), shape=%r, block_shape=%r)" % (self.shape, self.block_shape)
+        return "Tensor(blocks=(...), shape=%r, grid=%r, block_shape=%r)" % (self.shape, self.grid, self.block_shape)
 
     def __getitem__(self, arg):
         if isinstance(arg, tuple):
