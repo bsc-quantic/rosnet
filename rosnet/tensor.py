@@ -113,7 +113,14 @@ class Tensor(object):
                 block = arr[idx]
                 blocks.append(kernel.block_pass(block))
 
-        blocks = np.array(blocks).reshape(grid)
+        # NOTE numpy reads 'blocks' recursively, so generate it manually when pycompss is deactivated
+        if isinstance(blocks[0], np.ndarray):
+            bs = np.empty_like(range(len(blocks)), dtype=np.ndarray)
+            for i in range(len(blocks)):
+                bs[i] = blocks[i]
+            blocks = bs.reshape(grid)
+        else:
+            blocks = np.array(blocks).reshape(grid)
         return Tensor(blocks, list(shape), block_shape, True, tensorid)
 
     @staticmethod
@@ -235,7 +242,7 @@ def tensordot(a: Tensor, b: Tensor, axes) -> Tensor:
         raise TypeError("Invalid argument type: a=%s, b=%s" %
                         (type(a), type(b)))
 
-    if not isinstance(axes, tuple) or not isinstance(axes, list):
+    if not isinstance(axes, tuple) and not isinstance(axes, list):
         raise TypeError(
             "Invalid argument type: axes=%s and should be Tuple or List" % type(axes))
 
@@ -276,8 +283,8 @@ def tensordot(a: Tensor, b: Tensor, axes) -> Tensor:
         # get all blocks in grid-a/grid-b with coord-a/coord-b + range(contraction indexes)
         coord_a, coord_b = coord[:len(shape_a)], coord[len(shape_a):]
         axes_a, axes_b = sorted(axes[0]), sorted(axes[1])
-        blocks_a = a._getblocks(coordrange(a, coord_a, axes_a))
-        blocks_b = b._getblocks(coordrange(b, coord_b, axes_b))
+        blocks_a = a._getblocks(coordrange(a, list(coord_a), axes_a))
+        blocks_b = b._getblocks(coordrange(b, list(coord_b), axes_b))
 
         # block in C is equal to the sum of contractions of blocks
         blocks.append(kernel.block_tensordot(blocks_a, blocks_b, axes))
