@@ -1,4 +1,4 @@
-from dislib_tensor.tensor import Tensor
+from rosnet.tensor import Tensor
 import argparse
 
 

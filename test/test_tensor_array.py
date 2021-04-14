@@ -1,4 +1,4 @@
-from dislib_tensor.tensor import Tensor
+from rosnet.tensor import Tensor
 import argparse
 import numpy as np
 import random as rnd

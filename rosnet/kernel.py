@@ -1,7 +1,7 @@
 import numpy as np
 from pycompss.api.task import task
 from pycompss.api.parameter import Type, Depth, IN, INOUT, COLLECTION_INOUT, COLLECTION_IN, COLLECTION_OUT
-from dislib_tensor.utils import prod
+from rosnet.utils import prod
 
 
 # NOTE np.transpose returns a view, does not perform the transformation

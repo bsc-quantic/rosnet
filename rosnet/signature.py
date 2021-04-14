@@ -1,4 +1,4 @@
-from dislib_tensor.utils import isunique
+from rosnet.utils import isunique
 
 
 class Signature(object):

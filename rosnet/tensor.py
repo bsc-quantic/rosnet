@@ -2,8 +2,8 @@ from pycompss.api.api import compss_delete_object, compss_barrier_group, compss_
 import numpy as np
 from itertools import product, count, repeat
 from dislib.data.array import Array
-from dislib_tensor import kernel
-from dislib_tensor.utils import prod, isunique, space
+from rosnet import kernel
+from rosnet.utils import prod, isunique, space
 from copy import copy
 
 
