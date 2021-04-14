@@ -1,16 +1,16 @@
 import numpy as np
 from pycompss.api.task import task
-from pycompss.api.parameter import Type, Depth, IN, INOUT, COLLECTION_INOUT, COLLECTION_IN
+from pycompss.api.parameter import Type, Depth, IN, INOUT, COLLECTION_INOUT, COLLECTION_IN, COLLECTION_OUT
 from dislib_tensor.utils import prod
 
 
 # NOTE np.transpose returns a view, does not perform the transformation
-@ task(block=INOUT)
+@task(block=INOUT)
 def block_transpose(block: np.ndarray, permutator):
     block = np.transpose(block, permutator)
 
 
-@ task(blocks={Type: COLLECTION_INOUT, Depth: 1})
+@task(blocks={Type: COLLECTION_INOUT, Depth: 1})
 def block_merge_split(blocks, block_shape, a):
     # merge blocks
     superblock = np.block(blocks).reshape((-1, len(blocks)), order='F')
