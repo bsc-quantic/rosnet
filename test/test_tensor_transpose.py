@@ -18,22 +18,20 @@ def main():
 
     shape = [2] * n
     block_shape = [2] * (m) + [1] * (n-m)
-    arr = np.random.rand(*shape)
-    print("Array generated! Sampling random locations:")
     samples = [tuple(rnd.randint(0, i-1) for i in shape)
                for _ in range(num_samples)]
-    for sample in samples:
-        print(f"\t{sample} => {arr[sample]}")
 
-    t = Tensor.array(arr, block_shape)
+    t = Tensor.rand(shape, block_shape)
     print(
         f'Created tensor with rank={t.rank}, shape={t.shape}, block_shape={t.block_shape}, grid={t.grid}')
+    t.sync()
     print("Tensor generated! Sampling random locations:")
     for sample in samples:
         print(f"\t{sample} => {t[sample]}")
 
     perm = list(range(n)[::-1])
     t.transpose(perm)
+    t.sync()
     print(
         f'Tranposed! Now rank={t.rank}, shape={t.shape}, block_shape={t.block_shape}, grid={t.grid}')
 
@@ -42,7 +40,6 @@ def main():
     for sample in samples:
         print(f"\t{sample} => {t[sample]}")
 
-    t.sync()
     print(
         f'Synced! Now rank={t.rank}, shape={t.shape}, block_shape={t.block_shape}, grid={t.grid}')
 
