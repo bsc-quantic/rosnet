@@ -83,7 +83,7 @@ class Tensor(object):
 
             grid_id = tuple(i // s for i, s in zip(arg, self.block_shape))
             block_id = tuple(i % s for i, s in zip(arg, self.block_shape))
-            return compss_wait_on(kernel.block_getitem(self._blocks[grid_id], block_id), to_write=False)
+            return compss_wait_on(kernel.block_getitem(self._blocks[grid_id], block_id))
 
         raise IndexError("Invalid indexing information: %s" % arg)
 
@@ -140,7 +140,14 @@ class Tensor(object):
             blocks = [kernel.block_full(block_shape, value, dtype)
                       for _ in range(prod(grid))]
 
-        blocks = np.array(blocks).reshape(grid)
+        # NOTE numpy reads 'blocks' recursively, so generate it manually when pycompss is deactivated
+        if isinstance(blocks[0], np.ndarray):
+            bs = np.empty_like(range(len(blocks)), dtype=np.ndarray)
+            for i in range(len(blocks)):
+                bs[i] = blocks[i]
+            blocks = bs.reshape(grid)
+        else:
+            blocks = np.array(blocks).reshape(grid)
         return Tensor(blocks, shape, block_shape, True, tensorid)
 
     @staticmethod
@@ -152,7 +159,14 @@ class Tensor(object):
             blocks = [kernel.block_rand(block_shape)
                       for _ in range(prod(grid))]
 
-        blocks = np.array(blocks).reshape(grid)
+        # NOTE numpy reads 'blocks' recursively, so generate it manually when pycompss is deactivated
+        if isinstance(blocks[0], np.ndarray):
+            bs = np.empty_like(range(len(blocks)), dtype=np.ndarray)
+            for i in range(len(blocks)):
+                bs[i] = blocks[i]
+            blocks = bs.reshape(grid)
+        else:
+            blocks = np.array(blocks).reshape(grid)
         return Tensor(blocks, shape, block_shape, True, tensorid)
 
     @property
@@ -288,6 +302,14 @@ def tensordot(a: Tensor, b: Tensor, axes) -> Tensor:
 
         # block in C is equal to the sum of contractions of blocks
         blocks.append(kernel.block_tensordot(blocks_a, blocks_b, axes))
-    blocks = np.array(blocks).reshape(grid)
+
+    # NOTE numpy reads 'blocks' recursively, so generate it manually when pycompss is deactivated
+    if isinstance(blocks[0], np.ndarray):
+        bs = np.empty_like(range(len(blocks)), dtype=np.ndarray)
+        for i in range(len(blocks)):
+            bs[i] = blocks[i]
+        blocks = bs.reshape(grid)
+    else:
+        blocks = np.array(blocks).reshape(grid)
 
     return Tensor(blocks, shape, block_shape)
