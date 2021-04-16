@@ -28,7 +28,7 @@ class Tensor(object):
     _delete: bool
     """
 
-    __newid = count()
+    _newid = count()
 
     def __init__(self, blocks, shape, block_shape=None, delete=True, tensorid=None):
         block_shape = shape if block_shape == None else block_shape
@@ -63,7 +63,7 @@ class Tensor(object):
         self._blocks = blocks
         self._delete = delete
         self._tensorid = tensorid if tensorid != None else str(
-            next(Tensor.__newid))
+            next(Tensor._newid))
 
     def __del__(self):
         if self._delete:
@@ -105,7 +105,7 @@ class Tensor(object):
         shape = arr.shape
         grid = [s // bs for s, bs in zip(shape, block_shape)]
 
-        tensorid = str(next(Tensor.__newid))
+        tensorid = str(next(Tensor._newid))
         blocks = []
         with TaskGroup(tensorid, False):
             for bidx in space(grid):
@@ -137,7 +137,7 @@ class Tensor(object):
     def full(value, shape, block_shape, dtype=None):
         grid = tuple(s // bs for s, bs in zip(shape, block_shape))
 
-        tensorid = str(next(Tensor.__newid))
+        tensorid = str(next(Tensor._newid))
         with TaskGroup(tensorid, False):
             blocks = [kernel.block_full(block_shape, value, dtype)
                       for _ in range(prod(grid))]
@@ -156,7 +156,7 @@ class Tensor(object):
     def rand(shape, block_shape):
         grid = tuple(s // bs for s, bs in zip(shape, block_shape))
 
-        tensorid = str(next(Tensor.__newid))
+        tensorid = str(next(Tensor._newid))
         with TaskGroup(tensorid, False):
             blocks = [kernel.block_rand(block_shape)
                       for _ in range(prod(grid))]
@@ -210,9 +210,10 @@ class Tensor(object):
             raise ValueError("axes must be a unique list: %s" % axes)
 
         # transpose blocks
-        for i in range(self._blocks.size):
-            self._blocks.flat[i] = kernel.block_transpose(
-                self._blocks.flat[i], axes)
+        with TaskGroup(self._tensorid):
+            for i in range(self._blocks.size):
+                self._blocks.flat[i] = kernel.block_transpose(
+                    self._blocks.flat[i], axes)
 
         # tranpose grid
         self._blocks = np.transpose(self._blocks, axes)
@@ -296,15 +297,17 @@ def tensordot(a: Tensor, b: Tensor, axes) -> Tensor:
 
     # for each block in C
     blocks = []
-    for coord in space(grid):
-        # get all blocks in grid-a/grid-b with coord-a/coord-b + range(contraction indexes)
-        coord_a, coord_b = coord[:len(shape_a)], coord[len(shape_a):]
-        axes_a, axes_b = sorted(axes[0]), sorted(axes[1])
-        blocks_a = a._getblocks(coordrange(a, list(coord_a), axes_a))
-        blocks_b = b._getblocks(coordrange(b, list(coord_b), axes_b))
+    tensorid = str(next(Tensor._newid))
+    with TaskGroup(tensorid):
+        for coord in space(grid):
+            # get all blocks in grid-a/grid-b with coord-a/coord-b + range(contraction indexes)
+            coord_a, coord_b = coord[:len(shape_a)], coord[len(shape_a):]
+            axes_a, axes_b = sorted(axes[0]), sorted(axes[1])
+            blocks_a = a._getblocks(coordrange(a, list(coord_a), axes_a))
+            blocks_b = b._getblocks(coordrange(b, list(coord_b), axes_b))
 
-        # block in C is equal to the sum of contractions of blocks
-        blocks.append(kernel.block_tensordot(blocks_a, blocks_b, axes))
+            # block in C is equal to the sum of contractions of blocks
+            blocks.append(kernel.block_tensordot(blocks_a, blocks_b, axes))
 
     # NOTE numpy reads 'blocks' recursively, so generate it manually when pycompss is deactivated
     if isinstance(blocks[0], np.ndarray):
@@ -315,4 +318,4 @@ def tensordot(a: Tensor, b: Tensor, axes) -> Tensor:
     else:
         blocks = np.array(blocks).reshape(grid)
 
-    return Tensor(blocks, shape, block_shape)
+    return Tensor(blocks, shape, block_shape, True, tensorid)
