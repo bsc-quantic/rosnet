@@ -267,16 +267,17 @@ def tensordot(a: Tensor, b: Tensor, axes) -> Tensor:
         raise ValueError(
             "Cannnot contract Tensors with incompatible block-shape on contraction indexes")
 
+    axes_sorted = [sorted(ax, reverse=True) for ax in axes]
     shape_a = copy(a.shape)
     shape_b = copy(b.shape)
-    for i, j in zip(*axes):
+    for i, j in zip(*axes_sorted):
         del shape_a[i]
         del shape_b[j]
     shape = shape_a + shape_b
 
     block_shape_a = copy(a.block_shape)
     block_shape_b = copy(b.block_shape)
-    for i, j in zip(*axes):
+    for i, j in zip(*axes_sorted):
         del block_shape_a[i]
         del block_shape_b[j]
     block_shape = block_shape_a + block_shape_b
