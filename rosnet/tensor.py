@@ -237,7 +237,7 @@ class Tensor(object):
 
         coords = [i if isinstance(i, slice) or isinstance(i, range) else repeat(
             i, times=1) for i in idx]
-        return [self.grid[coord] for coord in product(*coords)]
+        return [self._blocks[coord] for coord in product(*coords)]
 
 
 def transpose(a: Tensor, axes) -> Tensor:
