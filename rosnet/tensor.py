@@ -43,7 +43,7 @@ class Tensor(object):
         if not isinstance(delete, bool):
             raise TypeError(
                 "Invalid argument type: delete=%s and must be bool" % type(delete))
-        if not isinstance(tensorid, str):
+        if not isinstance(tensorid, str) and tensorid != None:
             raise TypeError(
                 "Invalid argument type: tensorid=%s and must be str" % type(tensorid))
 
