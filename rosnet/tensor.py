@@ -30,7 +30,9 @@ class Tensor(object):
 
     __newid = count()
 
-    def __init__(self, blocks, shape, block_shape, delete=True, tensorid=None):
+    def __init__(self, blocks, shape, block_shape=None, delete=True, tensorid=None):
+        block_shape = shape if block_shape == None else block_shape
+
         if not isinstance(blocks, np.ndarray):
             raise TypeError(
                 "Invalid argument type: blocks=%s and must be numpy.ndarray" % type(blocks))
