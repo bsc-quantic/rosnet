@@ -84,3 +84,53 @@ def test_block_setitem(shape, default, key, value):
 def test_block_tensordot(a, b, axes, check):
     c = block_tensordot(a, b, axes)
     assert all(i == check for i in c.flat)
+
+
+@pytest.mark.parametrize(("a,b,perm"), [
+    (
+        [
+            [1, 0],
+            [0, 1]
+        ],
+        [
+            [1, 0],
+            [0, 1]
+        ],
+        (0, 1)
+    ), (
+        [
+            [1, 0],
+            [0, 1]
+        ],
+        [
+            [1, 0],
+            [0, 1]
+        ],
+        (1, 0)
+    ), (
+        [
+            [1, 2],
+            [3, 4]
+        ],
+        [
+            [1, 2],
+            [3, 4]
+        ],
+        (0, 1)
+    ), (
+        [
+            [1, 2],
+            [3, 4]
+        ],
+        [
+            [1, 3],
+            [2, 4]
+        ],
+        (1, 0)
+    )
+])
+def test_block_transpose(a, b, perm):
+    at = block_transpose(a, perm)
+    assert (at == b).all()
+
+
