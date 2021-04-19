@@ -79,6 +79,11 @@ def test_block_setitem(shape, default, key, value):
         [block_full((2, 2), 1, int)],
         ([0, 1], [1, 0]),
         0
+    ), (
+        [block_full((2, 2, 2, 2), 1, int)],
+        [np.eye(2, 2, dtype=int, order='F')],
+        ([1], [0]),
+        1
     )
 ])
 def test_block_tensordot(a, b, axes, check):
