@@ -8,6 +8,7 @@
 		"python.linting.pylintEnabled": true
 	},
 	"containerUser": "jenkins",
+	"postStartCommand": "sudo service ssh start",
 	"remoteEnv": {
 		"PYTHONPATH": "/opt/COMPSs/Bindings/python/3/:${containerEnv:PYTHONPATH}",
 	},
