@@ -10,24 +10,6 @@ def block_transpose(block: np.ndarray, permutator):
     return np.transpose(block, permutator)
 
 
-@task(blocks={Type: COLLECTION_INOUT, Depth: 1})
-def block_merge_split(blocks, block_shape, a):
-    # merge blocks
-    superblock = np.block(blocks).reshape((-1, len(blocks)), order='F')
-    superblock = np.reshape(superblock, block_shape + [len(blocks)], order='F')
-
-    # transpose indexes
-    permutator = list(range(len(block_shape) + 1))
-    permutator[a], permutator[-1] = permutator[-1], permutator[a]
-    superblock = np.transpose(superblock, permutator)
-
-    # split blocks
-    blocks = np.split(
-        superblock, superblock.shape[-1], axis=len(superblock.shape)-1)
-    blocks = [np.reshape(block, (prod(block.shape),), order='F')
-              for block in blocks]
-
-
 @task(block=IN, returns={Type: COLLECTION_OUT, Depth: 1})
 def block_split(block: np.ndarray, axis: int):
     return np.split(block, block.shape[axis], axis)
