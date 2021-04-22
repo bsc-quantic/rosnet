@@ -223,7 +223,60 @@ class Tensor(object):
         self._block_shape = [self._block_shape[i] for i in axes]
 
     def rechunk(self, shape):
-        raise NotImplementedError("coming soon!")
+        """ Redefine the shape of the tensor block
+        """
+        assert len(shape) == self.rank
+        assert all(i < j for i, j in zip(shape, self.shape))
+        assert all(i % j == 0 for i, j in zip(self.shape, shape))
+
+        for axis, (block_dim, new_dim) in enumerate(zip(self.block_shape, shape)):
+            if block_dim == new_dim:
+                continue
+
+            elif block_dim % new_dim == 0:
+                # split blocks
+                self._rechunk_split(block_dim / new_dim, axis)
+                pass
+
+            elif new_dim % block_dim == 0:
+                # merge blocks
+                self._rechunk_merge(new_dim / block_dim, axis)
+                pass
+
+            else:
+                raise NotImplementedError(
+                    "Rechunking by a non-multiple or non-divisible factor is not supported")
+
+        self._block_shape = shape
+
+    def _rechunk_split(self, n: int, axis: int):
+        new_shape = list(self.grid)
+        new_shape[axis] = new_shape[axis] * n
+        grid = np.empty(new_shape, dtype=object, order='F')
+
+        with np.nditer(self._blocks, flags=['multi_index']) as it:
+            for block in it:
+                collection = kernel.block_split(block, n, axis)
+                index = list(it.multi_index)
+                index[axis] = slice(index[axis], index[axis] + n)
+                grid[index] = collection
+
+        self._blocks = grid
+
+    def _rechunk_merge(self, n: int, axis: int):
+        new_shape = list(self.grid)
+        new_shape[axis] = new_shape[axis] / n
+        grid = np.empty(new_shape, dtype=object, order='F')
+
+        with np.nditer(grid, flags=['multi_index'], op_flags=['writeonly']) as it:
+            for block in it:
+                index = list(it.multi_index)
+                index[axis] = slice(index[axis], index[axis] + n)
+                collection = self._blocks[index]
+                # TODO block or block[...]. check numpy.nditer doc
+                block = kernel.block_merge(collection, axis)
+
+        self._blocks = grid
 
     def _getblocks(self, idx: list) -> list:
         if len(idx) != self.rank:
