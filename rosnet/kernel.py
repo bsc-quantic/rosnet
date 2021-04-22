@@ -11,8 +11,8 @@ def block_transpose(block: np.ndarray, permutator):
 
 
 @task(block=IN, returns={Type: COLLECTION_OUT, Depth: 1})
-def block_split(block: np.ndarray, axis: int):
-    return np.split(block, block.shape[axis], axis)
+def block_split(block: np.ndarray, n: int, axis: int):
+    return np.split(block, n, axis)
 
 
 @task(blocks=COLLECTION_IN, returns=np.ndarray)
