@@ -257,12 +257,10 @@ class Tensor(object):
             elif block_dim % new_dim == 0:
                 # split blocks
                 self._rechunk_split(block_dim / new_dim, axis)
-                pass
 
             elif new_dim % block_dim == 0:
                 # merge blocks
                 self._rechunk_merge(new_dim / block_dim, axis)
-                pass
 
             else:
                 raise NotImplementedError(
