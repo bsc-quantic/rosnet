@@ -1,6 +1,6 @@
 from pycompss.api.api import compss_delete_object, compss_barrier_group, compss_wait_on, TaskGroup
 import numpy as np
-from itertools import product, count, repeat
+from itertools import product, count, repeat, accumulate
 from rosnet import kernel
 from rosnet.utils import prod, isunique, space
 from copy import copy
@@ -221,6 +221,27 @@ class Tensor(object):
         # transpose shapes
         self._shape = [self._shape[i] for i in axes]
         self._block_shape = [self._block_shape[i] for i in axes]
+
+    def reshape(self, shape, block_shape):
+        if prod(shape) != self.volume:
+            raise ValueError("new shape must not change volume")
+
+        ac = accumulate(self.shape, operator.mul)
+        ax, m = next((x for x in enumerate(ac) if x[1] >= shape[0]))
+        n = ac[-1] // m
+        if (m, n) != shape:
+            raise ValueError("reshape mismatch")
+
+        block_shape = (
+            prod(self.block_shape[:ax+1]), prod(self.block_shape[ax+1:]))
+
+        grid = tuple(s // bs for s, bs in zip(shape, block_shape))
+        with TaskGroup(self._tensorid):
+            for i in range(self._blocks.size):
+                self._blocks.flat[i] = kernel.block_reshape(
+                    self._blocks.flat[i], block_shape)
+
+        self._blocks = self._blocks.reshape(grid, order='F')
 
     def rechunk(self, shape):
         """ Redefine the shape of the tensor block

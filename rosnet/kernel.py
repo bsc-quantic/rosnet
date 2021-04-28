@@ -10,6 +10,11 @@ def block_transpose(block: np.ndarray, permutator):
     return np.transpose(block, permutator)
 
 
+@task(block=IN, returns=np.ndarray)
+def block_reshape(block: np.ndarray, shape: tuple):
+    return block.reshape(shape, order='F')
+
+
 @task(block=IN, returns={Type: COLLECTION_OUT, Depth: 1})
 def block_split(block: np.ndarray, n: int, axis: int):
     return np.split(block, n, axis)
@@ -48,3 +53,10 @@ def block_pass(block):
 @task(block=IN)
 def block_getitem(block: np.ndarray, idx: tuple):
     return block[idx]
+
+# @task(block=IN)
+# def block_svd(block: np.ndarray, t: int, chi: int) -> (np.ndarray, np.ndarray, np.ndarray):
+#     m = prod(block.shape[:t])
+#     n = prod(block.shape[t:])
+#     matrix = block.reshape((m, n), order='F')
+#     u, s, vh = np.linalg.svd(matrix)
