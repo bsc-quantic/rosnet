@@ -53,10 +53,3 @@ def block_pass(block):
 @task(block=IN)
 def block_getitem(block: np.ndarray, idx: tuple):
     return block[idx]
-
-# @task(block=IN)
-# def block_svd(block: np.ndarray, t: int, chi: int) -> (np.ndarray, np.ndarray, np.ndarray):
-#     m = prod(block.shape[:t])
-#     n = prod(block.shape[t:])
-#     matrix = block.reshape((m, n), order='F')
-#     u, s, vh = np.linalg.svd(matrix)
