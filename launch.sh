@@ -4,6 +4,7 @@ PARAMS=""
 NUM_NODES=1
 EXEC_TIME=2
 LOG_LEVEL=info
+TRACE=false
 while (( "$#" )); do
 	case "$1" in
 		-t|--exec_time)
@@ -18,6 +19,10 @@ while (( "$#" )); do
 			LOG_LEVEL=$2
 			shift 2
 			;;
+		--trace)
+			TRACE=$2
+			shift 2
+			;;
 		-*=*|--*=*)
 			echo "Error: Unsupported ="
 			exit 1
@@ -30,4 +35,4 @@ while (( "$#" )); do
 done
 
 export PYTHONPATH=$(pwd):$PYTHONPATH
-enqueue_compss --num_nodes=$NUM_NODES --qos=debug --log_level=$LOG_LEVEL --exec_time=$EXEC_TIME --summary --graph $PARAMS
+enqueue_compss --num_nodes=$NUM_NODES --qos=debug --log_level=$LOG_LEVEL --exec_time=$EXEC_TIME --summary --graph --tracing=$TRACE $PARAMS
