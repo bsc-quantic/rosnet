@@ -1,5 +1,5 @@
 from rosnet.utils import isunique, prod, ispower2
-from itertools import chain
+from itertools import chain, product
 import numpy as np
 import dislib as ds
 from dislib.data.array import Array
@@ -39,8 +39,8 @@ def schmidt(a: Tensor, axes_v: Tuple[int], chi=None, eps=1e-9) -> (Tensor, Tenso
 
     shape_u = [a.shape[i] for i in axes_u] + [k]
     shape_v = [a.shape[i] for i in axes_v] + [k]
-    bshape_u = [a.block_shape[i] for i in axes_u] + [k]
-    bshape_v = [a.block_shape[i] for i in axes_v] + [k]
+    bshape_u = [a.block_shape[i] for i in axes_u]
+    bshape_v = [a.block_shape[i] for i in axes_v]
 
     # permute tensor
     permutation = tuple(chain(axes_u, axes_v))
@@ -53,6 +53,8 @@ def schmidt(a: Tensor, axes_v: Tuple[int], chi=None, eps=1e-9) -> (Tensor, Tenso
     U, V = svd(a, chi, eps)
 
     # reshape U, V to tensors
+    bshape_u += [U.block_shape[1]]
+    bshape_v += [V.block_shape[1]]
     U.reshape(shape_u, bshape_u)
     V.reshape(shape_v, bshape_v)
 
@@ -86,13 +88,31 @@ def svd(A: Tensor, k, eps) -> (Tensor, Tensor):
                 A.block_shape, A.shape, False, delete=False)
     dsU, dsS, dsV = ds.svd(dsA, eps=eps)
 
+    # TODO contract dsU and dsS
+
     # NOTE hack not to delete blocks when moved to U,V
     dsU._delete = False
     dsV._delete = False
 
     # transform back U,V to Tensor
-    U = Tensor(np.ndarray(dsU._blocks), dsU.shape, dsU._reg_shape)
-    V = Tensor(np.ndarray(dsV._blocks), dsV.shape, dsV._reg_shape)
+    # NOTE numpy reads 'blocks' recursively, so generate it manually when pycompss is deactivated
+    blocks = dsU._blocks
+    if isinstance(blocks[0][0], np.ndarray):
+        bs = np.empty(
+            (len(blocks), len(blocks[0])), dtype=np.ndarray, order='F')
+        for i, j in product(range(len(blocks)), range(len(blocks[0]))):
+            bs[i, j] = blocks[i][j]
+        blocks = bs
+    U = Tensor(blocks, list(dsU.shape), list(dsU._reg_shape))
+
+    blocks = dsV._blocks
+    if isinstance(blocks[0][0], np.ndarray):
+        bs = np.empty(
+            (len(blocks), len(blocks[0])), dtype=np.ndarray, order='F')
+        for i, j in product(range(len(blocks)), range(len(blocks[0]))):
+            bs[i, j] = blocks[i][j]
+        blocks = bs
+    V = Tensor(blocks, list(dsV.shape), list(dsV._reg_shape))
 
     return (U, V)
 
