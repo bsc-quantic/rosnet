@@ -13,6 +13,10 @@ def space(s: list):
     return product(*[range(i) for i in s])
 
 
+def ispower2(v: int):
+    return (n & (n-1)) and n != 0
+
+
 try:
     from math import prod
 except ImportError:
