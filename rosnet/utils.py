@@ -13,7 +13,7 @@ def space(s: list):
     return product(*[range(i) for i in s])
 
 
-def ispower2(v: int):
+def ispower2(n: int):
     return (n & (n-1)) and n != 0
 
 
