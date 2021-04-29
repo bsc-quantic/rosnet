@@ -82,8 +82,8 @@ def svd(A: Tensor, k, eps) -> (Tensor, Tensor):
     kb = min(mb, nb)
 
     # call SVD
-    dsA = Array(A._blocks.tolist(), U.block_shape,
-                U.block_shape, U.shape, False, delete=False)
+    dsA = Array(A._blocks.tolist(), A.block_shape,
+                A.block_shape, A.shape, False, delete=False)
     dsU, dsS, dsV = ds.svd(dsA, eps=eps)
 
     # NOTE hack not to delete blocks when moved to U,V
