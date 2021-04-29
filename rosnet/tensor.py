@@ -207,6 +207,7 @@ class Tensor(object):
     def block_num(self):
         raise prod(self.grid)
 
+    @property
     def volume(self):
         return prod(self.shape)
 
