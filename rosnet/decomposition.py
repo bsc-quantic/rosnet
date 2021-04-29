@@ -47,7 +47,7 @@ def schmidt(a: Tensor, axes_v: Tuple[int], chi=None, eps=1e-9) -> (Tensor, Tenso
     a.transpose(permutation)
 
     # reshape to matrix
-    a.reshape((m, n), (mb, np))
+    a.reshape((m, n), (mb, nb))
 
     # perform SVD
     U, V = svd(a, chi, eps)
