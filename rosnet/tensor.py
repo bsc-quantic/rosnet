@@ -30,7 +30,7 @@ class Tensor(object):
 
     _newid = count()
 
-    def __init__(self, blocks, shape, block_shape=None, delete=True, tensorid=None):
+    def __init__(self, blocks, shape, block_shape=None, dtype=None, delete=True, tensorid=None):
         block_shape = shape if block_shape == None else block_shape
 
         if not isinstance(blocks, np.ndarray):
@@ -42,6 +42,9 @@ class Tensor(object):
         if not isinstance(block_shape, list):
             raise TypeError(
                 "Invalid argument type: block_shape=%s and must be list" % type(block_shape))
+        if not isinstance(dtype, type):
+            raise TypeError(
+                "Invalid argument type: dtype=%s and must be type" % type(dtype))
         if not isinstance(delete, bool):
             raise TypeError(
                 "Invalid argument type: delete=%s and must be bool" % type(delete))
@@ -64,6 +67,7 @@ class Tensor(object):
         self._delete = delete
         self._tensorid = tensorid if tensorid != None else str(
             next(Tensor._newid))
+        self._dtype = dtype
 
     def __del__(self):
         if self._delete:
@@ -131,7 +135,7 @@ class Tensor(object):
             blocks = bs.reshape(grid)
         else:
             blocks = np.array(blocks).reshape(grid)
-        return Tensor(blocks, list(shape), block_shape, True, tensorid)
+        return Tensor(blocks, list(shape), block_shape, arr.dtype, True, tensorid)
 
     @staticmethod
     def zeros(shape, block_shape, dtype=None):
@@ -158,7 +162,7 @@ class Tensor(object):
             blocks = bs.reshape(grid)
         else:
             blocks = np.array(blocks).reshape(grid)
-        return Tensor(blocks, shape, block_shape, True, tensorid)
+        return Tensor(blocks, shape, block_shape, dtype, True, tensorid)
 
     @staticmethod
     def rand(shape, block_shape):
@@ -177,7 +181,7 @@ class Tensor(object):
             blocks = bs.reshape(grid)
         else:
             blocks = np.array(blocks).reshape(grid)
-        return Tensor(blocks, shape, block_shape, True, tensorid)
+        return Tensor(blocks, shape, block_shape, float, True, tensorid)
 
     @property
     def shape(self):
@@ -206,6 +210,10 @@ class Tensor(object):
     @property
     def block_num(self):
         raise prod(self.grid)
+
+    @property
+    def dtype(self) -> type:
+        return self._dtype
 
     def volume(self):
         return prod(self.shape)
@@ -389,4 +397,5 @@ def tensordot(a: Tensor, b: Tensor, axes) -> Tensor:
     else:
         blocks = np.array(blocks).reshape(grid)
 
-    return Tensor(blocks, shape, block_shape, True, tensorid)
+    # TODO fix dtype
+    return Tensor(blocks, shape, block_shape, None, True, tensorid)
