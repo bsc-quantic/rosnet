@@ -322,17 +322,6 @@ class Tensor(object):
         return [self._blocks[coord] for coord in product(*coords)]
 
 
-def transpose(a: Tensor, axes) -> Tensor:
-    if not isinstance(a, Tensor):
-        raise TypeError("Invalid argument type: a=%s" % type(a))
-
-    if not isinstance(axes, tuple) or not isinstance(axes, list):
-        raise TypeError("Invalid argument type: axes=%s" % type(axes))
-
-    a.transpose(axes)
-    return a
-
-
 def tensordot(a: Tensor, b: Tensor, axes) -> Tensor:
     if not isinstance(a, Tensor) or not isinstance(b, Tensor):
         raise TypeError("Invalid argument type: a=%s, b=%s" %
