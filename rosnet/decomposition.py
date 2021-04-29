@@ -2,7 +2,8 @@ from rosnet.utils import isunique, prod, ispower2
 from itertools import chain
 import numpy as np
 import dislib as ds
-from dislib.array import Array
+from dislib.data.array import Array
+from typing import Tuple
 
 __all__ = ['schmidt']
 
