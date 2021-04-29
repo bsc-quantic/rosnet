@@ -226,15 +226,6 @@ class Tensor(object):
         if prod(shape) != self.volume:
             raise ValueError("new shape must not change volume")
 
-        ac = accumulate(self.shape, operator.mul)
-        ax, m = next((x for x in enumerate(ac) if x[1] >= shape[0]))
-        n = ac[-1] // m
-        if (m, n) != shape:
-            raise ValueError("reshape mismatch")
-
-        block_shape = (
-            prod(self.block_shape[:ax+1]), prod(self.block_shape[ax+1:]))
-
         grid = tuple(s // bs for s, bs in zip(shape, block_shape))
         with TaskGroup(self._tensorid):
             for i in range(self._blocks.size):
