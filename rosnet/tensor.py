@@ -242,6 +242,8 @@ class Tensor(object):
                     self._blocks.flat[i], block_shape)
 
         self._blocks = self._blocks.reshape(grid, order='F')
+        self._shape = shape
+        self._block_shape = block_shape
 
     def rechunk(self, shape):
         """ Redefine the shape of the tensor block
