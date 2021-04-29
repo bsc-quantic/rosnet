@@ -46,6 +46,11 @@ def block_tensordot(a, b, axes):
 
 
 @task(block=IN, returns=np.ndarray)
+def block_copy(block):
+    return np.copy(block)
+
+
+@task(block=IN, returns=np.ndarray)
 def block_pass(block):
     return block
 

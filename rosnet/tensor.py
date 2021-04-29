@@ -70,6 +70,14 @@ class Tensor(object):
             for block in self._blocks.flat:
                 compss_delete_object(block)
 
+    def __deepcopy__(self):
+        blocks = np.empty_like(self._blocks)
+
+        for i, block in enumerate(self._blocks.flat):
+            blocks[i] = kernel.block_copy(block)
+
+        return Tensor(blocks, self.shape, self.block_shape, self.dtype)
+
     def __str__(self):
         return "Tensor(blocks=(...), shape=%r, grid=%r, block_shape=%r)" % (self.shape, self.grid, self.block_shape)
 
