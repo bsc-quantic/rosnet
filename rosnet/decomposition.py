@@ -30,14 +30,16 @@ def schmidt(a: Tensor, axes_v: Tuple[int], chi=None, eps=1e-9) -> (Tensor, Tenso
 
     axes_u = tuple(filter(lambda x: x not in axes_v, range(a.rank)))
 
-    m, n = prod(a.shape[axes_u]), prod(a.shape[axes_v])
-    mb, nb = prod(a.block_shape[axes_u]), prod(a.block_shape[axes_v])
+    m = prod(a.shape[i] for i in axes_u)
+    n = prod(a.shape[i] for i in axes_v)
+    mb = prod(a.block_shape[i] for i in axes_u)
+    nb = prod(a.block_shape[i] for i in axes_v)
     k, kb = min(m, n), min(mb, nb)
 
-    shape_u = a.shape[axes_u] + [k]
-    shape_v = a.shape[axes_v] + [k]
-    bshape_u = a.block_shape[axes_u] + [k]
-    bshape_v = a.block_shape[axes_v] + [k]
+    shape_u = [a.shape[i] for i in axes_u] + [k]
+    shape_v = [a.shape[i] for i in axes_v] + [k]
+    bshape_u = [a.block_shape[i] for i in axes_u] + [k]
+    bshape_v = [a.block_shape[i] for i in axes_v] + [k]
 
     # permute tensor
     permutation = tuple(chain(axes_u, axes_v))
