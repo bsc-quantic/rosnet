@@ -1,4 +1,5 @@
 from rosnet.utils import isunique, prod, ispower2
+from rosnet import Tensor
 from itertools import chain, product
 import numpy as np
 import dislib as ds
