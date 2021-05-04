@@ -116,4 +116,3 @@ def svd(A: Tensor, k, eps) -> (Tensor, Tensor):
     V = Tensor(blocks, list(dsV.shape), list(dsV._reg_shape))
 
     return (U, V)
-
