@@ -139,3 +139,18 @@ def test_block_transpose(a, b, perm):
     assert (at == b).all()
 
 
+@pytest.mark.parametrize(("t,n,axis,a,b"), [
+    (
+        block_full((2, 2, 2, 2), 1, int), 2, 0,
+        block_full((1, 2, 2, 2), 1, int), block_full((1, 2, 2, 2), 1, int)
+    ), (
+        block_full([2]*12, 1, int), 2, -1,
+        block_full([2]*11 + [1], 1, int), block_full([2]*11 + [1], 1, int)
+    )
+])
+def test_block_split(t, n, axis, a, b):
+    at, bt = block_split(t, n, axis)
+    assert np.array_equal(a, at)
+    assert np.array_equal(b, bt)
+
+
