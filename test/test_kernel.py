@@ -152,5 +152,7 @@ def test_block_split(t, n, axis, a, b):
     at, bt = block_split(t, n, axis)
     assert np.array_equal(a, at)
     assert np.array_equal(b, bt)
+    assert at.base == None
+    assert bt.base == None
 
 

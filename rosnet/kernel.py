@@ -17,7 +17,7 @@ def block_reshape(block: np.ndarray, shape: tuple):
 
 @task(block=IN, returns={Type: COLLECTION_OUT, Depth: 1})
 def block_split(block: np.ndarray, n: int, axis: int):
-    return np.split(block, n, axis)
+    return map(lambda x: x.copy(), np.split(block, n, axis))
 
 
 @task(blocks=COLLECTION_IN, returns=np.ndarray)
