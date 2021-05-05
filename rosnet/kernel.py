@@ -32,7 +32,7 @@ def block_full(shape, value, dtype, order='F'):
 
 @task(returns=np.array)
 def block_rand(shape):
-    return np.random.random_sample(shape)
+    return np.asfortranarray(np.random.random_sample(shape))
 
 
 @task(block=INOUT)
