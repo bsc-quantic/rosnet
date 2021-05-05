@@ -2,12 +2,12 @@ import numpy as np
 from pycompss.api.task import task
 from pycompss.api.parameter import Type, Depth, IN, INOUT, COLLECTION_INOUT, COLLECTION_IN, COLLECTION_OUT
 from rosnet.utils import prod
+from rosnet.backend import transpose
 
 
-# NOTE np.transpose returns a view, does not perform the transformation
 @task(block=IN, returns=np.ndarray)
 def block_transpose(block: np.ndarray, permutator):
-    return np.transpose(block, permutator)
+    return transpose(block, permutator)
 
 
 @task(block=IN, returns=np.ndarray)
