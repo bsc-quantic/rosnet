@@ -275,7 +275,7 @@ class Tensor(object):
         new_shape[axis] = new_shape[axis] * n
         grid = np.empty(new_shape, dtype=object, order='F')
 
-        with np.nditer(self._blocks, flags=['multi_index']) as it:
+        with np.nditer(self._blocks, flags=['multi_index', 'refs_ok']) as it:
             for block in it:
                 collection = kernel.block_split(block, n, axis)
                 index = list(it.multi_index)
