@@ -241,3 +241,4 @@ $RECYCLE.BIN/
 *.out
 *.err
 .vscode/settings.json
+trace
