@@ -2,7 +2,35 @@ import numpy as np
 from pycompss.api.task import task
 from pycompss.api.parameter import Type, Depth, IN, INOUT, COLLECTION_INOUT, COLLECTION_IN, COLLECTION_OUT
 from rosnet.utils import prod
-from rosnet.backend import transpose
+import logging
+import os
+import sys
+
+logging.basicConfig(stream=sys.stdout)
+logger = logging.getLogger(__name__)
+
+
+def __numpy_transpose(a, axes=None):
+    return np.asfortranarray(np.transpose(a, axes))
+
+
+# defaults
+__backend_transpose = os.environ.get('ROSNET_BACKEND_TRANSPOSE', 'numpy')
+
+
+if __backend_transpose == 'numpy':
+    transpose = __numpy_transpose
+else:
+    try:
+        transpose = __import__(__backend_transpose,
+                               fromlist=('transpose')).transposes
+    except ImportError:
+        logger.error(
+            f'{__backend_transpose} not found. Falling back to \'numpy\'')
+        transpose = __numpy_transpose
+        __backend_transpose = 'numpy'
+
+logger.debug(f'backend \'transpose\': {__backend_transpose}')
 
 
 @task(block=IN, returns=np.ndarray)
