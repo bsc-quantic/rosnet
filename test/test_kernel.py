@@ -1,6 +1,7 @@
 import pytest
 from rosnet.kernel import *
 from pycompss.api.api import compss_wait_on
+import numpy as np
 
 
 @pytest.mark.skip(reason="does nothing")
