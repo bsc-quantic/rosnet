@@ -70,7 +70,7 @@ def block_setitem(block, idx, value):
 
 @task(a={Type: COLLECTION_IN, Depth: 1}, b={Type: COLLECTION_IN, Depth: 1}, returns=np.ndarray)
 def block_tensordot(a, b, axes):
-    return sum(np.tensordot(ba, bb, axes) for ba, bb in zip(a, b))
+    return sum(np.tensordot(ba, bb, axes) for ba, bb in zip(a.flat, b.flat))
 
 
 @task(block=IN, returns=np.ndarray)
