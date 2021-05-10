@@ -57,8 +57,10 @@ def tensordot(a: Tensor, b: Tensor, axes) -> Tensor:
         for coord in space(grid):
             # get all blocks in grid-a/grid-b with coord-a/coord-b + range(contraction indexes)
             coord_a, coord_b = coord[:len(shape_a)], coord[len(shape_a):]
-            blocks_a = a._blocks[coordrange(a, list(coord_a), axes_a)]
-            blocks_b = b._blocks[coordrange(b, list(coord_b), axes_b)]
+            blocks_a = list(
+                a._blocks[coordrange(a, list(coord_a), axes_a)].flat)
+            blocks_b = list(
+                b._blocks[coordrange(b, list(coord_b), axes_b)].flat)
 
             # block in C is equal to the sum of contractions of blocks
             # TODO are blocks_a, blocks_b in correct pair order?
