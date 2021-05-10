@@ -35,12 +35,14 @@ class Tensor(object):
         if not isinstance(blocks, np.ndarray):
             raise TypeError(
                 "Invalid argument type: blocks=%s and must be numpy.ndarray" % type(blocks))
-        if not isinstance(shape, list):
+        if not isinstance(shape, list) and not isinstance(shape, tuple):
             raise TypeError(
                 "Invalid argument type: shape=%s and must be list" % type(shape))
-        if not isinstance(block_shape, list):
+        shape = list(shape)
+        if not isinstance(block_shape, list) and not isinstance(block_shape, tuple):
             raise TypeError(
                 "Invalid argument type: block_shape=%s and must be list" % type(block_shape))
+        block_shape = list(block_shape)
         if not isinstance(delete, bool):
             raise TypeError(
                 "Invalid argument type: delete=%s and must be bool" % type(delete))
