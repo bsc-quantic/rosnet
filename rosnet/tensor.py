@@ -220,7 +220,7 @@ class Tensor(object):
             raise ValueError("axes must be a unique list: %s" % axes)
 
         # transpose blocks
-        with TaskGroup(self._tensorid):
+        with TaskGroup(self._tensorid, False):
             for i in range(self._blocks.size):
                 self._blocks.flat[i] = kernel.block_transpose(
                     self._blocks.flat[i], axes)
@@ -237,7 +237,7 @@ class Tensor(object):
             raise ValueError("new shape must not change volume")
 
         grid = tuple(s // bs for s, bs in zip(shape, block_shape))
-        with TaskGroup(self._tensorid):
+        with TaskGroup(self._tensorid, False):
             for i in range(self._blocks.size):
                 self._blocks.flat[i] = kernel.block_reshape(
                     self._blocks.flat[i], block_shape)

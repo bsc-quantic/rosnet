@@ -53,7 +53,7 @@ def tensordot(a: Tensor, b: Tensor, axes) -> Tensor:
     # for each block in C
     tensorid = str(next(Tensor._newid))
     blocks = []
-    with TaskGroup(tensorid):
+    with TaskGroup(tensorid, False):
         for coord in space(grid):
             # get all blocks in grid-a/grid-b with coord-a/coord-b + range(contraction indexes)
             coord_a, coord_b = coord[:len(shape_a)], coord[len(shape_a):]
