@@ -54,4 +54,4 @@ if [[ "${PARAMS[0]}" != /* ]]; then
 	PARAMS[0]=$PWD/${PARAMS[0]}
 fi
 
-enqueue_compss --num_nodes=$NUM_NODES --qos=debug --log_level=$LOG_LEVEL --exec_time=$EXEC_TIME --worker_working_dir=$WORKER_WD --master_working_dir=$MASTER_WD --pythonpath=$PWD --summary --graph --tracing=$TRACE $PARAMS
+enqueue_compss --num_nodes=$NUM_NODES --qos=debug --log_level=$LOG_LEVEL --exec_time=$EXEC_TIME --worker_working_dir=$WORKER_WD --master_working_dir=$MASTER_WD --pythonpath=$PWD --summary --graph --tracing=$TRACE ${PARAMS[*]}
