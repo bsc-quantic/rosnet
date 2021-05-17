@@ -80,10 +80,10 @@ class Tensor(object):
         return Tensor(blocks, self.shape, self.block_shape)
 
     def __str__(self):
-        return "Tensor(blocks=(...), shape=%r, grid=%r, block_shape=%r)" % (self.shape, self.grid, self.block_shape)
+        return "Tensor(shape=%r, grid=%r, block_shape=%r)" % (self.shape, self.grid, self.block_shape)
 
     def __repr__(self):
-        return "Tensor(blocks=(...), shape=%r, grid=%r, block_shape=%r)" % (self.shape, self.grid, self.block_shape)
+        return "Tensor(shape=%r, grid=%r, block_shape=%r)" % (self.shape, self.grid, self.block_shape)
 
     def __getitem__(self, arg):
         if isinstance(arg, tuple):
