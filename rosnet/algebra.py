@@ -27,6 +27,10 @@ def tensordot(a: Tensor, b: Tensor, axes) -> Tensor:
         raise ValueError(
             "Cannnot contract Tensors with incompatible block-shape on contraction indexes")
 
+    if a.shape == [] and b.shape == []:
+        res = np.array(kernel.block_kron(a._blocks[()], b._blocks[()]))
+        return Tensor(res, (), ())
+
     axes_a, axes_b = axes
 
     shape_a = list(map(lambda x: x[1], filter(

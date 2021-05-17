@@ -86,3 +86,8 @@ def block_pass(block):
 @task(block=IN)
 def block_getitem(block: np.ndarray, idx: tuple):
     return block[idx]
+
+
+@task(returns=np.ndarray)
+def block_kron(a: np.ndarray, b: np.ndarray):
+    return np.kron(a, b)
