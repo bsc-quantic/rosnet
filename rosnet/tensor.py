@@ -272,9 +272,9 @@ class Tensor(object):
         self._block_shape = shape
 
     def _rechunk_split(self, n: int, axis: int):
-        new_shape = list(self.grid)
-        new_shape[axis] = new_shape[axis] * n
-        grid = np.empty(new_shape, dtype=object, order='F')
+        grid_shape = list(self.grid)
+        grid_shape[axis] = grid_shape[axis] * n
+        grid = np.empty(grid_shape, dtype=object, order='F')
 
         with np.nditer(self._blocks, flags=['multi_index', 'refs_ok']) as it:
             for block in it:
@@ -286,9 +286,9 @@ class Tensor(object):
         self._blocks = grid
 
     def _rechunk_merge(self, n: int, axis: int):
-        new_shape = list(self.grid)
-        new_shape[axis] = new_shape[axis] / n
-        grid = np.empty(new_shape, dtype=object, order='F')
+        grid_shape = list(self.grid)
+        grid_shape[axis] = grid_shape[axis] / n
+        grid = np.empty(grid_shape, dtype=object, order='F')
 
         with np.nditer(grid, flags=['multi_index'], op_flags=['writeonly']) as it:
             for block in it:
