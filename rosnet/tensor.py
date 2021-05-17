@@ -250,7 +250,7 @@ class Tensor(object):
         """ Redefine the shape of the tensor block
         """
         assert len(shape) == self.rank
-        assert all(i < j for i, j in zip(shape, self.shape))
+        assert all(i <= j for i, j in zip(shape, self.shape))
         assert all(i % j == 0 for i, j in zip(self.shape, shape))
 
         for axis, (block_dim, new_dim) in enumerate(zip(self.block_shape, shape)):
