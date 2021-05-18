@@ -1,7 +1,9 @@
 from rosnet.tensor import Tensor
 from rosnet.utils import isunique, space
 from rosnet import kernel
+from rosnet.utils import prod, ispower2
 from copy import copy, deepcopy
+from itertools import chain
 import numpy as np
 from pycompss.api.api import TaskGroup
 
@@ -80,3 +82,56 @@ def tensordot(a: Tensor, b: Tensor, axes) -> Tensor:
         blocks = np.array(blocks).reshape(grid)
 
     return Tensor(blocks, shape, block_shape, True, tensorid)
+
+
+def schmidt(a: Tensor, axes_v, chi=None, eps=1e-9, copy=False) -> (Tensor, Tensor):
+    """ Decomposes tensor `a` into two tensors `u` and `v` using the Schmidt decomposition.
+
+    `a`: `Tensor` to decompose.
+
+    `axes_v`: `tuple`-like. List of indexes kept by `v`.
+
+    `chi`: `int`. Maximum rank of the decomposition. Currently unused.
+
+    `eps`: `float`. Epsilon.
+    """
+    if not isinstance(axes_v, list) and not isinstance(axes_v, tuple):
+        raise TypeError(
+            f'axes_v must be of type "tuple" or "list"; {type(axes_v)} instead')
+    if not isunique(axes_v) or len(axes_v) > a.rank - 1 or min(axes_v) < 0 or max(axes_v) >= a.rank:
+        raise ValueError(f'axes_v is not valid: {axes_v}')
+    if not isinstance(chi, int):
+        raise TypeError(f'chi must be of type "int"; {type(chi)} instead')
+    if chi < 2 or not ispower2(chi):
+        raise ValueError(f'chi must be a power of 2 and > 2: {chi}')
+
+    axes_u = tuple(filter(lambda x: x not in axes_v, range(a.rank)))
+
+    m = prod(a.shape[i] for i in axes_u)
+    n = prod(a.shape[i] for i in axes_v)
+    mb = prod(a.block_shape[i] for i in axes_u)
+    nb = prod(a.block_shape[i] for i in axes_v)
+    k, kb = min(m, n), min(mb, nb)
+
+    shape_u = [a.shape[i] for i in axes_u] + [k]
+    shape_v = [a.shape[i] for i in axes_v] + [k]
+    bshape_u = [a.block_shape[i] for i in axes_u]
+    bshape_v = [a.block_shape[i] for i in axes_v]
+
+    # permute tensor
+    permutation = tuple(chain(axes_u, axes_v))
+    a.transpose(permutation)
+
+    # reshape to matrix
+    a.reshape((m, n), (mb, nb))
+
+    # perform SVD
+    U, V = svd(a, chi, eps)
+
+    # reshape U, V to tensors
+    bshape_u += [U.block_shape[1]]
+    bshape_v += [V.block_shape[1]]
+    U.reshape(shape_u, bshape_u)
+    V.reshape(shape_v, bshape_v)
+
+    return (U, V)
