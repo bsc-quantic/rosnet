@@ -1,6 +1,5 @@
-from rosnet import Tensor
+import rosnet
 import argparse
-import numpy as np
 import random as rnd
 
 
@@ -21,7 +20,7 @@ def main():
     samples = [tuple(rnd.randint(0, i-1) for i in shape)
                for _ in range(num_samples)]
 
-    t = Tensor.rand(shape, block_shape)
+    t = rosnet.rand(shape, block_shape)
     print(
         f'Created tensor with rank={t.rank}, shape={t.shape}, block_shape={t.block_shape}, grid={t.grid}')
     t.sync()

@@ -1,4 +1,4 @@
-from rosnet.tensor import Tensor
+from rosnet.tensor import array
 import argparse
 import numpy as np
 import random as rnd
@@ -27,7 +27,7 @@ def main():
         print(f"\t{sample} => {arr[sample]}")
 
     print("Tensor generated! Sampling random locations:")
-    t = Tensor.array(arr, block_shape)
+    t = array(arr, block_shape)
     for sample in samples:
         print(f"\t{sample} => {t[sample]}")
 

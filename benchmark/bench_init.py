@@ -1,4 +1,4 @@
-from rosnet.tensor import Tensor
+from rosnet.tensor import zeros
 import argparse
 
 
@@ -13,7 +13,7 @@ def main():
 
     shape = [2] * n
     block_shape = [2] * (n-m) + [1] * (m)
-    t = Tensor.zeros(shape, block_shape)
+    t = zeros(shape, block_shape)
     t.sync()
     print(
         f'Created tensor with rank={t.rank}, shape={t.shape}, block_shape={t.block_shape}, grid={t.grid}')

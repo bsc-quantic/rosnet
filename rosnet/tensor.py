@@ -109,77 +109,6 @@ class Tensor(object):
 
         raise IndexError("Invalid indexing information: %s" % key)
 
-    @staticmethod
-    def array(arr: np.ndarray, block_shape):
-        shape = arr.shape
-        grid = [s // bs for s, bs in zip(shape, block_shape)]
-
-        tensorid = str(next(Tensor._newid))
-        blocks = []
-        with TaskGroup(tensorid, False):
-            for bidx in space(grid):
-                idx_begin = [x*y for x, y in zip(block_shape, bidx)]
-                idx_end = [x+y for x, y in zip(block_shape, idx_begin)]
-                idx = tuple(slice(b, e) for b, e in zip(idx_begin, idx_end))
-                block = arr[idx]
-                blocks.append(kernel.block_pass(block))
-
-        # NOTE numpy reads 'blocks' recursively, so generate it manually when pycompss is deactivated
-        if isinstance(blocks[0], np.ndarray):
-            bs = np.empty_like(range(len(blocks)), dtype=np.ndarray)
-            for i in range(len(blocks)):
-                bs[i] = blocks[i]
-            blocks = bs.reshape(grid)
-        else:
-            blocks = np.array(blocks).reshape(grid)
-        return Tensor(blocks, list(shape), block_shape, True, tensorid)
-
-    @staticmethod
-    def zeros(shape, block_shape, dtype=None):
-        return Tensor.full(0, shape, block_shape, dtype)
-
-    @staticmethod
-    def ones(shape, block_shape, dtype=None):
-        return Tensor.full(1, shape, block_shape, dtype)
-
-    @staticmethod
-    def full(value, shape, block_shape, dtype=None):
-        grid = tuple(s // bs for s, bs in zip(shape, block_shape))
-
-        tensorid = str(next(Tensor._newid))
-        with TaskGroup(tensorid, False):
-            blocks = [kernel.block_full(block_shape, value, dtype)
-                      for _ in range(prod(grid))]
-
-        # NOTE numpy reads 'blocks' recursively, so generate it manually when pycompss is deactivated
-        if isinstance(blocks[0], np.ndarray):
-            bs = np.empty_like(range(len(blocks)), dtype=np.ndarray)
-            for i in range(len(blocks)):
-                bs[i] = blocks[i]
-            blocks = bs.reshape(grid)
-        else:
-            blocks = np.array(blocks).reshape(grid)
-        return Tensor(blocks, shape, block_shape, True, tensorid)
-
-    @staticmethod
-    def rand(shape, block_shape):
-        grid = tuple(s // bs for s, bs in zip(shape, block_shape))
-
-        tensorid = str(next(Tensor._newid))
-        with TaskGroup(tensorid, False):
-            blocks = [kernel.block_rand(block_shape)
-                      for _ in range(prod(grid))]
-
-        # NOTE numpy reads 'blocks' recursively, so generate it manually when pycompss is deactivated
-        if isinstance(blocks[0], np.ndarray):
-            bs = np.empty_like(range(len(blocks)), dtype=np.ndarray)
-            for i in range(len(blocks)):
-                bs[i] = blocks[i]
-            blocks = bs.reshape(grid)
-        else:
-            blocks = np.array(blocks).reshape(grid)
-        return Tensor(blocks, shape, block_shape, True, tensorid)
-
     @property
     def shape(self):
         return self._shape
@@ -299,3 +228,77 @@ class Tensor(object):
                 block = kernel.block_merge(collection, axis)
 
         self._blocks = grid
+
+    def collect(self) -> np.ndarray:
+        raise NotImplementedError("coming soon!")
+
+
+def array(arr: np.ndarray, block_shape):
+    shape = arr.shape
+    grid = [s // bs for s, bs in zip(shape, block_shape)]
+
+    tensorid = str(next(Tensor._newid))
+    blocks = []
+    with TaskGroup(tensorid, False):
+        for bidx in space(grid):
+            idx_begin = [x*y for x, y in zip(block_shape, bidx)]
+            idx_end = [x+y for x, y in zip(block_shape, idx_begin)]
+            idx = tuple(slice(b, e) for b, e in zip(idx_begin, idx_end))
+            block = arr[idx]
+            blocks.append(kernel.block_pass(block))
+
+    # NOTE numpy reads 'blocks' recursively, so generate it manually when pycompss is deactivated
+    if isinstance(blocks[0], np.ndarray):
+        bs = np.empty_like(range(len(blocks)), dtype=np.ndarray)
+        for i, _ in enumerate(blocks):
+            bs[i] = blocks[i]
+        blocks = bs.reshape(grid)
+    else:
+        blocks = np.array(blocks).reshape(grid)
+    return Tensor(blocks, list(shape), block_shape, True, tensorid)
+
+
+def zeros(shape, block_shape, dtype=None):
+    return full(0, shape, block_shape, dtype)
+
+
+def ones(shape, block_shape, dtype=None):
+    return full(1, shape, block_shape, dtype)
+
+
+def full(value, shape, block_shape, dtype=None):
+    grid = tuple(s // bs for s, bs in zip(shape, block_shape))
+
+    tensorid = str(next(Tensor._newid))
+    with TaskGroup(tensorid, False):
+        blocks = [kernel.block_full(block_shape, value, dtype)
+                  for _ in range(prod(grid))]
+
+    # NOTE numpy reads 'blocks' recursively, so generate it manually when pycompss is deactivated
+    if isinstance(blocks[0], np.ndarray):
+        bs = np.empty_like(range(len(blocks)), dtype=np.ndarray)
+        for i, _ in enumerate(blocks):
+            bs[i] = blocks[i]
+        blocks = bs.reshape(grid)
+    else:
+        blocks = np.array(blocks).reshape(grid)
+    return Tensor(blocks, shape, block_shape, True, tensorid)
+
+
+def rand(shape, block_shape):
+    grid = tuple(s // bs for s, bs in zip(shape, block_shape))
+
+    tensorid = str(next(Tensor._newid))
+    with TaskGroup(tensorid, False):
+        blocks = [kernel.block_rand(block_shape)
+                  for _ in range(prod(grid))]
+
+    # NOTE numpy reads 'blocks' recursively, so generate it manually when pycompss is deactivated
+    if isinstance(blocks[0], np.ndarray):
+        bs = np.empty_like(range(len(blocks)), dtype=np.ndarray)
+        for i, _ in enumerate(blocks):
+            bs[i] = blocks[i]
+        blocks = bs.reshape(grid)
+    else:
+        blocks = np.array(blocks).reshape(grid)
+    return Tensor(blocks, shape, block_shape, True, tensorid)

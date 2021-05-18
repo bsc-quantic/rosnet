@@ -1,5 +1,5 @@
 import opt_einsum as oe
-from rosnet import Tensor, tensordot
+import rosnet
 from pycompss.api.api import compss_wait_on
 import cotengra as ctg
 import math
@@ -92,7 +92,7 @@ if args.cut_size or args.cut_slices or args.cut_overhead:
             fakes[i].block_shape = block_shape
 
 # initialize tensors
-tensors = [Tensor.ones(fake.shape, fake.block_shape,
+tensors = [rosnet.ones(fake.shape, fake.block_shape,
                        dtype=np.float32) for fake in fakes]
 
 # contract tn
