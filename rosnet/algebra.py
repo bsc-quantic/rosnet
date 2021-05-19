@@ -83,6 +83,22 @@ def tensordot(a: Tensor, b: Tensor, axes) -> Tensor:
     return Tensor(blocks, shape, block_shape, True, tensorid)
 
 
+def kron(a: Tensor, b: Tensor) -> Tensor:
+    shape = list(a.shape) + list(b.shape)
+    block_shape = list(a.block_shape) + list(b.block_shape)
+    grid = list(a.grid) + list(b.grid)
+    blocks = np.empty(grid, dtype='object', order='F')
+    n = a.rank
+
+    with np.nditer(blocks, flags=['multi_index'], op_flags=['writeonly']) as it:
+        for block in it:
+            index = list(it.multi_index)
+            block[...] = kernel.block_kron(
+                a._blocks[index[:n]], b._blocks[index[n:]])
+
+    return Tensor(blocks, shape, block_shape)
+
+
 def schmidt(a: Tensor, axes_v, chi=None, eps=1e-9, copy=False) -> (Tensor, Tensor):
     """ Decomposes tensor `a` into two tensors `u` and `v` using the Schmidt decomposition.
 
