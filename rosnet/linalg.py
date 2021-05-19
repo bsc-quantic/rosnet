@@ -1,4 +1,4 @@
-import copy
+from copy import deepcopy
 from rosnet import Tensor, kernel
 import numpy as np
 from itertools import product
@@ -42,7 +42,7 @@ def svd(A: Tensor, eps=1e-9, copy=True) -> (Tensor, Tensor):
     kb = min(mb, nb)
 
     # generate U,V
-    U = copy.deepcopy(A) if copy else A  # TODO is U.block_shape ok?
+    U = deepcopy(A) if copy else A  # TODO is U.block_shape ok?
     V = identity(n, (nb, nb))
 
     # call SVD asynchronously
