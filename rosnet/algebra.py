@@ -1,7 +1,6 @@
 from rosnet.tensor import Tensor
-from rosnet.utils import isunique, space
-from rosnet import kernel
-from rosnet.utils import prod, ispower2
+from rosnet.utils import isunique, space, prod, ispower2
+from rosnet import kernel, linalg
 from copy import copy, deepcopy
 from itertools import chain
 import numpy as np
@@ -126,7 +125,7 @@ def schmidt(a: Tensor, axes_v, chi=None, eps=1e-9, copy=False) -> (Tensor, Tenso
     a.reshape((m, n), (mb, nb))
 
     # perform SVD
-    U, V = svd(a, chi, eps)
+    U, V = linalg.svd(a, eps)
 
     # reshape U, V to tensors
     bshape_u += [U.block_shape[1]]

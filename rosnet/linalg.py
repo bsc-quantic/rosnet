@@ -1,10 +1,8 @@
-import dislib as ds
-from dislib.data.array import Array
-from pycompss.api.task import task
-from pycompss.api.parameter import Type, Depth, IN, INOUT, COLLECTION_INOUT, COLLECTION_IN, COLLECTION_OUT
-from rosnet import Tensor
+import copy
+from rosnet import Tensor, kernel
 import numpy as np
 from itertools import product
+from pycompss.api.api import TaskGroup
 
 
 def gemm(a: Tensor, b: Tensor, axes) -> Tensor:
@@ -27,62 +25,50 @@ def gemm(a: Tensor, b: Tensor, axes) -> Tensor:
     return c
 
 
-def svd(A: Array, k, eps) -> (Array, Array):
+# TODO implement reduced SVD variants
+def svd(A: Tensor, eps=1e-9, copy=True) -> (Tensor, Tensor):
     """ Computes the Singular Value Decomposition of `A`.
 
-    `A`: rank-2 `Array`.
-
-    `k`: int. Currently unused.
+    `A`: rank-2 `Tensor`.
 
     `eps`: Epsilon.
     """
     if A.rank != 2:
         raise ValueError("A must be a matrix!")
-    if k > min(A.shape):
-        raise ValueError("")
-    if k % A._block_shape[1] != 0:
-        raise NotImplementedError(
-            "reduced rank must be a multiple of block_shape[1]")
 
     m, n = A.shape
     k = min(m, n)
     mb, nb = A.block_shape
     kb = min(mb, nb)
 
-    # call SVD
-    dsA = Array(A._blocks.tolist(), A.block_shape,
-                A.block_shape, A.shape, False, delete=False)
-    dsU, dsS, dsV = ds.svd(dsA, eps=eps)
+    # generate U,V
+    U = copy.deepcopy(A) if copy else A  # TODO is U.block_shape ok?
+    V = identity(n, (nb, nb))
 
-    # TODO contract dsU and dsS
-
-    # NOTE hack not to delete blocks when moved to U,V
-    dsU._delete = False
-    dsV._delete = False
-
-    # transform back U,V to Array
-    # NOTE numpy reads 'blocks' recursively, so generate it manually when pycompss is deactivated
-    blocks = dsU._blocks
-    if isinstance(blocks[0][0], np.ndarray):
-        bs = np.empty(
-            (len(blocks), len(blocks[0])), dtype=np.ndarray, order='F')
-        for i, j in product(range(len(blocks)), range(len(blocks[0]))):
-            bs[i, j] = blocks[i][j]
-        blocks = bs
-    U = Array(blocks, list(dsU.shape), list(dsU._reg_shape))
-
-    blocks = dsV._blocks
-    if isinstance(blocks[0][0], np.ndarray):
-        bs = np.empty(
-            (len(blocks), len(blocks[0])), dtype=np.ndarray, order='F')
-        for i, j in product(range(len(blocks)), range(len(blocks[0]))):
-            bs[i, j] = blocks[i][j]
-        blocks = bs
-    V = Array(blocks, list(dsV.shape), list(dsV._reg_shape))
+    # call SVD asynchronously
+    kernel.svdmatrix_async_blocked(U._blocks.tolist(), V._blocks.tolist(), eps)
 
     return (U, V)
 
 
-@task(A={Type: COLLECTION_INOUT, Depth: 1}, U={Type: COLLECTION_INOUT, Depth: 1}, V={Type: COLLECTION_INOUT, Depth: 1})
-def svd_serial(A, U, S, V, m, n):
-    pass
+def identity(n, block_shape, dtype=None) -> Tensor:
+    if len(block_shape) != 2:
+        raise ValueError("block_shape needs to have 2 values")
+    if n < block_shape[0] or n < block_shape[1]:
+        raise ValueError("block is greater than the tensor")
+
+    grid = tuple(n // bs for bs in block_shape)
+    tensorid = str(next(Tensor._newid))
+    with TaskGroup(tensorid, False):
+        blocks = [kernel.block_identity(block_shape, n, i, j, dtype)
+                  for i, j in product(range(g) for g in grid)]
+
+    # NOTE numpy reads 'blocks' recursively, so generate it manually when pycompss is deactivated
+    if isinstance(blocks[0], np.ndarray):
+        bs = np.empty_like(range(len(blocks)), dtype=np.ndarray)
+        for i, _ in enumerate(blocks):
+            bs[i] = blocks[i]
+        blocks = bs.reshape(grid)
+    else:
+        blocks = np.array(blocks).reshape(grid)
+    return Tensor(blocks, (n, n), block_shape, True, tensorid)
