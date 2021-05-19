@@ -75,7 +75,7 @@ class Tensor(object):
         blocks = np.empty_like(self._blocks)
 
         for i, block in enumerate(self._blocks.flat):
-            blocks[i] = kernel.block_copy(block)
+            blocks.flat[i] = kernel.block_copy(block)
 
         return Tensor(blocks, self.shape, self.block_shape)
 
