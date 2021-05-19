@@ -151,8 +151,7 @@ class Tensor(object):
         # transpose blocks
         with TaskGroup(self._tensorid, False):
             for i in range(self._blocks.size):
-                self._blocks.flat[i] = kernel.block_transpose(
-                    self._blocks.flat[i], axes)
+                kernel.block_transpose(self._blocks.flat[i], axes)
 
         # tranpose grid
         self._blocks = np.transpose(self._blocks, axes)
@@ -168,8 +167,7 @@ class Tensor(object):
         grid = tuple(s // bs for s, bs in zip(shape, block_shape))
         with TaskGroup(self._tensorid, False):
             for i in range(self._blocks.size):
-                self._blocks.flat[i] = kernel.block_reshape(
-                    self._blocks.flat[i], block_shape)
+                kernel.block_reshape(self._blocks.flat[i], block_shape)
 
         self._blocks = self._blocks.reshape(grid, order='F')
         self._shape = shape
