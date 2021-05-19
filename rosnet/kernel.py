@@ -116,7 +116,7 @@ def block_identity(block_shape, n, i, j, dtype):
 @task(U={Type: COLLECTION_INOUT, Depth: 2}, V={Type: COLLECTION_INOUT, Depth: 2})
 def svdmatrix_async_blocked(U, V, eps: float):
     checks = [True]
-    n = len(U)
+    n = len(U[0])
     while any(compss_wait_on(checks)):
         checks = []
 
