@@ -65,7 +65,7 @@ def identity(n, block_shape, dtype=None) -> Tensor:
     tensorid = str(next(Tensor._newid))
     with TaskGroup(tensorid, False):
         blocks = [kernel.block_identity(block_shape, n, i, j, dtype)
-                  for i, j in product(range(g) for g in grid)]
+                  for i, j in product(range(grid[0]), range(grid[1]))]
 
     # NOTE numpy reads 'blocks' recursively, so generate it manually when pycompss is deactivated
     if isinstance(blocks[0], np.ndarray):
