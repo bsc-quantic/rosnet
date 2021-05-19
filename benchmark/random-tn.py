@@ -70,7 +70,7 @@ fakes = [FakeTensor(s, s) for s in shapes]
 
 # find contraction path
 path, info = oe.contract_path(eq, *fakes, optimize=args.optimize)
-print(f'Largest intermediate: {int(math.log2(info.largest_intermediate))}')
+print(str(info).encode('utf-8'))
 
 # find optimal cuts
 if args.cut_size or args.cut_slices or args.cut_overhead:
