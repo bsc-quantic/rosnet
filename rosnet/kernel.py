@@ -115,12 +115,12 @@ def block_identity(block_shape, n, i, j, dtype):
 
 @task(U={Type: COLLECTION_INOUT, Depth: 2}, V={Type: COLLECTION_INOUT, Depth: 2})
 def svdmatrix_async_blocked(U, V, eps: float):
-    checks = True
+    checks = [True]
     n = len(U)
     while any(compss_wait_on(checks)):
         checks = []
 
-        for i, j in filter(lambda a, b: a < b, itertools.product(range(n), range(n))):
+        for i, j in filter(lambda x: x[0] < x[1], itertools.product(range(n), range(n))):
             rot, check = _svd_compute_rotation(U[:][i], U[:][j], eps)
             _svd_rotate(U[:][i], U[:][j], rot)
             _svd_rotate(V[:][i], V[:][j], rot)
