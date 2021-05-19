@@ -5,24 +5,28 @@ from itertools import product
 from pycompss.api.api import TaskGroup
 
 
-def gemm(a: Tensor, b: Tensor, axes) -> Tensor:
-    # TODO perform permutation
-    a.transpose(...)
-    b.transpose(...)
+def gemm(a: Tensor, b: Tensor, transpose_a: bool, transpose_b: bool) -> Tensor:
+    if a.rank != 2 or b.rank != 2:
+        raise ValueError("a,b must be matrixes")
 
-    a.reshape(...)
-    b.reshape(...)
+    mi = 1 if transpose_a else 0
+    ni = 0 if transpose_b else 1
 
-    # perform matrix multiplication
-    A = Array(a._blocks.tolist(), a.block_shape,
-              a.block_shape, a.shape, False, delete=False)
-    B = Array(b._blocks.tolist(), b.block_shape,
-              b.block_shape, b.shape, False, delete=False)
-    C = A @ B
+    shape = (a.shape[mi], b.shape[ni])
+    block_shape = (a.block_shape[mi], b.block_shape[ni])
+    grid = [s // bs for s, bs in zip(shape, block_shape)]
+    blocks = np.empty(grid, dtype=object)
 
-    c = Tensor(np.array(C._blocks), ..., ...)
-    c.reshape(...)
-    return c
+    tensorid = str(next(Tensor._newid))
+    with TaskGroup(tensorid, False), np.nditer(blocks, flags=['multi_index'], op_flags=['writeonly']) as it:
+        for block in it:
+            row, col = tuple(it)
+            blocks_a = a._blocks[:, row] if transpose_a else a._blocks[row, :]
+            blocks_b = b._blocks[col, :] if transpose_b else b._blocks[:, col]
+            block[...] = kernel.block_gemm(
+                blocks_a, blocks_b, transpose_a, transpose_b)
+
+    return Tensor(blocks, shape, block_shape, True, tensorid)
 
 
 # TODO implement reduced SVD variants

@@ -84,6 +84,23 @@ def block_kron(a: np.ndarray, b: np.ndarray):
     return np.kron(a, b)
 
 
+@task(a={Type: COLLECTION_IN, Depth: 1}, b={Type: COLLECTION_IN, Depth: 1}, returns=np.ndarray)
+def block_gemm(a, b, transpose_a, transpose_b):
+    return np.sum(__gemm(ai, bi, transpose_a, transpose_b) for ai, bi in zip(a, b))
+
+
+# TODO do we need to do .conj() if complex number?
+def __gemm(a, b, transpose_a, transpose_b):
+    if transpose_a and transpose_b:
+        return a.T @ b.T
+    elif transpose_a and not transpose_b:
+        return a.T @ b
+    elif not transpose_a and transpose_b:
+        return a @ b.T
+    else:
+        return a @ b
+
+
 @task(returns=np.ndarray)
 def block_identity(block_shape, n, i, j, dtype):
     block = np.zeros(block_shape, dtype)
