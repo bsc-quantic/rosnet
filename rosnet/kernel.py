@@ -24,14 +24,14 @@ else:
         __backend_transpose = 'numpy'
 
 
-@task(block=INOUT, returns=np.ndarray)
+@task(block=IN, returns=np.ndarray)
 def block_transpose(block: np.ndarray, permutator):
-    block[...] = transpose(block, permutator)
+    return transpose(block, permutator)
 
 
-@task(block=INOUT, returns=np.ndarray)
+@task(block=IN, returns=np.ndarray)
 def block_reshape(block: np.ndarray, shape: tuple):
-    block[...] = block.reshape(shape, order='F')
+    return block.reshape(shape, order='F')
 
 
 @task(block=IN, returns={Type: COLLECTION_OUT, Depth: 1})
