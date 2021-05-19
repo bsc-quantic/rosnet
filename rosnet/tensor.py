@@ -227,7 +227,7 @@ class Tensor(object):
         self._blocks = grid
 
     def collect(self) -> np.ndarray:
-        raise NotImplementedError("coming soon!")
+        return np.block(compss_wait_on(self._blocks.tolist()))
 
 
 def array(arr: np.ndarray, block_shape):
