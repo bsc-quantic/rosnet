@@ -222,8 +222,7 @@ class Tensor(object):
                 index = list(it.multi_index)
                 index[axis] = slice(index[axis], index[axis] + n)
                 collection = self._blocks[index]
-                # TODO block or block[...]. check numpy.nditer doc
-                block = kernel.block_merge(collection, axis)
+                block[...] = kernel.block_merge(collection, axis)
 
         self._blocks = grid
 
