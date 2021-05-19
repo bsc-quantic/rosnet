@@ -71,7 +71,7 @@ class Tensor(object):
             for block in self._blocks.flat:
                 compss_delete_object(block)
 
-    def __deepcopy__(self):
+    def __deepcopy__(self, memo):
         blocks = np.empty_like(self._blocks)
 
         for i, block in enumerate(self._blocks.flat):
