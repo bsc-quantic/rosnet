@@ -138,7 +138,7 @@ def _svd_compute_rotation(coli_blocks, colj_blocks, eps):
     bjj = colj.T @ colj
     bij = coli.T @ colj
 
-    if eps * np.sqrt(bii @ bjj) > np.linalg.norm(bij):
+    if eps * np.sqrt(np.sum(bii @ bjj)) > np.linalg.norm(bij):
         # TODO bij.T.conj() for complex matrixes ?
         b = np.block([[bii, bij], [bij.T, bjj]])
         J, _, _ = np.linalg.svd(b)
