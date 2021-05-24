@@ -133,14 +133,14 @@ def svdmatrix_async_blocked(U, V, eps: float):
 # TODO COLLECTION_INOUT in order to preserve order?
 @task(coli_blocks=COLLECTION_IN, colj_blocks=COLLECTION_IN, returns=2)
 def _svd_compute_rotation(coli_blocks, colj_blocks, eps):
-    coli = np.block(coli_blocks)
-    colj = np.block(colj_blocks)
+    coli = np.vstack(coli_blocks)
+    colj = np.vstack(colj_blocks)
 
     bii = coli.T @ coli
     bjj = colj.T @ colj
     bij = coli.T @ colj
 
-    if eps * np.sqrt(np.sum(bii @ bjj)) > np.linalg.norm(bij):
+    if np.linalg.norm(bij) >= eps * np.sqrt(np.sum(bii * bjj)):
         # TODO bij.T.conj() for complex matrixes ?
         b = np.block([[bii, bij], [bij.T, bjj]])
         J, _, _ = np.linalg.svd(b)
@@ -150,13 +150,13 @@ def _svd_compute_rotation(coli_blocks, colj_blocks, eps):
 
 
 # TODO try with Direction: COMMUTATIVE. not proven but theorically works.
-@task(coli_blocks=COLLECTION_INOUT, colj_blocks=COLLECTION_INOUT)
+@task(coli_blocks=COLLECTION_INOUT, colj_blocks=COLLECTION_INOUT, J=IN)
 def _svd_rotate(coli_blocks, colj_blocks, J):
     if J is None:
         return
 
-    coli = np.block(coli_blocks)
-    colj = np.block(colj_blocks)
+    coli = np.vstack(coli_blocks)
+    colj = np.vstack(colj_blocks)
 
     # TODO why all this?
     n = coli.shape[1]
@@ -165,5 +165,5 @@ def _svd_rotate(coli_blocks, colj_blocks, J):
 
     block_size = coli_blocks[0][0].shape[0]
     for i, _ in enumerate(coli_blocks):
-        coli_blocks[i][0][:] = coli_k[i * block_size:(i + 1) * block_size][:]
-        colj_blocks[i][0][:] = colj_k[i * block_size:(i + 1) * block_size][:]
+        coli_blocks[i][:] = coli_k[i * block_size:(i + 1) * block_size][:]
+        colj_blocks[i][:] = colj_k[i * block_size:(i + 1) * block_size][:]

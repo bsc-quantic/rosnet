@@ -128,8 +128,10 @@ def schmidt(a: Tensor, axes_v, chi=None, eps=1e-9, copy=False) -> (Tensor, Tenso
     nb = prod(a.block_shape[i] for i in axes_v)
     k, kb = min(m, n), min(mb, nb)
 
+    shape_a = a.shape
     shape_u = [a.shape[i] for i in axes_u] + [k]
     shape_v = [a.shape[i] for i in axes_v] + [k]
+    bshape_a = a.block_shape
     bshape_u = [a.block_shape[i] for i in axes_u]
     bshape_v = [a.block_shape[i] for i in axes_v]
 
@@ -143,9 +145,10 @@ def schmidt(a: Tensor, axes_v, chi=None, eps=1e-9, copy=False) -> (Tensor, Tenso
     # perform SVD
     U, V = linalg.svd(a, eps)
 
-    # reshape U, V to tensors
+    # reshape A, U, V to tensors
     bshape_u += [U.block_shape[1]]
     bshape_v += [V.block_shape[1]]
+    a.reshape(shape_a, bshape_a)
     U.reshape(shape_u, bshape_u)
     V.reshape(shape_v, bshape_v)
 
