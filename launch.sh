@@ -11,6 +11,7 @@ GROUP=$(id -g -n)
 WORKER_WD=/gpfs/scratch/$GROUP/$USER
 MASTER_WD=/gpfs/scratch/$GROUP/$USER
 QOS=debug
+MASTER_CPUS=0
 
 # parse arguments
 while (( "$#" )); do
@@ -43,6 +44,10 @@ while (( "$#" )); do
 			QOS=$2
 			shift 2
 			;;
+		--master_cpus)
+			MASTER_CPUS=$2
+			shift 2
+			;;
 		-*=*|--*=*)
 			echo "Error: Unsupported '=' syntax"
 			exit 1
@@ -59,4 +64,4 @@ if [[ "${PARAMS[0]}" != /* ]]; then
 	PARAMS[0]=$PWD/${PARAMS[0]}
 fi
 
-enqueue_compss --num_nodes=$NUM_NODES --qos=$QOS --log_level=$LOG_LEVEL --exec_time=$EXEC_TIME --worker_working_dir=$WORKER_WD --master_working_dir=$MASTER_WD --pythonpath=$PWD --summary --graph --tracing=$TRACE ${PARAMS[*]}
+enqueue_compss --num_nodes=$NUM_NODES --qos=$QOS --log_level=$LOG_LEVEL --exec_time=$EXEC_TIME --worker_working_dir=$WORKER_WD --master_working_dir=$MASTER_WD --pythonpath=$PWD --summary --graph --tracing=$TRACE --worker_in_master_cpus=$MASTER_CPUS ${PARAMS[*]}
