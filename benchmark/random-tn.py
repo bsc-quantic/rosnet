@@ -24,13 +24,13 @@ parser.add_argument('--d-max',
                     help='Maximum dimension size',
                     type=int,
                     default=2)
-parser.add_argument('--optimize',
-                    help='Optimization algorithm',
+parser.add_argument('--minimize',
+                    help='Minimization target',
                     type=str,
-                    default='greedy')
+                    default='flops')
 parser.add_argument('--seed',
                     help='Seed',
-                    default=None)
+                    default=0)
 parser.add_argument('--cut-size',
                     help='Maximum number of entries a tensor can have',
                     type=int,
@@ -58,6 +58,15 @@ args = parser.parse_args()
 eq, shapes = oe.helpers.rand_equation(
     n=int(args.n), reg=int(args.reg), n_out=int(args.out), d_min=int(args.d_min), d_max=int(args.d_max), seed=int(args.seed))
 
+opt = ctg.ReusableHyperOptimizer(
+    methods=['kahypar', 'greedy'],
+    max_repeats=16,
+    progbar=True,
+    minimize=args.minimize,
+    parallel=True,
+    directory='.',
+)
+
 
 # NOTE: oe.contract_path only needs objects with "shape" attr
 class FakeTensor(object):
@@ -69,7 +78,7 @@ class FakeTensor(object):
 fakes = [FakeTensor(s, s) for s in shapes]
 
 # find contraction path
-path, info = oe.contract_path(eq, *fakes, optimize=args.optimize)
+path, info = oe.contract_path(eq, *fakes, optimize=opt)
 print(str(info).encode('utf-8'))
 
 # find optimal cuts
@@ -96,7 +105,7 @@ tensors = [rosnet.ones(fake.shape, fake.block_shape,
                        dtype=np.float32) for fake in fakes]
 
 # contract tn
-a = oe.contract(eq, *tensors, optimize=args.optimize, backend='rosnet')
+a = oe.contract(eq, *tensors, optimize=opt, backend='rosnet')
 
 amplitude = compss_wait_on(a._blocks[()])
 print(f'Amplitude: {amplitude}')
