@@ -67,7 +67,7 @@ class Tensor(object):
             next(Tensor._newid))
 
     def __del__(self):
-        if self._delete:
+        if self._delete and self.shape != []:
             for block in self._blocks.flat:
                 compss_delete_object(block)
 
