@@ -1,4 +1,4 @@
-from rosnet.tensor import Tensor
+from rosnet.tensor import Tensor, array
 from rosnet.utils import isunique, space, prod, ispower2, ndarray_from_list
 from rosnet import kernel, linalg
 from copy import copy, deepcopy
@@ -13,6 +13,11 @@ def transpose(t: Tensor, axes):
 
 
 def tensordot(a: Tensor, b: Tensor, axes) -> Tensor:
+    if isinstance(a, np.ndarray):
+        a = array(a, a.shape)
+    if isinstance(b, np.ndarray):
+        b = array(b, b.shape)
+
     if not isinstance(a, Tensor) or not isinstance(b, Tensor):
         raise TypeError("Invalid argument type: a=%s, b=%s" %
                         (type(a), type(b)))
