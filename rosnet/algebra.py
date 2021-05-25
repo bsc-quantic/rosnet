@@ -1,5 +1,5 @@
 from rosnet.tensor import Tensor
-from rosnet.utils import isunique, space, prod, ispower2
+from rosnet.utils import isunique, space, prod, ispower2, ndarray_from_list
 from rosnet import kernel, linalg
 from copy import copy, deepcopy
 from itertools import chain
@@ -71,15 +71,7 @@ def tensordot(a: Tensor, b: Tensor, axes) -> Tensor:
             # TODO are blocks_a, blocks_b in correct pair order?
             blocks.append(kernel.block_tensordot(blocks_a, blocks_b, axes))
 
-    # NOTE numpy reads 'blocks' recursively, so generate it manually when pycompss is deactivated
-    if isinstance(blocks[0], np.ndarray):
-        bs = np.empty(grid, dtype=object, order='F')
-        for i, block in enumerate(blocks):
-            bs.flat[i] = block
-        blocks = bs.reshape(grid)
-    else:
-        blocks = np.array(blocks, order='F').reshape(grid)
-
+    blocks = ndarray_from_list(blocks, grid)
     return Tensor(blocks, shape, block_shape, True, tensorid)
 
 

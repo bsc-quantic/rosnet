@@ -2,7 +2,7 @@ from pycompss.api.api import compss_delete_object, compss_barrier_group, compss_
 import numpy as np
 from itertools import product, count
 from rosnet import kernel
-from rosnet.utils import prod, isunique, space
+from rosnet.utils import prod, isunique, space, ndarray_from_list
 
 
 class Tensor(object):
@@ -246,14 +246,7 @@ def array(arr: np.ndarray, block_shape):
             block = arr[idx]
             blocks.append(kernel.block_pass(block))
 
-    # NOTE numpy reads 'blocks' recursively, so generate it manually when pycompss is deactivated
-    if isinstance(blocks[0], np.ndarray):
-        bs = np.empty(grid, dtype=object, order='F')
-        for i, block in enumerate(blocks):
-            bs.flat[i] = block
-        blocks = bs.reshape(grid)
-    else:
-        blocks = np.array(blocks, order='F').reshape(grid)
+    blocks = ndarray_from_list(blocks, grid)
     return Tensor(blocks, list(shape), block_shape, True, tensorid)
 
 
@@ -273,14 +266,7 @@ def full(value, shape, block_shape, dtype=None):
         blocks = [kernel.block_full(block_shape, value, dtype)
                   for _ in range(prod(grid))]
 
-    # NOTE numpy reads 'blocks' recursively, so generate it manually when pycompss is deactivated
-    if isinstance(blocks[0], np.ndarray):
-        bs = np.empty(grid, dtype=object, order='F')
-        for i, block in enumerate(blocks):
-            bs.flat[i] = block
-        blocks = bs.reshape(grid)
-    else:
-        blocks = np.array(blocks, order='F').reshape(grid)
+    blocks = ndarray_from_list(blocks, grid)
     return Tensor(blocks, shape, block_shape, True, tensorid)
 
 
@@ -292,12 +278,5 @@ def rand(shape, block_shape):
         blocks = [kernel.block_rand(block_shape)
                   for _ in range(prod(grid))]
 
-    # NOTE numpy reads 'blocks' recursively, so generate it manually when pycompss is deactivated
-    if isinstance(blocks[0], np.ndarray):
-        bs = np.empty(grid, dtype=object, order='F')
-        for i, block in enumerate(blocks):
-            bs.flat[i] = block
-        blocks = bs.reshape(grid)
-    else:
-        blocks = np.array(blocks, order='F').reshape(grid)
+    blocks = ndarray_from_list(blocks, grid)
     return Tensor(blocks, shape, block_shape, True, tensorid)

@@ -1,5 +1,6 @@
 from copy import deepcopy
 from rosnet import Tensor, kernel
+from rosnet.utils import ndarray_from_list
 import numpy as np
 from itertools import product
 from pycompss.api.api import TaskGroup
@@ -67,12 +68,5 @@ def identity(n, block_shape, dtype=None) -> Tensor:
         blocks = [kernel.block_identity(block_shape, n, i, j, dtype)
                   for i, j in product(range(grid[0]), range(grid[1]))]
 
-    # NOTE numpy reads 'blocks' recursively, so generate it manually when pycompss is deactivated
-    if isinstance(blocks[0], np.ndarray):
-        bs = np.empty(grid, dtype=object, order='F')
-        for i, block in enumerate(blocks):
-            bs.flat[i] = block
-        blocks = bs.reshape(grid)
-    else:
-        blocks = np.array(blocks, order='F').reshape(grid)
+    blocks = ndarray_from_list(blocks, grid)
     return Tensor(blocks, (n, n), block_shape, True, tensorid)
