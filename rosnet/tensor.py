@@ -30,7 +30,7 @@ class Tensor(object):
     _newid = count()
 
     def __init__(self, blocks, shape, block_shape=None, delete=True, tensorid=None):
-        block_shape = shape if block_shape == None else block_shape
+        block_shape = shape if block_shape is None else block_shape
 
         if not isinstance(blocks, np.ndarray):
             raise TypeError(
@@ -63,7 +63,7 @@ class Tensor(object):
         self._block_shape = block_shape
         self._blocks = blocks
         self._delete = delete
-        self._tensorid = tensorid if tensorid != None else str(
+        self._tensorid = tensorid if tensorid is not None else str(
             next(Tensor._newid))
 
     def __del__(self):
