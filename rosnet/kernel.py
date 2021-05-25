@@ -123,9 +123,13 @@ def svdmatrix_async_blocked(U, V, eps: float):
         checks = []
 
         for i, j in filter(lambda x: x[0] < x[1], itertools.product(range(n), range(n))):
-            rot, check = _svd_compute_rotation(U[:][i], U[:][j], eps)
-            _svd_rotate(U[:][i], U[:][j], rot)
-            _svd_rotate(V[:][i], V[:][j], rot)
+            Ui = [Urow[i] for Urow in U]
+            Uj = [Urow[j] for Urow in U]
+            Vi = [Vrow[i] for Vrow in V]
+            Vj = [Vrow[j] for Vrow in V]
+            rot, check = _svd_compute_rotation(Ui, Uj, eps)
+            _svd_rotate(Ui, Uj, rot)
+            _svd_rotate(Vi, Vj, rot)
 
             checks.append(check)
 
@@ -158,12 +162,11 @@ def _svd_rotate(coli_blocks, colj_blocks, J):
     coli = np.vstack(coli_blocks)
     colj = np.vstack(colj_blocks)
 
-    # TODO why all this?
     n = coli.shape[1]
     coli_k = coli @ J[:n, :n] + colj @ J[n:, :n]
     colj_k = coli @ J[:n, n:] + colj @ J[n:, n:]
 
-    block_size = coli_blocks[0][0].shape[0]
+    block_size = coli_blocks[0].shape[0]
     for i, _ in enumerate(coli_blocks):
         coli_blocks[i][:] = coli_k[i * block_size:(i + 1) * block_size][:]
         colj_blocks[i][:] = colj_k[i * block_size:(i + 1) * block_size][:]
