@@ -70,8 +70,8 @@ case "$AGENTS" in
 		# do nothing
 		;;
 	*)
-		OPTIONALS+=(--agents)
 		OPTIONALS+=(--agents=$AGENTS)
+		;;
 esac
 
 # fix execution from working dir
