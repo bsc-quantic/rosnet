@@ -31,7 +31,7 @@ def gemm(a: Tensor, b: Tensor, transpose_a: bool, transpose_b: bool) -> Tensor:
 
 
 # TODO implement reduced SVD variants
-def svd(A: Tensor, eps=1e-9, copy=True) -> (Tensor, Tensor):
+def svd(A: Tensor, eps=1e-9, copy=True, parallel=False) -> (Tensor, Tensor):
     """ Computes the Singular Value Decomposition of `A`.
 
     `A`: rank-2 `Tensor`.
@@ -51,7 +51,11 @@ def svd(A: Tensor, eps=1e-9, copy=True) -> (Tensor, Tensor):
     V = identity(n, (nb, nb))
 
     # call SVD asynchronously
-    kernel.svdmatrix_async_blocked(U._blocks.tolist(), V._blocks.tolist(), eps)
+    if parallel:
+        kernel.svdmatrix_async_nested(
+            U._blocks.tolist(), V._blocks.tolist(), eps)
+    else:
+        kernel.svdmatrix_async(U._blocks.tolist(), V._blocks.tolist())
 
     return (U, V)
 

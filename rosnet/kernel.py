@@ -4,6 +4,7 @@ from pycompss.api.task import task
 from pycompss.api.parameter import Type, Depth, IN, INOUT, COLLECTION_INOUT, COLLECTION_IN, COLLECTION_OUT
 from pycompss.api.api import compss_wait_on
 import itertools
+import scipy.linalg as la
 
 
 def __numpy_transpose(a, axes=None):
@@ -115,8 +116,24 @@ def block_identity(block_shape, n, i, j, dtype):
     return block
 
 
+@task(U={Type: COLLECTION_INOUT, Depth: 2}, Vh={Type: COLLECTION_INOUT, Depth: 2})
+def svdmatrix_async(U, Vh):
+    Ut = np.block(U)
+
+    Ut, s, Vth = la.svd(Ut, full_matrices=False, overwrite_a=True)
+    Ut = Ut * s
+    Vth = Vth.transpose().conjugate()
+
+    m, n = Ut.shape
+    mb, nb = U[0][0].shape
+    for i, j in itertools.product(range(m // mb), range(n // nb)):
+        U[i][j][:] = Ut[i*mb:(i+1)*mb, j*nb:(j+1)*nb][:]
+    for i, j in itertools.product(range(n // nb), range(n // nb)):
+        Vh[i][j][:] = Vth[i*nb:(i+1)*nb, j*nb:(j+1)*nb][:]
+
+
 @task(U={Type: COLLECTION_INOUT, Depth: 2}, V={Type: COLLECTION_INOUT, Depth: 2})
-def svdmatrix_async_blocked(U, V, eps: float):
+def svdmatrix_async_nested(U, V, eps: float):
     checks = [True]
     n = len(U[0])
     while any(compss_wait_on(checks)):
