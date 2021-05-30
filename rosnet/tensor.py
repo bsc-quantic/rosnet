@@ -232,8 +232,9 @@ class Tensor(object):
         return np.block(compss_wait_on(self._blocks.tolist()))
 
 
-def array(arr: np.ndarray, block_shape):
+def array(arr: np.ndarray, block_shape=None):
     shape = arr.shape
+    block_shape = shape if block_shape is None else block_shape
     grid = [s // bs for s, bs in zip(shape, block_shape)]
 
     tensorid = str(next(Tensor._newid))
@@ -250,15 +251,16 @@ def array(arr: np.ndarray, block_shape):
     return Tensor(blocks, list(shape), block_shape, True, tensorid)
 
 
-def zeros(shape, block_shape, dtype=None):
+def zeros(shape, block_shape=None, dtype=None):
     return full(0, shape, block_shape, dtype)
 
 
-def ones(shape, block_shape, dtype=None):
+def ones(shape, block_shape=None, dtype=None):
     return full(1, shape, block_shape, dtype)
 
 
-def full(value, shape, block_shape, dtype=None):
+def full(value, shape, block_shape=None, dtype=None):
+    block_shape = shape if block_shape is None else block_shape
     grid = tuple(s // bs for s, bs in zip(shape, block_shape))
 
     tensorid = str(next(Tensor._newid))
@@ -270,7 +272,8 @@ def full(value, shape, block_shape, dtype=None):
     return Tensor(blocks, shape, block_shape, True, tensorid)
 
 
-def rand(shape, block_shape):
+def rand(shape, block_shape=None):
+    block_shape = shape if block_shape is None else block_shape
     grid = tuple(s // bs for s, bs in zip(shape, block_shape))
 
     tensorid = str(next(Tensor._newid))
