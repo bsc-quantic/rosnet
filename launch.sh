@@ -12,7 +12,7 @@ WORKER_WD=/gpfs/scratch/$GROUP/$USER
 MASTER_WD=/gpfs/scratch/$GROUP/$USER
 QOS=debug
 MASTER_CPUS=0
-AGENTS=plain
+AGENTS=false
 OPTIONALS=()
 
 # parse arguments
@@ -66,7 +66,7 @@ while (( "$#" )); do
 done
 
 case "$AGENTS" in
-	false)
+	false|off|disabled)
 		# do nothing
 		;;
 	*)
