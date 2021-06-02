@@ -6,6 +6,10 @@ from itertools import chain
 import numpy as np
 from pycompss.api.api import TaskGroup
 
+OPTIONS = {
+    'parallel-partials': False,
+}
+
 
 def transpose(t: Tensor, axes):
     # TODO is it ok to copy?
@@ -72,9 +76,15 @@ def tensordot(a: Tensor, b: Tensor, axes) -> Tensor:
             blocks_b = list(
                 b._blocks[coordrange(b, list(coord_b), axes_b)].flat)
 
-            # block in C is equal to the sum of contractions of blocks
-            # TODO are blocks_a, blocks_b in correct pair order?
-            blocks.append(kernel.block_tensordot(blocks_a, blocks_b, axes))
+            # block in C is equal to the sum of contractions of block pairs
+            if OPTIONS['parallel-partials'] and shape != block_shape:
+                # exploit inner parallelism of tensordot if enabled and tensor is sliced
+                partials = [kernel.block_partialdot(
+                    pa, pb, axes) for pa, pb in zip(blocks_a, blocks_b)]
+                blocks.append(kernel.block_sum(partials))
+            else:
+                # do not exploit inner parallelism of tensordot if disabled or not sliced
+                blocks.append(kernel.block_tensordot(blocks_a, blocks_b, axes))
 
     blocks = ndarray_from_list(blocks, grid)
     return Tensor(blocks, shape, block_shape, True, tensorid)
