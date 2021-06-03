@@ -8,6 +8,7 @@ from pycompss.api.api import TaskGroup
 
 OPTIONS = {
     'parallel-partials': False,
+    'gett': False,
 }
 
 
@@ -42,6 +43,22 @@ def tensordot(a: Tensor, b: Tensor, axes) -> Tensor:
         return Tensor(res, (), ())
 
     axes_a, axes_b = axes
+    isressliced = any(filter(lambda x: x[0] not in axes_a and x[1] > 1, enumerate(
+        a.grid))) or any(filter(lambda x: x[0] not in axes_b and x[1] > 1, enumerate(b.grid)))
+
+    if OPTIONS['gett'] and isressliced:
+        # transpose tensors
+        permutator = tuple(
+            chain(filter(lambda x: x[0] not in axes_a, range(a.rank)), axes_a))
+        a.transpose(permutator)
+        axes_a = tuple(range(a.rank - len(axes_a), a.rank))
+
+        permutator = tuple(
+            chain(filter(lambda x: x[0] not in axes_b, range(b.rank)), axes_b))
+        b.transpose(permutator)
+        axes_b = tuple(range(b.rank - len(axes_b), b.rank))
+
+        axes = [axes_a, axes_b]
 
     shape_a = list(map(lambda x: x[1], filter(
         lambda x: x[0] not in axes_a, enumerate(a.shape))))
@@ -77,7 +94,7 @@ def tensordot(a: Tensor, b: Tensor, axes) -> Tensor:
                 b._blocks[coordrange(b, list(coord_b), axes_b)].flat)
 
             # block in C is equal to the sum of contractions of block pairs
-            if OPTIONS['parallel-partials'] and shape != block_shape:
+            if OPTIONS['parallel-partials'] and isressliced:
                 # exploit inner parallelism of tensordot if enabled and tensor is sliced
                 partials = [kernel.block_partialdot(
                     pa, pb, axes) for pa, pb in zip(blocks_a, blocks_b)]
