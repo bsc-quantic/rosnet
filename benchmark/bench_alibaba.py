@@ -3,6 +3,7 @@ import cotengra as ctg
 import argparse
 import rosnet
 import numpy as np
+import math
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
@@ -59,17 +60,19 @@ output_inds = []
 tn.full_simplify_(output_inds=output_inds)
 tn.astype_('complex64')
 
-opt = ctg.ReusableHyperOptimizer(
-    methods=['kahypar', 'greedy'],
-    max_repeats=128,
-    minimize=args.minimize,
-    score_compression=0.5,  # deliberately make the optimizer try many methods
-    progbar=True,
-    parallel=True,
-)
+# NOTE Use 'greedy' optimizer for reproducible results
+# opt = ctg.ReusableHyperOptimizer(
+#     methods=['kahypar', 'greedy'],
+#     max_repeats=128,
+#     minimize=args.minimize,
+#     score_compression=0.5,  # deliberately make the optimizer try many methods
+#     progbar=True,
+#     parallel=True,
+# )
 
-info = tn.contract(all, optimize=opt, get='path-info')
+info = tn.contract(all, optimize='greedy', get='path-info')
 print(str(info).encode('utf-8'))
+print(str(math.log2(info.largest_intermediate)))
 
 # find optimal cuts
 block_shapes = info.shapes
@@ -94,5 +97,5 @@ if args.cut_size or args.cut_slices or args.cut_overhead:
 for i, (tensor, bs) in enumerate(zip(tn.tensors, block_shapes)):
     tensor.modify(data=rosnet.array(tensor.data, bs))
 
-res = tn.contract(all, optimize=opt, backend='rosnet')
+res = tn.contract(all, optimize='greedy', backend='rosnet')
 print(f'Amplitude={res.collect()}')
