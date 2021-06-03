@@ -54,6 +54,10 @@ while (( "$#" )); do
 			AGENTS=$2
 			shift 2
 			;;
+		--scheduler)
+			OPTIONALS+=(--scheduler=$2)
+			shift 2
+			;;
 		-*=*|--*=*)
 			echo "Error: Unsupported '=' syntax"
 			exit 1
