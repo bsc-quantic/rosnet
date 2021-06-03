@@ -94,6 +94,5 @@ if args.cut_size or args.cut_slices or args.cut_overhead:
 for i, (tensor, bs) in enumerate(zip(tn.tensors, block_shapes)):
     tensor.modify(data=rosnet.array(tensor.data, bs))
 
-# res = (8.392206041207828e-09-2.647264185640097e-09j)
 res = tn.contract(all, optimize=opt, backend='rosnet')
 print(f'Amplitude={res.collect()}')
