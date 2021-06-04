@@ -65,12 +65,12 @@ def block_tensordot(a, b, axes):
     return sum(np.tensordot(ba, bb, axes) for ba, bb in zip(a, b))
 
 
-@task(a=IN, b=IN, returns=np.ndarray)
+@task(ba=IN, bb=IN, returns=np.ndarray)
 def block_partialdot(ba, bb, axes):
     return np.tensordot(ba, bb, axes)
 
 
-@task(a={Type: COLLECTION_IN, Depth: 1}, returns=np.ndarray)
+@task(blocks={Type: COLLECTION_IN, Depth: 1}, returns=np.ndarray)
 def block_sum(blocks):
     return sum(blocks)
 
