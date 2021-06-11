@@ -35,17 +35,9 @@ parser.add_argument('--cut-temperature',
                     type=float,
                     default=0.01)
 
-parser.add_argument('--parallel-partials',
-                    dest='parallel_partials', action='store_true')
-parser.set_defaults(parallel_partials=False)
-
-parser.add_argument('--gett', dest='gett', action='store_true')
-parser.set_defaults(gett=False)
 
 args = parser.parse_args()
 fn = args.filename
-rosnet.algebra.OPTIONS['paralle_partials'] = args.parallel_partials
-rosnet.algebra.OPTIONS['gett'] = args.gett
 
 if args.swap_split_gate:
     gate_opts = {'contract': 'swap-split-gate', 'max_bond': 2}
