@@ -103,8 +103,7 @@ if args.cut_size or args.cut_slices or args.cut_overhead:
             fakes[i].block_shape = block_shape
 
 # initialize tensors
-tensors = [rosnet.ones(fake.shape, fake.block_shape,
-                       dtype=np.float32) for fake in fakes]
+tensors = [rosnet.rand(fake.shape, fake.block_shape) for fake in fakes]
 
 # contract tn
 start = time.time()
