@@ -5,6 +5,7 @@ import cotengra as ctg
 import math
 import argparse
 import numpy as np
+import time
 
 parser = argparse.ArgumentParser()
 parser.add_argument('n',
@@ -106,7 +107,10 @@ tensors = [rosnet.ones(fake.shape, fake.block_shape,
                        dtype=np.float32) for fake in fakes]
 
 # contract tn
-a = oe.contract(eq, *tensors, optimize='greedy', backend='rosnet')
+start = time.time()
+a = oe.contract(eq, *tensors, optimize=opt, backend='rosnet')
 
 amplitude = compss_wait_on(a._blocks[()])
+end = time.time()
 print(f'Amplitude: {amplitude}')
+print(f'Time={end-start}', flush=True)

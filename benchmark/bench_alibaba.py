@@ -4,6 +4,7 @@ import argparse
 import rosnet
 import numpy as np
 import math
+import time
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
@@ -97,5 +98,9 @@ if args.cut_size or args.cut_slices or args.cut_overhead:
 for i, (tensor, bs) in enumerate(zip(tn.tensors, block_shapes)):
     tensor.modify(data=rosnet.array(tensor.data, bs))
 
+start = time.time()
 res = tn.contract(all, optimize='greedy', backend='rosnet')
 print(f'Amplitude={res.collect()}')
+end = time.time()
+
+print(f'Time={end-start}', flush=True)
