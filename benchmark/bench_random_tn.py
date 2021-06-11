@@ -52,6 +52,7 @@ parser.add_argument('--cut-minimize',
 parser.add_argument('--cut-temperature',
                     type=float,
                     default=0.01)
+parser.add_argument('--optimizer', type=str, default='greedy')
 
 args = parser.parse_args()
 
@@ -60,13 +61,19 @@ eq, shapes = oe.helpers.rand_equation(
     n=int(args.n), reg=int(args.reg), n_out=int(args.out), d_min=int(args.d_min), d_max=int(args.d_max), seed=int(args.seed))
 
 # NOTE Use 'greedy' optimizer for reproducible results
-# opt = ctg.ReusableHyperOptimizer(
-#     methods=['kahypar', 'greedy'],
-#     max_repeats=1,
-#     progbar=True,
-#     minimize=args.minimize,
-#     parallel=True,
-# )
+if args.optimizer == 'greedy':
+    opt = 'greedy'
+elif args.optimizer == 'kahypar':
+    opt = ctg.ReusableHyperOptimizer(
+        methods=['kahypar'],
+        max_repeats=128,
+        score_compression=0.5,  # deliberately make the optimizer try many methods
+        progbar=True,
+        minimize=args.minimize,
+        parallel=True,
+    )
+else:
+    raise ValueError('Unknown optimizer')
 
 
 # NOTE: oe.contract_path only needs objects with "shape" attr
@@ -79,7 +86,7 @@ class FakeTensor(object):
 fakes = [FakeTensor(s, s) for s in shapes]
 
 # find contraction path
-path, info = oe.contract_path(eq, *fakes, optimize='greedy')
+path, info = oe.contract_path(eq, *fakes, optimize=opt)
 print(str(info).encode('utf-8'))
 print(str(math.log2(info.largest_intermediate)))
 
