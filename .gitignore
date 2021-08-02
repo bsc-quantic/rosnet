@@ -242,3 +242,7 @@ $RECYCLE.BIN/
 *.err
 .vscode/settings.json
 trace
+log
+archive/
+assets/
+!assets/diagrams/
