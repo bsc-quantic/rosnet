@@ -4,7 +4,6 @@ from pycompss.api.task import task
 from pycompss.api.constraint import constraint
 from pycompss.api.implement import implement
 from pycompss.api.parameter import IN, COLLECTION_IN, COMMUTATIVE, Type, Depth
-from rosnet.tuning.constraint import NCORES, MEMORY
 
 
 # TODO tensordot implementation with context selector
@@ -21,7 +20,7 @@ from rosnet.tuning.constraint import NCORES, MEMORY
 #     return sum(np.tensordot(ba, bb, axes) for ba, bb in zip(a, b))
 
 
-@constraint(computing_units='NCORES', memory='MEMORY')
+@constraint(computing_units="$NCORES", memory_size="$MEMORY")
 @task(ba=IN, bb=IN, returns=np.ndarray)
 def tensordot(ba, bb, axes):
     return np.tensordot(ba, bb, axes)
@@ -33,14 +32,14 @@ def tensordot(ba, bb, axes):
 #     return sum(blocks)
 
 
-@constraint(computing_units='NCORES', memory='MEMORY')
+@constraint(computing_units="$NCORES", memory_size="$MEMORY")
 @task(res=COMMUTATIVE)
 def commutative(res, a, b, axes):
     res += np.tensordot(a, b, axes)
 
 
 # TODO use tensordot(a, b, axes=0)
-@constraint(computing_units='NCORES', memory='MEMORY')
+@constraint(computing_units="$NCORES", memory_size="$MEMORY")
 @task(returns=np.ndarray)
 def kron(a: np.ndarray, b: np.ndarray):
     return np.kron(a, b)

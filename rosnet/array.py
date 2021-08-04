@@ -10,6 +10,7 @@ from pycompss.api.api import compss_delete_object, compss_wait_on
 from rosnet import task, utils
 from rosnet.utils import todo, isunique, ndarray_from_list, prod, space
 from rosnet.helper import implements, numpy_dispatcher
+import rosnet.tuning as tuning
 
 
 def assert_axes(axes):
@@ -417,14 +418,25 @@ def __block_tensordot(a: BlockArray, b: BlockArray, axes):
     dtype = np.result_type(a.dtype, b.dtype)
     blockshape = result_shape(a.blockshape, b.blockshape, axes)
 
-    # TODO dynamic parallelism
+    # estimate number of cores per task for dynamic parallelism
+    parallel_tasks = grid.size
+    # ncores = tuning.heuristic.Default()()
+    ncores = tuning.heuristic.Eager()(parallel_tasks, 2 ** 6)
+
+    # required memory per task
+    # pylint: disable=no-member
+    memory = a.blocknbytes + b.blocknbytes + utils.prod(blockshape) * dtype.itemsize
+    # pylint: enable=no-member
+
     for outer_i_a in outer_iter_a:
         for outer_i_b in outer_iter_b:
             buffer = COMPSsArray(
                 task.init.full(blockshape, 0, dtype), shape=blockshape, dtype=dtype
             )
 
-            for inner_i_a, inner_i_b in zip(inner_iter_a, inner_iter_b):
+            # set resources of task
+            with tuning.resources(ncores=ncores, memory=memory):
+                for inner_i_a, inner_i_b in zip(inner_iter_a, inner_iter_b):
                     __compss_tensordot_commutative(
                         inner_i_a[()], inner_i_b[()], axes, buffer
                     )
