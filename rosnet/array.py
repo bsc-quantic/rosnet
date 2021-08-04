@@ -5,6 +5,7 @@ import functools
 import itertools
 import operator as op
 import numpy as np
+import pycompss
 from pycompss.api.api import compss_delete_object, compss_wait_on
 from rosnet import task, utils
 from rosnet.utils import todo, isunique, ndarray_from_list, prod, space
@@ -33,9 +34,7 @@ class COMPSsArray(np.lib.mixins.NDArrayOperatorsMixin):
         if issubclass(args[0].__class__, np.ndarray) or isinstance(args[0], np.ndarray):
             self.__shape = args[0].shape
             self.__dtype = args[0].dtype
-        elif asyncio.isfuture(args[0]):
-            self.__shape = kwargs['shape']
-            self.__dtype = kwargs['dtype']
+        elif isinstance(args[0], pycompss.runtime.management.classes.Future):
         else:
             raise TypeError(
                 "You must provide a np.ndarray or a COMPSs Future to a np.ndarray, but a %r was provided"
