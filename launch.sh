@@ -1,25 +1,21 @@
 #!/bin/bash
 
 # defaults
-PARAMS=()
 NUM_NODES=1
-EXEC_TIME=2
-LOG_LEVEL=off
-TRACE=false
 USER=$(id -u -n)
 GROUP=$(id -g -n)
 WORKER_WD=/gpfs/scratch/$GROUP/$USER
 MASTER_WD=/gpfs/scratch/$GROUP/$USER
 QOS=debug
-MASTER_CPUS=0
-AGENTS=false
-OPTIONALS=()
+
+FLAGS=()
+PARAMS=()
 
 # parse arguments
 while (( "$#" )); do
 	case "$1" in
 		-t|--exec_time)
-			EXEC_TIME=$2
+			FLAGS+=(--exec_time=$2)
 			shift 2
 			;;
 		-n|--num_nodes)
@@ -27,11 +23,11 @@ while (( "$#" )); do
 			shift 2
 			;;
 		--log_level)
-			LOG_LEVEL=$2
+			FLAGS+=(--log_level=$2)
 			shift 2
 			;;
 		--trace)
-			TRACE=$2
+			FLAGS+=(--tracing=$2)
 			shift 2
 			;;
 		--worker_working_dir)
@@ -47,16 +43,24 @@ while (( "$#" )); do
 			shift 2
 			;;
 		--master_cpus)
-			MASTER_CPUS=$2
+			FLAGS+=(--worker_in_master_cpus=$2)
 			shift 2
 			;;
 		--agents)
-			AGENTS=$2
+			FLAGS+=(--agents=$2)
 			shift 2
 			;;
 		--scheduler)
-			OPTIONALS+=(--scheduler=$2)
+			FLAGS+=(--scheduler=$2)
 			shift 2
+			;;
+		--gpus_per_node)
+			FLAGS+=(--gpus_per_node=$2)
+			shift 2
+			;;
+		--graph)
+			FLAGS+=(--graph)
+			shift 1
 			;;
 		-*=*|--*=*)
 			echo "Error: Unsupported '=' syntax"
@@ -69,18 +73,9 @@ while (( "$#" )); do
 	esac
 done
 
-case "$AGENTS" in
-	false|off|disabled)
-		# do nothing
-		;;
-	*)
-		OPTIONALS+=(--agents=$AGENTS)
-		;;
-esac
-
 # fix execution from working dir
 if [[ "${PARAMS[0]}" != /* ]]; then
 	PARAMS[0]=$PWD/${PARAMS[0]}
 fi
 
-enqueue_compss --num_nodes=$NUM_NODES --qos=$QOS --log_level=$LOG_LEVEL --exec_time=$EXEC_TIME --worker_working_dir=$WORKER_WD --master_working_dir=$MASTER_WD --pythonpath=$PWD --summary --graph --tracing=$TRACE --worker_in_master_cpus=$MASTER_CPUS ${OPTIONALS[*]} ${PARAMS[*]}
+enqueue_compss --num_nodes=$NUM_NODES --qos=$QOS --worker_working_dir=$WORKER_WD --master_working_dir=$MASTER_WD --pythonpath=$PWD --summary ${FLAGS[*]} ${PARAMS[*]}
