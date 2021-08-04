@@ -74,6 +74,14 @@ class COMPSsArray(np.lib.mixins.NDArrayOperatorsMixin):
         return utils.prod(self.shape)
 
     @property
+    def itemsize(self) -> int:
+        return self.dtype.itemsize
+
+    @property
+    def nbytes(self) -> int:
+        return self.size * self.itemsize
+
+    @property
     def ndim(self) -> int:
         return len(self.__shape)
 
@@ -291,8 +299,20 @@ class BlockArray(np.lib.mixins.NDArrayOperatorsMixin):
         return utils.prod(self.shape)
 
     @property
+    def itemsize(self) -> int:
+        return self.dtype.itemsize
+
+    @property
+    def nbytes(self) -> int:
+        return self.size * self.itemsize
+
+    @property
     def blocksize(self) -> int:
         return utils.prod(self.blockshape)
+
+    @property
+    def blocknbytes(self) -> int:
+        return self.blocksize * self.itemsize
 
     @property
     def ndim(self) -> int:
