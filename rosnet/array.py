@@ -270,9 +270,16 @@ class BlockArray(np.lib.mixins.NDArrayOperatorsMixin):
             self.dtype,
         )
 
-    @todo
     def __getitem__(self, index):
-        pass
+        if isinstance(index, tuple):
+            index = list(index)
+        if isinstance(index, list) and all(isinstance(i, int) for i in index):
+            if len(index) != self.ndim:
+                raise IndexError("Invalid indexing information: index=%s" % index)
+
+            grid_id = tuple(i // s for i, s in zip(index, self.blockshape))
+            block_id = tuple(i % s for i, s in zip(index, self.blockshape))
+            return compss_wait_on(task.getitem(self._grid[grid_id]._ref, block_id))
 
     @todo
     def __setitem__(self, key, value):
