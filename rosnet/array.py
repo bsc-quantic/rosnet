@@ -38,7 +38,14 @@ class COMPSsArray(np.lib.mixins.NDArrayOperatorsMixin):
             self.__dtype = kwargs['dtype']
         else:
             raise TypeError(
-                f"You must provide a np.ndarray or a COMPSs Future to a np.ndarray, but a {type(args[0])} was provided")
+                "You must provide a np.ndarray or a COMPSs Future to a np.ndarray, but a %r was provided"
+                % type(args[0])
+            )
+
+        if isinstance(self.dtype, type):
+            self.__dtype = np.dtype(self.__dtype)
+
+        assert isinstance(self.dtype, np.dtype)
 
     def __del__(self):
         compss_delete_object(self._ref)
@@ -68,7 +75,7 @@ class COMPSsArray(np.lib.mixins.NDArrayOperatorsMixin):
         return len(self.__shape)
 
     @property
-    def dtype(self) -> Type:
+    def dtype(self) -> np.dtype:
         return self.__dtype
 
     def __deepcopy__(self, memo):
@@ -213,7 +220,14 @@ class BlockArray(np.lib.mixins.NDArrayOperatorsMixin):
             self.__blockshape = kwargs['blockshape']
             self.__dtype = kwargs.get('dtype')
         else:
-            raise TypeError("expected COMPSsArray or numpy.ndarray, got " % type(args[0]))
+            raise TypeError(
+                "expected COMPSsArray or numpy.ndarray, got " % type(args[0])
+            )
+
+        if isinstance(self.dtype, type):
+            self.__dtype = np.dtype(self.__dtype)
+
+        assert isinstance(self.dtype, np.dtype)
 
     def __str__(self):
         return "BlockArray(shape=%r, grid=%r, blockshape=%r)" % (self.shape, self.grid, self.blockshape)
@@ -255,7 +269,7 @@ class BlockArray(np.lib.mixins.NDArrayOperatorsMixin):
         return len(self.shape)
 
     @property
-    def dtype(self) -> Type:
+    def dtype(self) -> np.dtype:
         return self.__dtype
 
     def __deepcopy__(self, memo):
@@ -371,10 +385,10 @@ def array(arr: np.ndarray, blockshape=None):
         idx_end = [x+y for x, y in zip(blockshape, idx_begin)]
         idx = tuple(slice(b, e) for b, e in zip(idx_begin, idx_end))
         block = arr[idx]
-        blocks.append(COMPSsArray(block, blockshape=blockshape))
+        blocks.append(COMPSsArray(block, shape=blockshape, dtype=arr.dtype))
 
     blocks = ndarray_from_list(blocks, grid)
-    return BlockArray(blocks, blockshape=blockshape)
+    return BlockArray(blocks, blockshape=blockshape, dtype=arr.dtype)
 
 
 def zeros(shape, blockshape=None, dtype=None):
@@ -388,8 +402,12 @@ def ones(shape, blockshape=None, dtype=None):
 def full(value, shape, blockshape=None, dtype=None):
     blockshape = shape if blockshape is None else blockshape
     grid = tuple(s // bs for s, bs in zip(shape, blockshape))
+    dtype = dtype or np.dtype(type(value))
 
-    blocks = [task.full(blockshape, value, dtype) for _ in range(prod(grid))]
+    blocks = [
+        COMPSsArray(task.full(blockshape, value, dtype), shape=blockshape, dtype=dtype)
+        for _ in range(prod(grid))
+    ]
 
     blocks = ndarray_from_list(blocks, grid)
-    return BlockArray(blocks, blockshape)
+    return BlockArray(blocks, blockshape=blockshape, dtype=dtype)
