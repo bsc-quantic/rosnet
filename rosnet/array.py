@@ -149,6 +149,22 @@ class COMPSsArray(np.lib.mixins.NDArrayOperatorsMixin):
         return numpy_dispatcher[self.__class__][func](*args, **kwargs)
 
 
+@implements(np.zeros, COMPSsArray)
+def __compss_zeros(shape, dtype=None, order="C"):
+    return np.full(shape, 0, dtype=dtype, order=order)
+
+
+@implements(np.ones, COMPSsArray)
+def __compss_ones(shape, dtype=None, order="C"):
+    return np.full(shape, 1, dtype=dtype, order=order)
+
+
+@implements(np.full, COMPSsArray)
+def __compss_full(shape, fill_value, dtype=None, order="C"):
+    ref = task.full(shape, fill_value, dtype=dtype, order=order)
+    return COMPSsArray(ref, shape=shape, dtype=dtype or np.dtype(type(fill_value)))
+
+
 # numpy: chainging array shape
 @implements(np.reshape, COMPSsArray)
 def __compss_reshape(a: COMPSsArray, newshape: Tuple[int], order="F"):
