@@ -13,7 +13,9 @@ from rosnet.helper import implements, numpy_dispatcher
 
 
 def assert_axes(axes):
-    assert isinstance(axes, (list, tuple)) and all(isinstance(ax, (list, tuple)) for ax in axes)
+    assert isinstance(axes, (list, tuple)) and all(
+        isinstance(ax, (list, tuple)) for ax in axes
+    )
     assert all(isunique(ax) for ax in axes)
     assert len(axes[0]) == len(axes[1])
 
@@ -21,7 +23,7 @@ def assert_axes(axes):
 # TODO special variation for in-place functions? keep np.reshape/transpose/... as non-modifying -> create new COMPSsArray/BlockArray
 # TODO support more properties of ndarray
 class COMPSsArray(np.lib.mixins.NDArrayOperatorsMixin):
-    """ Reference to a `numpy.ndarray` managed by COMPSs.
+    """Reference to a `numpy.ndarray` managed by COMPSs.
 
     Unlike a `numpy.ndarray`, a `COMPSsArray` is mutable and does not return views. As such, the following methods act in-place and return nothing:
     - `reshape`
@@ -35,6 +37,8 @@ class COMPSsArray(np.lib.mixins.NDArrayOperatorsMixin):
             self.__shape = args[0].shape
             self.__dtype = args[0].dtype
         elif isinstance(args[0], pycompss.runtime.management.classes.Future):
+            self.__shape = kwargs["shape"]
+            self.__dtype = kwargs["dtype"]
         else:
             raise TypeError(
                 "You must provide a np.ndarray or a COMPSs Future to a np.ndarray, but a %r was provided"
@@ -135,22 +139,24 @@ class COMPSsArray(np.lib.mixins.NDArrayOperatorsMixin):
 
     def __array_function__(self, func, types, args, kwargs):
         if func not in numpy_dispatcher[self.__class__]:
-            print('not in dispatcher')
+            print("not in dispatcher")
             return NotImplemented
         if not all(t == self.__class__ for t in types):
-            print('bad type')
+            print("bad type")
             # TODO create COMPSsArray if np.ndarray implementation
             return NotImplemented
 
         return numpy_dispatcher[self.__class__][func](*args, **kwargs)
 
+
 # numpy: chainging array shape
 @implements(np.reshape, COMPSsArray)
-def __compss_reshape(a: COMPSsArray, newshape: Tuple[int], order='F'):
+def __compss_reshape(a: COMPSsArray, newshape: Tuple[int], order="F"):
     # pylint: disable=protected-access
     # TODO support order?
     # TODO should return something?
     task.reshape(a._ref, newshape)
+
 
 # numpy: transpose-like operations
 @implements(np.transpose, COMPSsArray)
@@ -159,11 +165,13 @@ def __compss_transpose(a: COMPSsArray, axes: Tuple[int] = None):
     # TODO should return something?
     task.transpose(a._ref, axes)
 
+
 # numpy: joining arrays
 @todo
 @implements(np.stack, COMPSsArray)
 def __compss_stack(self):
     pass
+
 
 # numpy: splitting arrays
 @todo
@@ -171,13 +179,14 @@ def __compss_stack(self):
 def __compss_split(self, indices_or_sections, axis=0):
     pass
 
+
 @implements(np.tensordot, COMPSsArray)
 def __compss_tensordot(a: COMPSsArray, b: COMPSsArray, axes):
     # pylint: disable=protected-access
     # TODO assertions
 
     # only support operating against COMPSsArray
-    if not all(isinstance(i, COMPSsArray) for i in (a,b)):
+    if not all(isinstance(i, COMPSsArray) for i in (a, b)):
         return NotImplemented
 
     dtype = np.result_type(a.dtype, b.dtype)
@@ -191,13 +200,14 @@ def __compss_tensordot_commutative(a: COMPSsArray, b: COMPSsArray, axes, buffer:
     # pylint: disable=protected-access
     task.tensordot.commutative(buffer._ref, a._ref, b._ref, axes)
 
+
 # @implements(np.block, COMPSsArray)
 # def __compss_block(arrays):
 #     return np.block(compss_wait_on([a._ref for a in arrays]))
 
 
 class BlockArray(np.lib.mixins.NDArrayOperatorsMixin):
-    """ Block Array of `numpy.ndarray` or `COMPSsArray`.
+    """Block Array of `numpy.ndarray` or `COMPSsArray`.
 
     Assumptions:
     - All blocks have same `blockshape` and `dtype`.
@@ -216,8 +226,8 @@ class BlockArray(np.lib.mixins.NDArrayOperatorsMixin):
         elif isinstance(args[0], np.ndarray):
             # assert asyncio.isfuture(args[0][0])
             self._grid = args[0].copy()
-            self.__blockshape = kwargs['blockshape']
-            self.__dtype = kwargs.get('dtype')
+            self.__blockshape = kwargs["blockshape"]
+            self.__dtype = kwargs.get("dtype")
         else:
             raise TypeError(
                 "expected COMPSsArray or numpy.ndarray, got " % type(args[0])
@@ -229,7 +239,12 @@ class BlockArray(np.lib.mixins.NDArrayOperatorsMixin):
         assert isinstance(self.dtype, np.dtype)
 
     def __str__(self):
-        return "BlockArray(shape=%r, grid=%r, blockshape=%r)" % (self.shape, self.grid, self.blockshape)
+        return "BlockArray(shape=%r, grid=%r, blockshape=%r, dtype=%r)" % (
+            self.shape,
+            self.grid,
+            self.blockshape,
+            self.dtype,
+        )
 
     @todo
     def __getitem__(self, index):
@@ -281,7 +296,12 @@ class BlockArray(np.lib.mixins.NDArrayOperatorsMixin):
     # numpy-compatibility
     def __array__(self) -> np.ndarray:
         blocks = np.empty_like(self._grid, dtype=object)
-        it = np.nditer(self._grid, flags=['refs_ok', 'multi_index'], op_flags=['readonly'], op_axes=[tuple(range(self.ndim))])
+        it = np.nditer(
+            self._grid,
+            flags=["refs_ok", "multi_index"],
+            op_flags=["readonly"],
+            op_axes=[tuple(range(self.ndim))],
+        )
         with it:
             for x in it:
                 blocks[it.multi_index] = compss_wait_on(x[()]._ref)
@@ -293,19 +313,21 @@ class BlockArray(np.lib.mixins.NDArrayOperatorsMixin):
 
     def __array_function__(self, func, types, args, kwargs):
         if func not in numpy_dispatcher[self.__class__]:
-            print('not in dispatcher')
+            print("not in dispatcher")
             return NotImplemented
         if not all(t == self.__class__ for t in types):
-            print('bad type')
+            print("bad type")
             # TODO create COMPSsArray if np.ndarray implementation
             return NotImplemented
 
         return numpy_dispatcher[self.__class__][func](*args, **kwargs)
 
+
 @todo
 @implements(np.reshape, BlockArray)
 def __block_reshape(a, shape):
     pass
+
 
 @implements(np.transpose, BlockArray)
 def __block_transpose(a, axes=None):
@@ -323,6 +345,7 @@ def __block_transpose(a, axes=None):
     # transpose block shape
     a.__blockshape = tuple(a.__blockshape[i] for i in axes)
 
+
 @implements(np.tensordot, BlockArray)
 def __block_tensordot(a: BlockArray, b: BlockArray, axes):
     # pylint: disable=protected-access
@@ -334,14 +357,18 @@ def __block_tensordot(a: BlockArray, b: BlockArray, axes):
 
     # iterators
     outer_axes = [list(set(range(i.ndim)) - set(ax)) for ax, i in zip(axes, (a, b))]
-    outer_iter_a, inner_iter_a = np.nested_iters(a._grid,
+    outer_iter_a, inner_iter_a = np.nested_iters(
+        a._grid,
         [outer_axes[0], axes[0]],
-        op_flags=['readonly'],
-        flags=['multi_index', 'refs_ok'])
-    outer_iter_b, inner_iter_b = np.nested_iters(b._grid,
+        op_flags=["readonly"],
+        flags=["multi_index", "refs_ok"],
+    )
+    outer_iter_b, inner_iter_b = np.nested_iters(
+        b._grid,
         [outer_axes[1], axes[1]],
-        op_flags=['readonly'],
-        flags=['multi_index', 'refs_ok'])
+        op_flags=["readonly"],
+        flags=["multi_index", "refs_ok"],
+    )
 
     grid = np.empty(outer_iter_a.shape + outer_iter_b.shape, dtype=COMPSsArray)
     dtype = np.result_type(a.dtype, b.dtype)
@@ -350,10 +377,14 @@ def __block_tensordot(a: BlockArray, b: BlockArray, axes):
     # TODO dynamic parallelism
     for outer_i_a in outer_iter_a:
         for outer_i_b in outer_iter_b:
-            buffer = COMPSsArray(task.init.full(blockshape, 0, dtype), shape=blockshape, dtype=dtype)
+            buffer = COMPSsArray(
+                task.init.full(blockshape, 0, dtype), shape=blockshape, dtype=dtype
+            )
 
             for inner_i_a, inner_i_b in zip(inner_iter_a, inner_iter_b):
-                __compss_tensordot_commutative(inner_i_a[()], inner_i_b[()], axes, buffer)
+                    __compss_tensordot_commutative(
+                        inner_i_a[()], inner_i_b[()], axes, buffer
+                    )
 
             grid[outer_iter_a.multi_index + outer_iter_b.multi_index] = buffer
             inner_iter_a.reset()
@@ -364,13 +395,20 @@ def __block_tensordot(a: BlockArray, b: BlockArray, axes):
 
 
 def result_nblock(a: BlockArray, b: BlockArray, axes):
-    " Returns the number of blocks of the resulting array after `tensordot`. "
-    return prod(prod(itertools.compress(grid, [x not in ax for x in range(len(grid))])) for ax, grid in zip(axes, (a.grid, b.grid)))
+    "Returns the number of blocks of the resulting array after `tensordot`."
+    return prod(
+        prod(itertools.compress(grid, [x not in ax for x in range(len(grid))]))
+        for ax, grid in zip(axes, (a.grid, b.grid))
+    )
+
 
 def result_shape(a, b, axes):
-    " Returns the blockshape of the resulting array after `tensordot`. "
+    "Returns the blockshape of the resulting array after `tensordot`."
     outer_axes = [tuple(set(range(len(bs))) - set(ax)) for ax, bs in zip(axes, (a, b))]
-    return functools.reduce(op.add, (tuple(i[ax] for ax in outer_ax) for outer_ax, i in zip(outer_axes, (a,b))))
+    return functools.reduce(
+        op.add,
+        (tuple(i[ax] for ax in outer_ax) for outer_ax, i in zip(outer_axes, (a, b))),
+    )
 
 
 def array(arr: np.ndarray, blockshape=None):
@@ -380,8 +418,8 @@ def array(arr: np.ndarray, blockshape=None):
 
     blocks = []
     for bidx in space(grid):
-        idx_begin = [x*y for x, y in zip(blockshape, bidx)]
-        idx_end = [x+y for x, y in zip(blockshape, idx_begin)]
+        idx_begin = [x * y for x, y in zip(blockshape, bidx)]
+        idx_end = [x + y for x, y in zip(blockshape, idx_begin)]
         idx = tuple(slice(b, e) for b, e in zip(idx_begin, idx_end))
         block = arr[idx]
         blocks.append(COMPSsArray(block, shape=blockshape, dtype=arr.dtype))
