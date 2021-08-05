@@ -1,5 +1,4 @@
-from rosnet.tensor import Tensor, full, ones, zeros, array, rand
-from rosnet.algebra import tensordot, transpose, schmidt, kron
+from rosnet.array import COMPSsArray, BlockArray, full, ones, zeros, rand, array
 
 __version__ = "0.1"
 __all__ = ['Tensor', 'full', 'ones', 'zeros', 'array',

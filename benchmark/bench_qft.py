@@ -1,22 +1,17 @@
-import opt_einsum as oe
-import rosnet
-from pycompss.api.api import compss_wait_on
+# import cirq
+# import cirq.contrib.quimb as ccq
+import quimb
+import quimb.tensor as qtn
 import cotengra as ctg
-import math
+import rosnet as rn
 import argparse
-import numpy as np
+import math
 import time
+import cmath
 
 parser = argparse.ArgumentParser()
-parser.add_argument("n", help="Number of tensors", type=int)
-parser.add_argument(
-    "reg", help="Regularity / Mean number of indexes each tensor shares"
-)
-parser.add_argument("--out", help="Number of output indexes", type=int, default=0)
-parser.add_argument("--d-min", help="Minimum dimension size", type=int, default=1)
-parser.add_argument("--d-max", help="Maximum dimension size", type=int, default=2)
+parser.add_argument("n", help="Number of qubits", type=int)
 parser.add_argument("--minimize", help="Minimization target", type=str, default="flops")
-parser.add_argument("--seed", help="Seed", default=0)
 parser.add_argument(
     "--cut-size",
     help="Maximum number of entries a tensor can have",
@@ -43,16 +38,21 @@ parser.add_argument("--cut-temperature", type=float, default=0.01)
 parser.add_argument("--optimizer", type=str, default="greedy")
 
 args = parser.parse_args()
+n = int(args.n)
 
-# generate random tensor network
-eq, shapes = oe.helpers.rand_equation(
-    n=int(args.n),
-    reg=int(args.reg),
-    n_out=int(args.out),
-    d_min=int(args.d_min),
-    d_max=int(args.d_max),
-    seed=int(args.seed),
-)
+circ = qtn.Circuit(N=n)
+
+for i in range(n - 1):
+    circ.h(i, gate_round=i)
+
+    for j in range(i + 1, n):
+        m = j - i
+        circ.cz(j, i, gate_round=i)
+
+zero = quimb.computational_state("0").reshape((2,))
+zero_state = [qtn.Tensor(zero, inds=[i]) for i in circ.psi.outer_inds()]
+tn = circ.psi & zero_state
+tn.astype_("complex64")
 
 # NOTE Use 'greedy' optimizer for reproducible results
 if args.optimizer == "greedy":
@@ -69,22 +69,12 @@ elif args.optimizer == "kahypar":
 else:
     raise ValueError("Unknown optimizer")
 
-
-# NOTE: oe.contract_path only needs objects with "shape" attr
-class FakeTensor(object):
-    def __init__(self, shape, blockshape):
-        self.shape = shape
-        self.blockshape = blockshape
-
-
-fakes = [FakeTensor(s, s) for s in shapes]
-
-# find contraction path
-path, info = oe.contract_path(eq, *fakes, optimize=opt)
+info = tn.contract(all, optimize=opt, get="path-info")
 print(str(info).encode("utf-8"))
 print(str(math.log2(info.largest_intermediate)))
 
 # find optimal cuts
+blockshapes = info.shapes
 if args.cut_size or args.cut_slices or args.cut_overhead:
     sf = ctg.SliceFinder(
         info,
@@ -97,25 +87,23 @@ if args.cut_size or args.cut_slices or args.cut_overhead:
     ix_sl, cost_sl = sf.search()
     print(cost_sl)
 
-    signatures = eq.split("->")[0].split(",")
-    for i, (sign, tensor) in enumerate(zip(signatures, fakes)):
+    signatures = info.input_subscripts.split(",")
+    for i, sign in enumerate(signatures):
         if any(label in ix_sl for label in sign):
-            blockshape = tuple(
+            blockshapes[i] = tuple(
                 map(
-                    lambda x: 1 if x[1] else tensor.shape[x[0]],
+                    lambda x: 1 if x[1] else info.shapes[i][x[0]],
                     enumerate(label in ix_sl for label in sign),
                 )
             )
-            fakes[i].blockshape = blockshape
 
-# initialize tensors
-tensors = [rosnet.rand(fake.shape, fake.blockshape) for fake in fakes]
+# move tensors to rosnet and define blockshape
+for i, (tensor, bs) in enumerate(zip(tn.tensors, blockshapes)):
+    tensor.modify(data=rn.array(tensor.data, blockshape=bs))
 
-# contract tn
 start = time.time()
-a = oe.contract(eq, *tensors, optimize=opt, backend="rosnet")
-
-amplitude = compss_wait_on(a._blocks[()])
+res = tn.contract(all, optimize=opt, backend="rosnet")
+print(f"Amplitude={res.collect()}")
 end = time.time()
-print(f"Amplitude: {amplitude}")
+
 print(f"Time={end-start}", flush=True)
