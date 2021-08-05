@@ -3,6 +3,7 @@ from rosnet.utils import inherit_doc
 
 numpy_dispatcher = {}
 
+
 def implements(np_function, cls):
     "Register an __array_function__ implementation."
     # pylint: disable=protected-access

@@ -1,5 +1,4 @@
-from typing import Tuple, Type, List
-import asyncio
+from typing import Tuple, Type
 import copy
 import functools
 import itertools
@@ -30,6 +29,7 @@ class COMPSsArray(np.lib.mixins.NDArrayOperatorsMixin):
     - `reshape`
     - `transpose`
     """
+
     # pylint: disable=protected-access
 
     def __init__(self, *args, **kwargs):
@@ -106,34 +106,37 @@ class COMPSsArray(np.lib.mixins.NDArrayOperatorsMixin):
             return NotImplemented
 
         # get COMPSs reference if COMPSsArray
-        inputs = [arg._ref if isinstance(arg, self.__class__) else arg
-                  for arg in inputs]
+        inputs = [
+            arg._ref if isinstance(arg, self.__class__) else arg for arg in inputs
+        ]
 
         inplace = False
-        if 'out' in kwargs and kwargs['out'] == (self,):
+        if "out" in kwargs and kwargs["out"] == (self,):
             inplace = True
-            kwargs['out'] = (self._ref,)
+            kwargs["out"] = (self._ref,)
 
         # 'at' operates in-place
-        if method == 'at':
-            if not np.can_cast(inputs[1], inputs[0], casting='safe'):
+        if method == "at":
+            if not np.can_cast(inputs[1], inputs[0], casting="safe"):
                 return NotImplemented
             task.ioperate(ufunc, *inputs, **kwargs)
 
         # '__call__', 'outer'
-        elif method in '__call__':
+        elif method in "__call__":
             if inplace:
-                types = [i.dtype if hasattr(i, 'dtype') else i for i in inputs]
-                if not np.can_cast(types[1], types[0], casting='safe'):
+                types = [i.dtype if hasattr(i, "dtype") else i for i in inputs]
+                if not np.can_cast(types[1], types[0], casting="safe"):
                     return NotImplemented
                 task.ioperate(ufunc, *inputs, **kwargs)
                 return self
             else:
                 ref = task.operate(ufunc, *inputs, **kwargs)
-                dtype = np.result_type(*(i.dtype if hasattr(i, 'dtype') else i for i in inputs))
+                dtype = np.result_type(
+                    *(i.dtype if hasattr(i, "dtype") else i for i in inputs)
+                )
                 return COMPSsArray(ref, shape=self.shape, dtype=dtype)
 
-        elif method == 'outer':
+        elif method == "outer":
             if inplace:
                 return NotImplemented
             else:
@@ -404,6 +407,7 @@ def __block_transpose(a, axes=None):
 def __block_tensordot(a: BlockArray, b: BlockArray, axes):
     # pylint: disable=protected-access
     # TODO assertions
+    # TODO selection of implementation based on input arrays
 
     # only support operating against BlockArray
     if not isinstance(b, a.__class__):
