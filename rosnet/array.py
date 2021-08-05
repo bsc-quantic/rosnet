@@ -511,12 +511,12 @@ def array(
 
 @implements(np.zeros, BlockArray)
 def zeros(shape, dtype=None, order="C", blockshape=None):
-    return full(0, shape, blockshape, dtype)
+    return full(shape, 0, blockshape=blockshape, dtype=dtype)
 
 
 @implements(np.ones, BlockArray)
 def ones(shape, dtype=None, order="C", blockshape=None):
-    return full(1, shape, blockshape, dtype)
+    return full(shape, 1, blockshape=blockshape, dtype=dtype)
 
 
 @implements(np.full, BlockArray)
