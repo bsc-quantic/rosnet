@@ -282,9 +282,16 @@ class BlockArray(np.lib.mixins.NDArrayOperatorsMixin):
             block_id = tuple(i % s for i, s in zip(index, self.blockshape))
             return compss_wait_on(task.getitem(self._grid[grid_id]._ref, block_id))
 
-    @todo
     def __setitem__(self, key, value):
-        pass
+        if isinstance(key, list) and isinstance(key[0], int):
+            if len(key) != self.ndim:
+                raise IndexError("Invalid indexing information: key=%s" % key)
+
+            grid_id = [i // s for i, s in zip(key, self.blockshape)]
+            block_id = [i % s for i, s in zip(key, self.blockshape)]
+            task.setitem(self._grid[grid_id], block_id, value)
+
+        raise IndexError("Invalid indexing information: %s" % key)
 
     @property
     def shape(self) -> Tuple[int]:
