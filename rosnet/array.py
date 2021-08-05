@@ -234,9 +234,10 @@ def __compss_tensordot_commutative(
 
 
 class BlockArray(np.lib.mixins.NDArrayOperatorsMixin):
-    """Block Array of `numpy.ndarray` or `COMPSsArray`.
+    """A distributed n-dimensional array divided in blocks.
 
-    Assumptions:
+    Notes
+    -----------
     - All blocks have same `blockshape` and `dtype`.
     """
 
