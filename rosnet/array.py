@@ -221,7 +221,9 @@ def __compss_tensordot(a: COMPSsArray, b: COMPSsArray, axes):
     return COMPSsArray(ref, shape=shape, dtype=dtype)
 
 
-def __compss_tensordot_commutative(a: COMPSsArray, b: COMPSsArray, axes, buffer: COMPSsArray):
+def __compss_tensordot_commutative(
+    a: COMPSsArray, b: COMPSsArray, axes, buffer: COMPSsArray
+):
     # pylint: disable=protected-access
     task.tensordot.commutative(buffer._ref, a._ref, b._ref, axes)
 
@@ -473,7 +475,19 @@ def result_shape(a, b, axes):
     )
 
 
-def array(arr: np.ndarray, blockshape=None):
+@implements(np.array, BlockArray)
+def array(
+    arr: np.ndarray,
+    dtype=None,
+    blockshape=None,
+    copy=True,
+    order="K",
+    subok=False,
+    ndmin=0,
+):
+    """
+    `dtype`, `copy`, `order`, `subok` and `ndmin` ignored at the moment.
+    """
     shape = arr.shape
     blockshape = shape if blockshape is None else blockshape
     grid = [s // bs for s, bs in zip(shape, blockshape)]
@@ -490,15 +504,18 @@ def array(arr: np.ndarray, blockshape=None):
     return BlockArray(blocks, blockshape=blockshape, dtype=arr.dtype)
 
 
-def zeros(shape, blockshape=None, dtype=None):
+@implements(np.zeros, BlockArray)
+def zeros(shape, dtype=None, order="C", blockshape=None):
     return full(0, shape, blockshape, dtype)
 
 
-def ones(shape, blockshape=None, dtype=None):
+@implements(np.ones, BlockArray)
+def ones(shape, dtype=None, order="C", blockshape=None):
     return full(1, shape, blockshape, dtype)
 
 
-def full(value, shape, blockshape=None, dtype=None):
+@implements(np.full, BlockArray)
+def full(shape, value, dtype=None, order="C", blockshape=None):
     blockshape = shape if blockshape is None else blockshape
     grid = tuple(s // bs for s, bs in zip(shape, blockshape))
     dtype = dtype or np.dtype(type(value))
