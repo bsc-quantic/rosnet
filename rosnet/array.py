@@ -528,3 +528,17 @@ def full(shape, value, dtype=None, order="C", blockshape=None):
 
     blocks = ndarray_from_list(blocks, grid)
     return BlockArray(blocks, blockshape=blockshape, dtype=dtype)
+
+
+def rand(shape, blockshape=None):
+    blockshape = shape if blockshape is None else blockshape
+    grid = tuple(s // bs for s, bs in zip(shape, blockshape))
+    dtype = np.dtype(np.float64)
+
+    blocks = [
+        COMPSsArray(task.init.rand(blockshape), shape=blockshape, dtype=dtype)
+        for _ in range(prod(grid))
+    ]
+
+    blocks = ndarray_from_list(blocks, grid)
+    return BlockArray(blocks, blockshape=blockshape, dtype=dtype)
