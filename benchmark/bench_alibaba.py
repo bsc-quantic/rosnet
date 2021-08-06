@@ -96,7 +96,9 @@ for i, (tensor, bs) in enumerate(zip(tn.tensors, blockshapes)):
 
 start = time.time()
 res = tn.contract(all, optimize="greedy")
-end = time.time()
-print(f"Time={end-start}", flush=True)
+submit = time.time()
+print(f"Submit Time={submit-start}", flush=True)
 c = np.asarray(res)
+download = time.time()
+print(f"Download Time={download-submit}", flush=True)
 print(f"Amplitude={c}")
