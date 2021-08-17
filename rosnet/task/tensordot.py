@@ -1,35 +1,19 @@
-from enum import Enum, auto
 import numpy as np
 from pycompss.api.task import task
 from pycompss.api.constraint import constraint
-from pycompss.api.implement import implement
 from pycompss.api.parameter import IN, COLLECTION_IN, COMMUTATIVE, Type, Depth
 
 
-# TODO tensordot implementation with context selector
-
-# class methods(Enum):
-#     TENSORDOT = auto()
-#     SEQUENTIAL = auto()
-#     COMMUTATIVE = auto()
-
-
-# @constraint(computing_units='NCORES', memory='MEMORY')
-# @task(a={Type: COLLECTION_IN, Depth: 1}, b={Type: COLLECTION_IN, Depth: 1}, returns=np.ndarray)
-# def sequential(a, b, axes):
-#     return sum(np.tensordot(ba, bb, axes) for ba, bb in zip(a, b))
+@constraint(computing_units="$NCORES", memory="$MEMORY")
+@task(a={Type: COLLECTION_IN, Depth: 1}, b={Type: COLLECTION_IN, Depth: 1}, returns=np.ndarray)
+def sequential(a, b, axes):
+    return sum(np.tensordot(ba, bb, axes) for ba, bb in zip(a, b))
 
 
 @constraint(computing_units="$NCORES", memory_size="$MEMORY")
 @task(ba=IN, bb=IN, returns=np.ndarray)
 def tensordot(ba, bb, axes):
     return np.tensordot(ba, bb, axes)
-
-
-# @constraint(computing_units='NCORES', memory='MEMORY')
-# @task(blocks={Type: COLLECTION_IN, Depth: 1}, returns=np.ndarray)
-# def sum(blocks):
-#     return sum(blocks)
 
 
 @constraint(computing_units="$NCORES", memory_size="$MEMORY")

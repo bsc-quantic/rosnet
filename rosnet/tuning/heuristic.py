@@ -1,36 +1,75 @@
-import numpy as np
-from pycompss.api.api import compss_get_number_of_resources
-import multiprocessing
+from abc import abstractmethod
+from contextlib import contextmanager
+from typing import Tuple, Callable
+from .util import core_count, node_count, flops_tensordot
+from rosnet import helper
+from rosnet.utils import result_nblock
+
+DEFAULT_THRESHOLD_FLOPS = 2 ** 20
 
 
-node_count = compss_get_number_of_resources
-core_count = multiprocessing.cpu_count
+class Heuristic:
+    def __init__(self, *args, **kwargs):
+        self.max_cpu = kwargs.get("max_cpu") or core_count()
+        self.threshold_flops = kwargs.get("threshold_flops") or DEFAULT_THRESHOLD_FLOPS
+
+    def tensordot(self, a, b, axes) -> Tuple[Callable, int]:
+        flops = flops_tensordot(a.shape, b.shape, axes)
+        flops_block = flops_tensordot(a.blockshape, b.blockshape, axes)
+        nblock = result_nblock(a, b, axes)
+
+        # choose implementation by grid and flops
+        impl = None
+        if a.nblock == 1 or b.nblock == 1:
+            impl = helper.tensordot_sequential
+        else:
+            if flops_block < self.threshold_flops:
+                impl = helper.tensordot_sequential
+            else:
+                impl = helper.tensordot_commutative
+
+        # parallelize if threshold surpassed
+        par = 1
+        if flops_block > self.threshold_flops:
+            par = min(self.estimate(flops, flops_block, nblock), self.max_cpu)
+
+        return (impl, par)
+
+    @abstractmethod
+    def estimate(self, flops, flops_block, nblock) -> int:
+        pass
 
 
-class Default:
-    def __call__(self, *args, **kwargs) -> int:
+class Default(Heuristic):
+    def estimate(self, *args) -> int:
         return 1
 
 
-class Eager:
-    def __init__(self, **kwargs):
-        self.threshold_flops = kwargs.get("threshold_flops") or 1
-        self.max_core_per_task = kwargs.get("max_core_per_task") or core_count()
-
-    def __call__(self, parallel_tasks, block_flops, *args, **kwargs) -> int:
-        """Returns the number of cores to be used by the task.
-
-        `parallel_tasks`: Number of independent task to be launched.
-        """
-        if block_flops < self.threshold_flops:
-            print("block_flops < self.threshold_flops")
-            return 1
+class Eager(Heuristic):
+    def estimate(self, flops, flops_block, nblock) -> int:
+        "Returns the number of cores to be used by the task."
 
         available_parallelism = node_count() * core_count()
-        if parallel_tasks > available_parallelism:
-            print("parallel_tasks > available_parallelism")
+
+        if nblock > available_parallelism:
             return 1
 
-        ncores = min(available_parallelism // parallel_tasks, core_count())
-        print("[DEBUG] ncores=%r" % ncores)
+        ncores = min(available_parallelism // nblock, self.max_cpu)
         return ncores
+
+
+algorithm = Default()
+
+
+@contextmanager
+def heuristic(cls, *args, **kwargs):
+    if not issubclass(cls, Heuristic):
+        raise TypeError("'cls' must implement Heuristic")
+
+    global algorithm
+    tmp = algorithm
+    algorithm = cls(*args, **kwargs)
+
+    yield
+
+    algorithm = tmp

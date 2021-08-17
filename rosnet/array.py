@@ -1,15 +1,20 @@
 from typing import Tuple, Type
 import copy
 import functools
-import itertools
-import operator as op
 import numpy as np
 import pycompss
 from pycompss.api.api import compss_delete_object, compss_wait_on
 from rosnet import task, utils
-from rosnet.utils import todo, isunique, ndarray_from_list, prod, space
+from rosnet.utils import (
+    todo,
+    isunique,
+    ndarray_from_list,
+    prod,
+    space,
+    result_shape,
+)
 from rosnet.helper import implements, numpy_dispatcher
-import rosnet.tuning as tuning
+from rosnet import tuning
 
 
 def assert_axes(axes):
@@ -40,6 +45,9 @@ class COMPSsArray(np.lib.mixins.NDArrayOperatorsMixin):
         elif isinstance(args[0], pycompss.runtime.management.classes.Future):
             self.__shape = kwargs["shape"]
             self.__dtype = kwargs["dtype"]
+        elif isinstance(args[0], np.generic):
+            self.__shape = ()
+            self.__dtype = args[0].dtype
         else:
             raise TypeError(
                 "You must provide a np.ndarray or a COMPSs Future to a np.ndarray, but a %r was provided"
@@ -222,13 +230,6 @@ def __compss_tensordot(a: COMPSsArray, b: COMPSsArray, axes):
 
     ref = task.tensordot.tensordot(a._ref, b._ref, axes)
     return COMPSsArray(ref, shape=shape, dtype=dtype)
-
-
-def __compss_tensordot_commutative(
-    a: COMPSsArray, b: COMPSsArray, axes, buffer: COMPSsArray
-):
-    # pylint: disable=protected-access
-    task.tensordot.commutative(buffer._ref, a._ref, b._ref, axes)
 
 
 # @implements(np.block, COMPSsArray)
@@ -433,51 +434,29 @@ def __block_tensordot(a: BlockArray, b: BlockArray, axes):
     blockshape = result_shape(a.blockshape, b.blockshape, axes)
 
     # estimate number of cores per task for dynamic parallelism
-    parallel_tasks = grid.size
-    # ncores = tuning.heuristic.Default()()
-    ncores = tuning.heuristic.Eager()(parallel_tasks, 2 ** 6)
+    impl, ncores = tuning.heuristic.algorithm.tensordot(a, b, axes)
 
     # required memory per task
     # pylint: disable=no-member
     memory = a.blocknbytes + b.blocknbytes + utils.prod(blockshape) * dtype.itemsize
     # pylint: enable=no-member
 
-    for outer_i_a in outer_iter_a:
-        for outer_i_b in outer_iter_b:
-            buffer = COMPSsArray(
-                task.init.full(blockshape, 0, dtype), shape=blockshape, dtype=dtype
-            )
+    with tuning.resources(ncores=ncores, memory=memory):
+        for _ in outer_iter_a:  # outer_i_a
+            for _ in outer_iter_b:  # outer_i_b
+                idx = outer_iter_a.multi_index + outer_iter_b.multi_index
 
-            # set resources of task
-            with tuning.resources(ncores=ncores, memory=memory):
-                for inner_i_a, inner_i_b in zip(inner_iter_a, inner_iter_b):
-                    __compss_tensordot_commutative(
-                        inner_i_a[()], inner_i_b[()], axes, buffer
-                    )
+                # call chosen implementation
+                blocks_a = [i[()]._ref for i in inner_iter_a]
+                blocks_b = [i[()]._ref for i in inner_iter_b]
+                grid[idx] = impl(blocks_a, blocks_b, axes)
 
-            grid[outer_iter_a.multi_index + outer_iter_b.multi_index] = buffer
-            inner_iter_a.reset()
-            inner_iter_b.reset()
-        outer_iter_b.reset()
+                # reset inner block iterators
+                inner_iter_a.reset()
+                inner_iter_b.reset()
+            outer_iter_b.reset()
 
     return BlockArray(grid, blockshape=blockshape, dtype=dtype)
-
-
-def result_nblock(a: BlockArray, b: BlockArray, axes):
-    "Returns the number of blocks of the resulting array after `tensordot`."
-    return prod(
-        prod(itertools.compress(grid, [x not in ax for x in range(len(grid))]))
-        for ax, grid in zip(axes, (a.grid, b.grid))
-    )
-
-
-def result_shape(a, b, axes):
-    "Returns the blockshape of the resulting array after `tensordot`."
-    outer_axes = [tuple(set(range(len(bs))) - set(ax)) for ax, bs in zip(axes, (a, b))]
-    return functools.reduce(
-        op.add,
-        (tuple(i[ax] for ax in outer_ax) for outer_ax, i in zip(outer_axes, (a, b))),
-    )
 
 
 @implements(np.array, BlockArray)

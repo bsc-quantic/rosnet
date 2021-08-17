@@ -1,9 +1,9 @@
 from typing import List
 import functools
 import itertools
+import operator as op
 import numpy as np
 from pycompss.api.task import task
-
 
 def isunique(l: List) -> bool:
     """ Checks whether all the elements in `l` are unique in `l` """
@@ -22,10 +22,8 @@ def ispower2(n: int):
 try:
     from math import prod
 except ImportError:
-    import operator
-
     def prod(x):
-        return functools.reduce(operator.mul, x, 1)
+        return functools.reduce(op.mul, x, 1)
 
 
 def ndarray_from_list(blocklist, grid):
@@ -84,3 +82,20 @@ class hybridmethod:
 
 def isarray(o: object):
     return isinstance(o, np.ndarray) or issubclass(o, np.ndarray) or hasattr(o, '__array__')
+
+
+def result_nblock(a, b, axes):
+    "Returns the number of blocks of the resulting array after `tensordot`."
+    return prod(
+        prod(itertools.compress(grid, [x not in ax for x in range(len(grid))]))
+        for ax, grid in zip(axes, (a.grid, b.grid))
+    )
+
+
+def result_shape(a, b, axes):
+    "Returns the blockshape of the resulting array after `tensordot`."
+    outer_axes = [tuple(set(range(len(bs))) - set(ax)) for ax, bs in zip(axes, (a, b))]
+    return functools.reduce(
+        op.add,
+        (tuple(i[ax] for ax in outer_ax) for outer_ax, i in zip(outer_axes, (a, b))),
+    )
