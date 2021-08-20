@@ -1,5 +1,6 @@
 # import cirq
 # import cirq.contrib.quimb as ccq
+import numpy as np
 import quimb
 import quimb.tensor as qtn
 import cotengra as ctg
@@ -7,7 +8,6 @@ import rosnet as rn
 import argparse
 import math
 import time
-import cmath
 
 parser = argparse.ArgumentParser()
 parser.add_argument("n", help="Number of qubits", type=int)
@@ -103,7 +103,12 @@ for i, (tensor, bs) in enumerate(zip(tn.tensors, blockshapes)):
 
 start = time.time()
 res = tn.contract(all, optimize=opt, backend="rosnet")
-print(f"Amplitude={res.collect()}")
-end = time.time()
+upload_end = time.time()
+print("Upload Time="+str(upload_end - start))
 
-print(f"Time={end-start}", flush=True)
+res = np.asarray(res)
+end = time.time()
+print("Total Time=" + str(end-start))
+
+print("Amplitude=" + str(res))
+
