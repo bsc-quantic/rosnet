@@ -54,35 +54,40 @@ def gen_shapes():
             yield (phys_dim, phys_dim, phys_dim, phys_dim)
 
 
-einsum_total = ""
-right_idx = [i for i in range(N)]
+def main():
+    einsum_total = ""
+    right_idx = [i for i in range(N)]
 
-for i in range(rows):
-    einsum_str, right_idx = create_sycamore_row(N + i * (2 * N - 2), right_idx)
-    einsum_total += einsum_str
+    for i in range(rows):
+        einsum_str, right_idx = create_sycamore_row(N + i * (2 * N - 2), right_idx)
+        einsum_total += einsum_str
 
-shapes = tuple(gen_shapes())
-einsum_total = einsum_total[:-1]
+    shapes = tuple(gen_shapes())
+    einsum_total = einsum_total[:-1]
 
-print(str(einsum_total).encode("utf-8"))
-print(len(einsum_total.split(",")))
-einsum_total += "->"
+    print(str(einsum_total).encode("utf-8"))
+    print(len(einsum_total.split(",")))
+    einsum_total += "->"
 
-# arrays = [np.random.randn(*shp) for shp in shapes]
-arrays = [rosnet.rand(shp, shp) for shp in shapes]
+    # arrays = [np.random.randn(*shp) for shp in shapes]
+    arrays = [rosnet.rand(shp, shp) for shp in shapes]
 
-opt = ctg.ReusableHyperOptimizer(
-    methods=["kahypar", "greedy"],
-    max_repeats=128,
-    parallel=True,
-    progbar=True,
-    score_compression=0.5,
-    directory=".",
-)
+    opt = ctg.ReusableHyperOptimizer(
+        methods=["kahypar", "greedy"],
+        max_repeats=128,
+        parallel=True,
+        progbar=True,
+        score_compression=0.5,
+        directory=".",
+    )
 
-start_time = time.time()
-res = oe.contract(
-    einsum_total, *arrays, optimize=opt, memory_limit=-1, backend="rosnet"
-)
-_time = time.time() - start_time
-print("rosnet backend %f" % _time)
+    start_time = time.time()
+    res = oe.contract(
+        einsum_total, *arrays, optimize=opt, memory_limit=-1, backend="rosnet"
+    )
+    _time = time.time() - start_time
+    print("rosnet backend %f" % _time)
+
+
+if __name__ == "__main__":
+    main()
