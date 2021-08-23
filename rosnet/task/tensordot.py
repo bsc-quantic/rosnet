@@ -4,7 +4,7 @@ from pycompss.api.constraint import constraint
 from pycompss.api.parameter import IN, COLLECTION_IN, COMMUTATIVE, Type, Depth
 
 
-@constraint(computing_units="$NCORES", memory="$MEMORY")
+@constraint(computing_units="$NCORES", memory_size="$MEMORY")
 @task(a={Type: COLLECTION_IN, Depth: 1}, b={Type: COLLECTION_IN, Depth: 1}, returns=np.ndarray)
 def sequential(a, b, axes):
     return sum(np.tensordot(ba, bb, axes) for ba, bb in zip(a, b))
