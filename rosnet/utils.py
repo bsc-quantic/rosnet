@@ -99,3 +99,18 @@ def result_shape(a, b, axes):
         op.add,
         (tuple(i[ax] for ax in outer_ax) for outer_ax, i in zip(outer_axes, (a, b))),
     )
+
+
+def join_idx(outer, inner, axes):
+    n = len(outer) + len(inner)
+    outer_axes = filter(lambda i: i not in axes, set(range(n)))
+
+    res = [0] * n
+
+    for axe, v in zip(axes, inner):
+        res[axe] = v
+
+    for axe, v in zip(outer_axes, outer):
+        res[axe] = v
+
+    return tuple(res)

@@ -12,6 +12,7 @@ from rosnet.utils import (
     prod,
     space,
     result_shape,
+    join_idx,
 )
 from rosnet.helper import implements, numpy_dispatcher
 from rosnet import tuning
@@ -447,8 +448,33 @@ def __block_tensordot(a: BlockArray, b: BlockArray, axes):
                 idx = outer_iter_a.multi_index + outer_iter_b.multi_index
 
                 # call chosen implementation
-                blocks_a = [i[()]._ref for i in inner_iter_a]
-                blocks_b = [i[()]._ref for i in inner_iter_b]
+                blocks_a = list(
+                    map(
+                        lambda x: a._grid[x],
+                        (
+                            join_idx(
+                                outer_iter_a.multi_index,
+                                inner_iter_a.multi_index,
+                                axes[0],
+                            )
+                            for _ in inner_iter_a
+                        ),
+                    )
+                )
+                blocks_b = list(
+                    map(
+                        lambda x: b._grid[x],
+                        (
+                            join_idx(
+                                outer_iter_b.multi_index,
+                                inner_iter_b.multi_index,
+                                axes[1],
+                            )
+                            for _ in inner_iter_b
+                        ),
+                    )
+                )
+
                 grid[idx] = impl(blocks_a, blocks_b, axes)
 
                 # reset inner block iterators
