@@ -54,8 +54,8 @@ def tensordot_commutative(a: List, b: List, axes):
 
     for ia, ib in zip(a, b):
         # get ref if a,b are COMPSsArrays
-        ia = ia._ref if hasattr(a, "_ref") else ia
-        ib = ib._ref if hasattr(b, "_ref") else ib
+        ia = ia._ref if hasattr(ia, "_ref") else ia
+        ib = ib._ref if hasattr(ib, "_ref") else ib
 
         rosnet.task.tensordot.commutative(res._ref, ia, ib, axes)
 
