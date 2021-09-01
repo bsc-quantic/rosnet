@@ -6,11 +6,16 @@ import math
 import time
 import rosnet as rn
 
+
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("filename", help="Filename of the circuit description", type=str)
+    parser.add_argument(
+        "filename", help="Filename of the circuit description", type=str
+    )
     parser.add_argument("--swap-split-gate", type=bool, default=False)
-    parser.add_argument("--minimize", help="Minimization target", type=str, default="flops")
+    parser.add_argument(
+        "--minimize", help="Minimization target", type=str, default="flops"
+    )
     parser.add_argument(
         "--cut-size",
         help="Maximum number of entries a tensor can have",
@@ -18,7 +23,10 @@ def main():
         default=None,
     )
     parser.add_argument(
-        "--cut-slices", help="Minimum number of slices to consider", type=int, default=None
+        "--cut-slices",
+        help="Minimum number of slices to consider",
+        type=int,
+        default=None,
     )
     parser.add_argument(
         "--cut-overhead",
@@ -34,7 +42,6 @@ def main():
         default="flops",
     )
     parser.add_argument("--cut-temperature", type=float, default=0.01)
-
 
     args = parser.parse_args()
     fn = args.filename
@@ -54,16 +61,16 @@ def main():
     tn.astype_("complex64")
 
     # NOTE Use 'greedy' optimizer for reproducible results
-    # opt = ctg.ReusableHyperOptimizer(
-    #     methods=['kahypar', 'greedy'],
-    #     max_repeats=128,
-    #     minimize=args.minimize,
-    #     score_compression=0.5,  # deliberately make the optimizer try many methods
-    #     progbar=True,
-    #     parallel=True,
-    # )
+    opt = ctg.ReusableHyperOptimizer(
+        methods=["kahypar", "greedy"],
+        max_repeats=128,
+        minimize=args.minimize,
+        score_compression=0.5,  # deliberately make the optimizer try many methods
+        progbar=True,
+        parallel=True,
+    )
 
-    info = tn.contract(all, optimize="kahypar", get="path-info")
+    info = tn.contract(all, optimize=opt, get="path-info")
     print(str(info).encode("utf-8"))
     print(str(math.log2(info.largest_intermediate)))
 
@@ -96,7 +103,7 @@ def main():
         tensor.modify(data=rn.array(np.asarray(tensor.data), blockshape=bs))
 
     start = time.time()
-    res = tn.contract(all, optimize="kahypar")
+    res = tn.contract(all, optimize=opt, backend="rosnet")
     submit = time.time()
     print(f"Submit Time={submit-start}", flush=True)
     c = np.asarray(res)
