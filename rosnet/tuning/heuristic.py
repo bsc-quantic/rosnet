@@ -58,6 +58,15 @@ class Eager(Heuristic):
         return ncores
 
 
+class Fixed(Heuristic):
+    def __init__(self, ncores, **kwargs):
+        super().__init__(**kwargs)
+        self.ncores = ncores
+
+    def estimate(self, *args) -> int:
+        return self.ncores
+
+
 algorithm = Default()
 
 
