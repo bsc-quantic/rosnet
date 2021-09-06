@@ -60,6 +60,7 @@ class Eager(Heuristic):
 
 class Fixed(Heuristic):
     def __init__(self, ncores, **kwargs):
+        kwargs["max_cpu"] = ncores
         super().__init__(**kwargs)
         self.ncores = ncores
 
