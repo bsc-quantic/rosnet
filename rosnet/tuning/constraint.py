@@ -53,27 +53,27 @@ def resources(**kwargs):
 def __fix_dyn_par_tensordot():
     from rosnet.task import tensordot
 
-    if environ["NCORES"] == 1:
+    if int(environ["NCORES"]) == 1:
         tensordot.sequential = tensordot.sequential_1
         tensordot.tensordot = tensordot.tensordot_1
         tensordot.commutative = tensordot.commutative_1
-    elif environ["NCORES"] == 2:
+    elif int(environ["NCORES"]) == 2:
         tensordot.sequential = tensordot.sequential_2
         tensordot.tensordot = tensordot.tensordot_2
         tensordot.commutative = tensordot.commutative_2
-    elif 2 < environ["NCORES"] <= 4:
+    elif 2 < int(environ["NCORES"]) <= 4:
         tensordot.sequential = tensordot.sequential_4
         tensordot.tensordot = tensordot.tensordot_4
         tensordot.commutative = tensordot.commutative_4
-    elif 4 < environ["NCORES"] <= 8:
+    elif 4 < int(environ["NCORES"]) <= 8:
         tensordot.sequential = tensordot.sequential_8
         tensordot.tensordot = tensordot.tensordot_8
         tensordot.commutative = tensordot.commutative_8
-    elif 8 < environ["NCORES"] <= 12:
+    elif 8 < int(environ["NCORES"]) <= 12:
         tensordot.sequential = tensordot.sequential_12
         tensordot.tensordot = tensordot.tensordot_12
         tensordot.commutative = tensordot.commutative_12
-    elif 12 < environ["NCORES"] <= 24:
+    elif 12 < int(environ["NCORES"]) <= 24:
         tensordot.sequential = tensordot.sequential_24
         tensordot.tensordot = tensordot.tensordot_24
         tensordot.commutative = tensordot.commutative_24
