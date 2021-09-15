@@ -39,7 +39,41 @@ def resources(**kwargs):
     environ["NCORES"] = str(kwargs.get("ncores") or tmp["NCORES"])
     environ["MEMORY"] = str(kwargs.get("memory") or tmp["MEMORY"])
 
+    __fix_dyn_par_tensordot()
+
     yield
 
     environ["NCORES"] = tmp["NCORES"]
     environ["MEMORY"] = tmp["MEMORY"]
+
+    __fix_dyn_par_tensordot()
+
+
+# temporary fix for dynamic parallelism
+def __fix_dyn_par_tensordot():
+    from rosnet.task import tensordot
+
+    if environ["NCORES"] == 1:
+        tensordot.sequential = tensordot.sequential_1
+        tensordot.tensordot = tensordot.tensordot_1
+        tensordot.commutative = tensordot.commutative_1
+    elif environ["NCORES"] == 2:
+        tensordot.sequential = tensordot.sequential_2
+        tensordot.tensordot = tensordot.tensordot_2
+        tensordot.commutative = tensordot.commutative_2
+    elif 2 < environ["NCORES"] <= 4:
+        tensordot.sequential = tensordot.sequential_4
+        tensordot.tensordot = tensordot.tensordot_4
+        tensordot.commutative = tensordot.commutative_4
+    elif 4 < environ["NCORES"] <= 8:
+        tensordot.sequential = tensordot.sequential_8
+        tensordot.tensordot = tensordot.tensordot_8
+        tensordot.commutative = tensordot.commutative_8
+    elif 8 < environ["NCORES"] <= 12:
+        tensordot.sequential = tensordot.sequential_12
+        tensordot.tensordot = tensordot.tensordot_12
+        tensordot.commutative = tensordot.commutative_12
+    elif 12 < environ["NCORES"] <= 24:
+        tensordot.sequential = tensordot.sequential_24
+        tensordot.tensordot = tensordot.tensordot_24
+        tensordot.commutative = tensordot.commutative_24

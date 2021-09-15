@@ -4,10 +4,10 @@ from pycompss.api.constraint import constraint
 from pycompss.api.parameter import IN, COLLECTION_IN, COMMUTATIVE, Type, Depth
 
 
-@constraint(computing_units="$NCORES", memory_size="$MEMORY")
-@task(a={Type: COLLECTION_IN, Depth: 1}, b={Type: COLLECTION_IN, Depth: 1}, returns=np.ndarray)
-def sequential(a, b, axes):
-    return sum(np.tensordot(ba, bb, axes) for ba, bb in zip(a, b))
+# @constraint(computing_units="$NCORES", memory_size="$MEMORY")
+# @task(a={Type: COLLECTION_IN, Depth: 1}, b={Type: COLLECTION_IN, Depth: 1}, returns=np.ndarray)
+# def sequential(a, b, axes):
+#     return sum(np.tensordot(ba, bb, axes) for ba, bb in zip(a, b))
 
 
 @constraint(computing_units="1")
@@ -60,10 +60,23 @@ def sequential_12(a, b, axes):
     return sum(np.tensordot(ba, bb, axes) for ba, bb in zip(a, b))
 
 
-@constraint(computing_units="$NCORES", memory_size="$MEMORY")
-@task(ba=IN, bb=IN, returns=np.ndarray)
-def tensordot(ba, bb, axes):
-    return np.tensordot(ba, bb, axes)
+@constraint(computing_units="24")
+@task(
+    a={Type: COLLECTION_IN, Depth: 1},
+    b={Type: COLLECTION_IN, Depth: 1},
+    returns=np.ndarray,
+)
+def sequential_24(a, b, axes):
+    return sum(np.tensordot(ba, bb, axes) for ba, bb in zip(a, b))
+
+
+sequential = sequential_1
+
+
+# @constraint(computing_units="$NCORES", memory_size="$MEMORY")
+# @task(ba=IN, bb=IN, returns=np.ndarray)
+# def tensordot(ba, bb, axes):
+#     return np.tensordot(ba, bb, axes)
 
 
 @constraint(computing_units="1")
@@ -96,10 +109,19 @@ def tensordot_12(ba, bb, axes):
     return np.tensordot(ba, bb, axes)
 
 
-@constraint(computing_units="$NCORES", memory_size="$MEMORY")
-@task(res=COMMUTATIVE)
-def commutative(res, a, b, axes):
-    res += np.tensordot(a, b, axes)
+@constraint(computing_units="24")
+@task(ba=IN, bb=IN, returns=np.ndarray)
+def tensordot_24(ba, bb, axes):
+    return np.tensordot(ba, bb, axes)
+
+
+tensordot = tensordot_1
+
+
+# @constraint(computing_units="$NCORES", memory_size="$MEMORY")
+# @task(res=COMMUTATIVE)
+# def commutative(res, a, b, axes):
+#     res += np.tensordot(a, b, axes)
 
 
 @constraint(computing_units="1")
@@ -131,6 +153,14 @@ def commutative_8(res, a, b, axes):
 def commutative_12(res, a, b, axes):
     res += np.tensordot(a, b, axes)
 
+
+@constraint(computing_units="24")
+@task(res=COMMUTATIVE)
+def commutative_24(res, a, b, axes):
+    res += np.tensordot(a, b, axes)
+
+
+commutative = commutative_1
 
 # TODO use tensordot(a, b, axes=0)
 @constraint(computing_units="$NCORES", memory_size="$MEMORY")
