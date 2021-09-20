@@ -60,3 +60,23 @@ def tensordot_commutative(a: List, b: List, axes):
         rosnet.task.tensordot.commutative(res._ref, ia, ib, axes)
 
     return res
+
+
+def tensordot_tensordot(a: List, b: List, axes):
+    # pylint: disable=protected-access
+    import rosnet
+
+    if len(a) > 1 or len(b) > 1:
+        raise ValueError()
+
+    blockshape = result_shape(a[0].shape, b[0].shape, axes)
+    dtype = np.result_type(
+        *(i.dtype if hasattr(i, "dtype") else i for i in chain(a, b))
+    )
+
+    # get ref if a,b are COMPSsArrays
+    aref = [i._ref if hasattr(i, "_ref") else i for i in a][0]
+    bref = [i._ref if hasattr(i, "_ref") else i for i in b][0]
+
+    ref = rosnet.task.tensordot.tensordot(aref, bref, axes)
+    return rosnet.COMPSsArray(ref, shape=blockshape, dtype=dtype)
