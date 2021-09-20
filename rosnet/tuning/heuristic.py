@@ -17,9 +17,9 @@ class Heuristic:
 
     def tensordot(self, a, b, axes) -> Tuple[Callable, int]:
         nblock = prod(map(lambda i: a.grid[i], axes[0]))
-        dtype = np.result_type(a.dtype, b.dtype)
+        typ = np.result_type(a, b)
         blockshape = result_shape(a.blockshape, b.blockshape, axes)
-        blocknbytes = prod(blockshape) * dtype.nbytes
+        blocknbytes = prod(blockshape) * typ.type().nbytes
 
         # choose implementation by means of number of blocks
         impl = helper.tensordot_sequential
