@@ -49,9 +49,11 @@ def tensordot_commutative(a: List, b: List, axes):
 
     with rosnet.tuning.resources(ncores=1):
         blocknbytes = dtype.itemsize * prod(blockshape) / 1024 ** 3
-        impl = rosnet.task.init.full_1
+        impl = None
 
-        if 1 < blocknbytes <= 2:
+        if blocknbytes <= 1:
+            impl = rosnet.task.init.full_1
+        elif 1 < blocknbytes <= 2:
             impl = rosnet.task.init.full_2
         elif 2 < blocknbytes <= 4:
             impl = rosnet.task.init.full_4
