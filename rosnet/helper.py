@@ -1,7 +1,7 @@
 from typing import List
 from itertools import chain
 import numpy as np
-from .utils import result_shape, inherit_doc
+from .utils import result_shape, inherit_doc, prod
 
 numpy_dispatcher = {}
 
@@ -48,8 +48,24 @@ def tensordot_commutative(a: List, b: List, axes):
     )
 
     with rosnet.tuning.resources(ncores=1):
+        blocknbytes = dtype.itemsize * prod(blockshape) / 1024 ** 3
+        impl = rosnet.task.init.full_1
+
+        if 1 < blocknbytes <= 2:
+            impl = rosnet.task.init.full_2
+        elif 2 < blocknbytes <= 4:
+            impl = rosnet.task.init.full_4
+        elif 4 < blocknbytes <= 8:
+            impl = rosnet.task.init.full_8
+        elif 8 < blocknbytes <= 16:
+            impl = rosnet.task.init.full_16
+        elif 16 < blocknbytes <= 32:
+            impl = rosnet.task.init.full_32
+        else:
+            raise NotImplementedError("rosnet not prepared for blocks of size > 32GB")
+
         res = rosnet.COMPSsArray(
-            rosnet.task.init.full(blockshape, 0, dtype), shape=blockshape, dtype=dtype
+            impl(blockshape, 0, dtype), shape=blockshape, dtype=dtype
         )
 
     for ia, ib in zip(a, b):
