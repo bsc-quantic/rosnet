@@ -1,9 +1,10 @@
 from abc import abstractmethod
 from contextlib import contextmanager
 from typing import Tuple, Callable
+import numpy as np
 from .util import core_count, node_count, flops_tensordot
 from rosnet import helper
-from rosnet.utils import result_nblock
+from rosnet.utils import result_nblock, result_shape, prod
 
 DEFAULT_THRESHOLD_FLOPS = 2 ** 20
 
@@ -12,26 +13,32 @@ class Heuristic:
     def __init__(self, *args, **kwargs):
         self.max_cpu = kwargs.get("max_cpu") or core_count()
         self.threshold_flops = kwargs.get("threshold_flops") or DEFAULT_THRESHOLD_FLOPS
+        self.commutative_threshold = kwargs.get("threshold_k") or 2
 
     def tensordot(self, a, b, axes) -> Tuple[Callable, int]:
-        flops = flops_tensordot(a.shape, b.shape, axes)
-        flops_block = flops_tensordot(a.blockshape, b.blockshape, axes)
-        nblock = result_nblock(a, b, axes)
+        nblock = prod(map(lambda i: a.grid[i], axes[0]))
+        dtype = np.result_type(a.dtype, b.dtype)
+        blockshape = result_shape(a.blockshape, b.blockshape, axes)
+        blocknbytes = prod(blockshape) * dtype.nbytes
 
-        # choose implementation by grid and flops
-        impl = None
-        if a.nblock == 1 or b.nblock == 1:
-            impl = helper.tensordot_sequential
+        # choose implementation by means of number of blocks
+        impl = helper.tensordot_sequential
+
+        if nblock == 1:
+            impl = helper.tensordot_tensordot
+
+        if nblock > self.commutative_threshold:
+            impl = helper.tensordot_commutative
+
+        # choose parallelism conservatively based on calculated memory usage
+        mem_usage = 0
+        if impl == helper.tensordot_sequential:
+            mem_usage = blocknbytes + nblock * (a.blocknbytes + b.blocknbytes)
         else:
-            if flops_block < self.threshold_flops:
-                impl = helper.tensordot_sequential
-            else:
-                impl = helper.tensordot_commutative
+            mem_usage = a.blocknbytes + b.blocknbytes + blocknbytes
 
-        # parallelize if threshold surpassed
-        par = 1
-        if flops_block > self.threshold_flops:
-            par = min(self.estimate(flops, flops_block, nblock), self.max_cpu)
+        memory = 96 * 1024 ** 3
+        par = min(memory // mem_usage, self.max_cpu)
 
         return (impl, par)
 
