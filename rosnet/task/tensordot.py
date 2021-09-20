@@ -1,7 +1,13 @@
+import os
 import numpy as np
 from pycompss.api.task import task
 from pycompss.api.constraint import constraint
 from pycompss.api.parameter import IN, COLLECTION_IN, COMMUTATIVE, Type, Depth
+
+
+def _fix_blas_threads():
+    os.environ["OPENBLAS_NUM_THREADS"] = os.environ["OMP_NUM_THREADS"]
+    os.environ["MKL_NUM_THREADS"] = os.environ["OMP_NUM_THREADS"]
 
 
 # @constraint(computing_units="$NCORES", memory_size="$MEMORY")
@@ -17,6 +23,7 @@ from pycompss.api.parameter import IN, COLLECTION_IN, COMMUTATIVE, Type, Depth
     returns=np.ndarray,
 )
 def sequential_1(a, b, axes):
+    _fix_blas_threads()
     return sum(np.tensordot(ba, bb, axes) for ba, bb in zip(a, b))
 
 
@@ -27,6 +34,7 @@ def sequential_1(a, b, axes):
     returns=np.ndarray,
 )
 def sequential_2(a, b, axes):
+    _fix_blas_threads()
     return sum(np.tensordot(ba, bb, axes) for ba, bb in zip(a, b))
 
 
@@ -37,6 +45,7 @@ def sequential_2(a, b, axes):
     returns=np.ndarray,
 )
 def sequential_4(a, b, axes):
+    _fix_blas_threads()
     return sum(np.tensordot(ba, bb, axes) for ba, bb in zip(a, b))
 
 
@@ -47,6 +56,7 @@ def sequential_4(a, b, axes):
     returns=np.ndarray,
 )
 def sequential_8(a, b, axes):
+    _fix_blas_threads()
     return sum(np.tensordot(ba, bb, axes) for ba, bb in zip(a, b))
 
 
@@ -57,6 +67,7 @@ def sequential_8(a, b, axes):
     returns=np.ndarray,
 )
 def sequential_12(a, b, axes):
+    _fix_blas_threads()
     return sum(np.tensordot(ba, bb, axes) for ba, bb in zip(a, b))
 
 
@@ -67,6 +78,7 @@ def sequential_12(a, b, axes):
     returns=np.ndarray,
 )
 def sequential_24(a, b, axes):
+    _fix_blas_threads()
     return sum(np.tensordot(ba, bb, axes) for ba, bb in zip(a, b))
 
 
@@ -82,36 +94,42 @@ sequential = sequential_1
 @constraint(computing_units="1", memory_size="2")
 @task(ba=IN, bb=IN, returns=np.ndarray)
 def tensordot_1(ba, bb, axes):
+    _fix_blas_threads()
     return np.tensordot(ba, bb, axes)
 
 
 @constraint(computing_units="2", memory_size="4")
 @task(ba=IN, bb=IN, returns=np.ndarray)
 def tensordot_2(ba, bb, axes):
+    _fix_blas_threads()
     return np.tensordot(ba, bb, axes)
 
 
 @constraint(computing_units="4", memory_size="8")
 @task(ba=IN, bb=IN, returns=np.ndarray)
 def tensordot_4(ba, bb, axes):
+    _fix_blas_threads()
     return np.tensordot(ba, bb, axes)
 
 
 @constraint(computing_units="8", memory_size="16")
 @task(ba=IN, bb=IN, returns=np.ndarray)
 def tensordot_8(ba, bb, axes):
+    _fix_blas_threads()
     return np.tensordot(ba, bb, axes)
 
 
 @constraint(computing_units="12", memory_size="24")
 @task(ba=IN, bb=IN, returns=np.ndarray)
 def tensordot_12(ba, bb, axes):
+    _fix_blas_threads()
     return np.tensordot(ba, bb, axes)
 
 
 @constraint(computing_units="24", memory_size="45")
 @task(ba=IN, bb=IN, returns=np.ndarray)
 def tensordot_24(ba, bb, axes):
+    _fix_blas_threads()
     return np.tensordot(ba, bb, axes)
 
 
@@ -127,36 +145,42 @@ tensordot = tensordot_1
 @constraint(computing_units="1", memory_size="2")
 @task(res=COMMUTATIVE)
 def commutative_1(res, a, b, axes):
+    _fix_blas_threads()
     res += np.tensordot(a, b, axes)
 
 
 @constraint(computing_units="2", memory_size="4")
 @task(res=COMMUTATIVE)
 def commutative_2(res, a, b, axes):
+    _fix_blas_threads()
     res += np.tensordot(a, b, axes)
 
 
 @constraint(computing_units="4", memory_size="8")
 @task(res=COMMUTATIVE)
 def commutative_4(res, a, b, axes):
+    _fix_blas_threads()
     res += np.tensordot(a, b, axes)
 
 
 @constraint(computing_units="8", memory_size="16")
 @task(res=COMMUTATIVE)
 def commutative_8(res, a, b, axes):
+    _fix_blas_threads()
     res += np.tensordot(a, b, axes)
 
 
 @constraint(computing_units="12", memory_size="24")
 @task(res=COMMUTATIVE)
 def commutative_12(res, a, b, axes):
+    _fix_blas_threads()
     res += np.tensordot(a, b, axes)
 
 
 @constraint(computing_units="24", memory_size="45")
 @task(res=COMMUTATIVE)
 def commutative_24(res, a, b, axes):
+    _fix_blas_threads()
     res += np.tensordot(a, b, axes)
 
 
