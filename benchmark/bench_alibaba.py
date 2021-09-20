@@ -63,7 +63,7 @@ def main():
     # NOTE Use 'greedy' optimizer for reproducible results
     opt = ctg.ReusableHyperOptimizer(
         methods=["kahypar", "greedy"],
-        max_repeats=128,
+        max_repeats=512,
         minimize=args.minimize,
         score_compression=0.5,  # deliberately make the optimizer try many methods
         progbar=True,
