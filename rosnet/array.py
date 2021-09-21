@@ -435,7 +435,7 @@ def __block_tensordot(a: BlockArray, b: BlockArray, axes):
     blockshape = result_shape(a.blockshape, b.blockshape, axes)
 
     # estimate number of cores per task for dynamic parallelism
-    impl, ncores = tuning.heuristic.algorithm.tensordot(a, b, axes)
+    impl, ncores = tuning.tuner.tensordot(a, b, axes)
 
     # required memory per task
     # pylint: disable=no-member

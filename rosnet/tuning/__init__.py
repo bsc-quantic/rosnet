@@ -1,2 +1,2 @@
 from .constraint import resources
-from . import heuristic
+from .tuner import configure, tuner

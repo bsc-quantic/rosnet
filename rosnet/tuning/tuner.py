@@ -1,19 +1,16 @@
-from abc import abstractmethod
 from contextlib import contextmanager
 from typing import Tuple, Callable
 from math import ceil
 import numpy as np
-from .util import core_count, node_count, flops_tensordot
+from .util import core_count
 from rosnet import helper
-from rosnet.utils import result_nblock, result_shape, prod
-
-DEFAULT_THRESHOLD_FLOPS = 2 ** 20
+from rosnet.utils import result_shape, prod
 
 
-class Heuristic:
+class Tuner:
     def __init__(self, *args, **kwargs):
         self.max_cpu = kwargs.get("max_cpu") or core_count()
-        self.threshold_flops = kwargs.get("threshold_flops") or DEFAULT_THRESHOLD_FLOPS
+        self.threshold_flops = kwargs.get("threshold_flops") or 0
         self.commutative_threshold = kwargs.get("threshold_k") or 2
 
     def tensordot(self, a, b, axes) -> Tuple[Callable, int]:
@@ -43,51 +40,17 @@ class Heuristic:
 
         return (impl, par)
 
-    @abstractmethod
-    def estimate(self, flops, flops_block, nblock) -> int:
-        pass
 
-
-class Default(Heuristic):
-    def estimate(self, *args) -> int:
-        return 1
-
-
-class Eager(Heuristic):
-    def estimate(self, flops, flops_block, nblock) -> int:
-        "Returns the number of cores to be used by the task."
-
-        available_parallelism = node_count() * core_count()
-
-        if nblock > available_parallelism:
-            return 1
-
-        ncores = min(available_parallelism // nblock, self.max_cpu)
-        return ncores
-
-
-class Fixed(Heuristic):
-    def __init__(self, ncores, **kwargs):
-        kwargs["max_cpu"] = ncores
-        super().__init__(**kwargs)
-        self.ncores = ncores
-
-    def estimate(self, *args) -> int:
-        return self.ncores
-
-
-algorithm = Default()
+tuner = Tuner()
 
 
 @contextmanager
-def heuristic(cls, *args, **kwargs):
-    if not issubclass(cls, Heuristic):
-        raise TypeError("'cls' must implement Heuristic")
+def configure(*args, **kwargs):
+    global tuner
+    tmp = tuner
 
-    global algorithm
-    tmp = algorithm
-    algorithm = cls(*args, **kwargs)
+    tuner = Tuner(*args, **kwargs)
 
     yield
 
-    algorithm = tmp
+    tuner = tmp
