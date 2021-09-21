@@ -1,6 +1,7 @@
 from abc import abstractmethod
 from contextlib import contextmanager
 from typing import Tuple, Callable
+from math import ceil
 import numpy as np
 from .util import core_count, node_count, flops_tensordot
 from rosnet import helper
@@ -38,7 +39,7 @@ class Heuristic:
             mem_usage = a.blocknbytes + b.blocknbytes + blocknbytes
 
         memory = 96 * 1024 ** 3
-        par = min(int(core_count() * mem_usage / memory), self.max_cpu)
+        par = min(int(ceil(core_count() * mem_usage / memory)), self.max_cpu)
 
         return (impl, par)
 
