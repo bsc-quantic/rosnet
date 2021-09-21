@@ -38,7 +38,7 @@ class Heuristic:
             mem_usage = a.blocknbytes + b.blocknbytes + blocknbytes
 
         memory = 96 * 1024 ** 3
-        par = min(memory // mem_usage, self.max_cpu)
+        par = min(int(core_count() * mem_usage / memory), self.max_cpu)
 
         return (impl, par)
 
