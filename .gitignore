@@ -246,3 +246,4 @@ log
 archive/
 assets/
 !assets/diagrams/
+*.dot
