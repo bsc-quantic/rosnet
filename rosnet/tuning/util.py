@@ -11,11 +11,7 @@ node_count = compss_get_number_of_resources
 def core_count():
     "Return the number of compute units."
     if in_master():
-        try:
-            return os.environ["DEFAULT_CPUS_PER_NODE"]
-        except KeyError:
-            print("'DEFAULT_CPUS_PER_NODE' not found. Setting to 1...")
-            return 1
+        return os.cpu_count()
     else:
         return multiprocessing.cpu_count()
 
