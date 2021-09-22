@@ -247,3 +247,5 @@ archive/
 assets/
 !assets/diagrams/
 *.dot
+cfg
+trace
