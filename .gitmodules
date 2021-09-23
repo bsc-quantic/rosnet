@@ -1,0 +1,3 @@
+[submodule "external/acqdp"]
+	path = external/acqdp
+	url = https://github.com/alibaba/acqdp
