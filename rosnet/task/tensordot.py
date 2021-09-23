@@ -163,42 +163,42 @@ tensordot = tensordot_1
 
 @constraint(computing_units="1", memory_size="2")
 @task(res=COMMUTATIVE)
-def commutative_1(res, a, b, axes):
+def commutative_1(res: ArrayWrapper, a, b, axes):
     _fix_blas_threads()
     res += np.tensordot(a, b, axes)
 
 
 @constraint(computing_units="2", memory_size="4")
 @task(res=COMMUTATIVE)
-def commutative_2(res, a, b, axes):
+def commutative_2(res: ArrayWrapper, a, b, axes):
     _fix_blas_threads()
     res += np.tensordot(a, b, axes)
 
 
 @constraint(computing_units="4", memory_size="8")
 @task(res=COMMUTATIVE)
-def commutative_4(res, a, b, axes):
+def commutative_4(res: ArrayWrapper, a, b, axes):
     _fix_blas_threads()
     res += np.tensordot(a, b, axes)
 
 
 @constraint(computing_units="8", memory_size="16")
 @task(res=COMMUTATIVE)
-def commutative_8(res, a, b, axes):
+def commutative_8(res: ArrayWrapper, a, b, axes):
     _fix_blas_threads()
     res += np.tensordot(a, b, axes)
 
 
 @constraint(computing_units="12", memory_size="24")
 @task(res=COMMUTATIVE)
-def commutative_12(res, a, b, axes):
+def commutative_12(res: ArrayWrapper, a, b, axes):
     _fix_blas_threads()
     res += np.tensordot(a, b, axes)
 
 
 @constraint(computing_units="24", memory_size="45")
 @task(res=COMMUTATIVE)
-def commutative_24(res, a, b, axes):
+def commutative_24(res: ArrayWrapper, a, b, axes):
     _fix_blas_threads()
     res += np.tensordot(a, b, axes)
 
