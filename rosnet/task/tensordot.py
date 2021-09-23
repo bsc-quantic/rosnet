@@ -5,7 +5,7 @@ from pycompss.api.constraint import constraint
 from pycompss.api.parameter import IN, COLLECTION_IN, COMMUTATIVE, Type, Depth
 
 
-def ArrayWrapper(object):
+class ArrayWrapper(object):
     def __init__(self):
         self.__init = False
         self.__array = None
