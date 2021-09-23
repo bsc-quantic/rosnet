@@ -5,6 +5,25 @@ from pycompss.api.constraint import constraint
 from pycompss.api.parameter import IN, COLLECTION_IN, COMMUTATIVE, Type, Depth
 
 
+def ArrayWrapper(object):
+    def __init__(self):
+        self.__init = False
+        self.__array = None
+
+    @property
+    def initialized(self):
+        return self.__init
+
+    def __array__(self):
+        return self.__array
+
+    def __iadd__(self, rhs):
+        if self.initialized:
+            self.__array += rhs
+        else:
+            self.__array = rhs
+
+
 def _fix_blas_threads():
     os.environ["OPENBLAS_NUM_THREADS"] = os.environ["OMP_NUM_THREADS"]
     os.environ["MKL_NUM_THREADS"] = os.environ["OMP_NUM_THREADS"]
