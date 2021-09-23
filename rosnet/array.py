@@ -49,6 +49,13 @@ class COMPSsArray(np.lib.mixins.NDArrayOperatorsMixin):
         elif isinstance(args[0], np.generic):
             self.__shape = ()
             self.__dtype = args[0].dtype
+        elif hasattr(args[0], "__array__"):
+            self.__shape = (
+                args[0].shape if hasattr(args[0], "shape") else kwargs["shape"]
+            )
+            self.__dtype = (
+                args[0].dtype if hasattr(args[0], "dtype") else kwargs["dtype"]
+            )
         else:
             raise TypeError(
                 "You must provide a np.ndarray or a COMPSs Future to a np.ndarray, but a %r was provided"
