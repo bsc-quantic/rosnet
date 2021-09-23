@@ -47,36 +47,16 @@ def tensordot_commutative(a: List, b: List, axes):
         *(i.dtype if hasattr(i, "dtype") else i for i in chain(a, b))
     )
 
-    blocknbytes = dtype.itemsize * prod(blockshape) / 1024 ** 3
-    impl = None
-
-    if blocknbytes <= 1:
-        impl = rosnet.task.init.full_1
-    elif 1 < blocknbytes <= 2:
-        impl = rosnet.task.init.full_2
-    elif 2 < blocknbytes <= 4:
-        impl = rosnet.task.init.full_4
-    elif 4 < blocknbytes <= 8:
-        impl = rosnet.task.init.full_8
-    elif 8 < blocknbytes <= 16:
-        impl = rosnet.task.init.full_16
-    elif 16 < blocknbytes <= 32:
-        impl = rosnet.task.init.full_32
-    else:
-        raise NotImplementedError("rosnet not prepared for blocks of size > 32GB")
-
-    res = rosnet.COMPSsArray(
-        impl(blockshape, 0, dtype), shape=blockshape, dtype=dtype
-    )
+    buffer = rosnet.task.tensordot.ArrayWrapper()
 
     for ia, ib in zip(a, b):
         # get ref if a,b are COMPSsArrays
         ia = ia._ref if hasattr(ia, "_ref") else ia
         ib = ib._ref if hasattr(ib, "_ref") else ib
 
-        rosnet.task.tensordot.commutative(res._ref, ia, ib, axes)
+        rosnet.task.tensordot.commutative(buffer, ia, ib, axes)
 
-    return res
+    return rosnet.COMPSsArray(buffer, shape=blockshape, dtype=dtype)
 
 
 def tensordot_tensordot(a: List, b: List, axes):
