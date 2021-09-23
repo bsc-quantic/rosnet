@@ -114,3 +114,23 @@ def join_idx(outer, inner, axes):
         res[axe] = v
 
     return tuple(res)
+
+
+def slice_blocks(eq, arrays, sliced_inds):
+    import rosnet
+
+    tmp_arrays = list(arrays)
+    signatures = eq.split("->")[0].split(",")
+
+    for i, signature in enumerate(signatures):
+        if any(label in sliced_inds for label in signature):
+            shape = tmp_arrays[i].shape
+            blockshape = tuple(
+                map(
+                    lambda x: 1 if x[1] else shape[x[0]],
+                    enumerate(label in sliced_inds for label in signature),
+                )
+            )
+            tmp_arrays[i] = rosnet.array(tmp_arrays, blockshape=blockshape)
+
+    return tmp_arrays
