@@ -14,10 +14,10 @@ def resources(**kwargs):
     tmp_ncores = NCORES
     tmp_memory = MEMORY
 
-    __fix_dyn_par_tensordot()
-
     NCORES = kwargs.get("ncores") or tmp_ncores
     MEMORY = kwargs.get("memory") or tmp_memory
+
+    __fix_dyn_par_tensordot()
 
     yield
 
