@@ -41,16 +41,21 @@ class Tuner:
         return (impl, par)
 
 
-tuner = Tuner()
+__tuner = Tuner()
 
 
 @contextmanager
 def configure(*args, **kwargs):
-    global tuner
-    tmp = tuner
+    global __tuner
+    tmp = __tuner
 
-    tuner = Tuner(*args, **kwargs)
+    __tuner = Tuner(*args, **kwargs)
 
     yield
 
-    tuner = tmp
+    __tuner = tmp
+
+
+def tensordot(a, b, axes):
+    global __tuner
+    return __tuner.tensordot(a, b, axes)
