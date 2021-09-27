@@ -24,6 +24,13 @@ class ArrayWrapper(object):
             self.__array = rhs
             self.__init = True
 
+    def __getstate__(self):
+        return {"init": self.__init, "array": self.__array}
+
+    def __setstate__(self, d):
+        self.__init = d["init"]
+        self.__array = d["array"]
+
 
 def _fix_blas_threads():
     os.environ["OPENBLAS_NUM_THREADS"] = os.environ["OMP_NUM_THREADS"]
