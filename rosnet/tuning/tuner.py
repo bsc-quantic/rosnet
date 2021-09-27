@@ -32,6 +32,10 @@ class Tuner:
         mem_usage = 0
         if impl == helper.tensordot_sequential:
             mem_usage = blocknbytes + nblock * (a.blocknbytes + b.blocknbytes)
+        elif impl == helper.tensordot_commutative:
+            # NOTE without the x2 factor, it goes Out-Of-Memory
+            # don't know why this happens
+            mem_usage = 2 * (a.blocknbytes + b.blocknbytes + blocknbytes)
         else:
             mem_usage = a.blocknbytes + b.blocknbytes + blocknbytes
 
