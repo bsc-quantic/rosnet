@@ -22,6 +22,7 @@ class ArrayWrapper(object):
             self.__array += rhs
         else:
             self.__array = rhs
+            self.__init = True
 
 
 def _fix_blas_threads():
