@@ -13,7 +13,6 @@ def main():
     parser.add_argument("mb", type=int)
     parser.add_argument("nb", type=int)
     parser.add_argument("kb", type=int)
-    parser.add_argument("threshold", type=int, default=1000)
 
     args = parser.parse_args()
 
@@ -35,16 +34,23 @@ def main():
     mark_init_B = timer()
 
     axes = ([i + len(m) for i in range(len(k))], [i + len(n) for i in range(len(k))])
-    with rn.tuning.configure(threshold_k=args.threshold):
+    with rn.tuning.configure(threshold_k=2 ** 30):
         C = rn.tensordot(A, B, axes)
     compss_barrier()
-    mark_contract = timer()
+    mark_contract_seq = timer()
+
+    with rn.tuning.configure(threshold_k=1):
+        C = rn.tensordot(A, B, axes)
+    compss_barrier()
+    mark_contract_comm = timer()
 
     time_init_A = mark_init_A - mark_start
     time_init_B = mark_init_B - mark_init_A
-    time_contract = mark_contract - mark_init_B
+    time_contract_seq = mark_contract_seq - mark_init_B
+    time_contract_comm = mark_contract_comm - mark_contract_seq
 
-    print("time=" + str(time_contract))
+    print("time(seq)=" + str(time_contract_seq))
+    print("time(comm)=" + str(time_contract_comm))
 
 
 if __name__ == "__main__":
