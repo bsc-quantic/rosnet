@@ -28,10 +28,12 @@ def main():
 
     A = rn.ones((*m, *k), blockshape=(*mb, *kb), dtype=np.complex64)
     compss_barrier()
+    print("A generated")
     mark_init_A = timer()
 
     B = rn.ones((*n, *k), blockshape=(*nb, *kb), dtype=np.complex64)
     compss_barrier()
+    print("B generated")
     mark_init_B = timer()
 
     axes = ([i + len(m) for i in range(len(k))], [i + len(n) for i in range(len(k))])
