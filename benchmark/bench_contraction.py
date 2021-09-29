@@ -7,36 +7,40 @@ import rosnet as rn
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("m", type=int)
-    parser.add_argument("n", type=int)
-    parser.add_argument("k", type=int)
-    parser.add_argument("mb", type=int)
-    parser.add_argument("nb", type=int)
-    parser.add_argument("kb", type=int)
+    parser.add_argument("Bm", help="#blocks in the m index", type=int)
+    parser.add_argument("Bn", help="#blocks in the n index", type=int)
+    parser.add_argument("Bk", help="#blocks in the k index", type=int)
+    parser.add_argument("mb", help="block size in the m index", type=int)
+    parser.add_argument("nb", help="block size in the n index", type=int)
+    parser.add_argument("kb", help="block size in the k index", type=int)
     parser.add_argument("threshold", type=int, default=1000)
 
     args = parser.parse_args()
 
-    m = [2] * int(args.m)
-    n = [2] * int(args.n)
-    k = [2] * int(args.k)
-    mb = [1] * int(args.mb) + [2] * (int(args.m) - int(args.mb))
-    nb = [1] * int(args.nb) + [2] * (int(args.n) - int(args.nb))
-    kb = [1] * int(args.kb) + [2] * (int(args.k) - int(args.kb))
+    Bm = int(args.Bm)
+    Bn = int(args.Bn)
+    Bk = int(args.Bk)
+    mb = int(args.mb)
+    nb = int(args.nb)
+    kb = int(args.kb)
+
+    m = Bm * mb
+    n = Bn * nb
+    k = Bk * kb
 
     mark_start = timer()
 
-    A = rn.ones((*m, *k), blockshape=(*mb, *kb), dtype=np.complex64)
+    A = rn.ones((m, k), blockshape=(mb, kb), dtype=np.complex64)
     compss_barrier()
     print("A generated")
     mark_init_A = timer()
 
-    B = rn.ones((*n, *k), blockshape=(*nb, *kb), dtype=np.complex64)
+    B = rn.ones((n, k), blockshape=(nb, kb), dtype=np.complex64)
     compss_barrier()
     print("B generated")
     mark_init_B = timer()
 
-    axes = ([i + len(m) for i in range(len(k))], [i + len(n) for i in range(len(k))])
+    axes = [(1,), (1,)]
     with rn.tuning.configure(threshold_k=args.threshold):
         C = rn.tensordot(A, B, axes)
     compss_barrier()
