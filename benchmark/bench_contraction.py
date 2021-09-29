@@ -13,7 +13,7 @@ def main():
     parser.add_argument("mb", help="block size in the m index", type=int)
     parser.add_argument("nb", help="block size in the n index", type=int)
     parser.add_argument("kb", help="block size in the k index", type=int)
-    parser.add_argument("threshold", type=int, default=1000)
+    parser.add_argument("--threshold", type=int, default=1000)
 
     args = parser.parse_args()
 
