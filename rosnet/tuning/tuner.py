@@ -9,9 +9,9 @@ from rosnet.utils import result_shape, prod
 
 class Tuner:
     def __init__(self, *args, **kwargs):
-        self.max_cpu = kwargs.get("max_cpu") or core_count()
-        self.threshold_flops = kwargs.get("threshold_flops") or 0
-        self.commutative_threshold = kwargs.get("threshold_k") or 2
+        self.max_cpu = kwargs.get("max_cpu", core_count())
+        self.threshold_flops = kwargs.get("threshold_flops", 0)
+        self.commutative_threshold = kwargs.get("threshold_k", 2)
 
     def tensordot(self, a, b, axes) -> Tuple[Callable, int]:
         nblock = prod(map(lambda i: a.grid[i], axes[0]))

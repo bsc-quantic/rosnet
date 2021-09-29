@@ -43,6 +43,7 @@ def main():
     )
     parser.add_argument("--cut-temperature", type=float, default=0.01)
     parser.add_argument("--directory", type=None, default=None)
+    parser.add_argument("--comm-threshold", type=int, default=1)
 
     args = parser.parse_args()
     fn = args.filename
@@ -105,7 +106,8 @@ def main():
         tensor.modify(data=rn.array(np.asarray(tensor.data), blockshape=bs))
 
     start = time.time()
-    res = tn.contract(all, optimize=opt, backend="rosnet")
+    with rn.tuning.configure(threshold_k=int(args.comm_threshold)):
+        res = tn.contract(all, optimize=opt, backend="rosnet")
     submit = time.time()
     print(f"Submit Time={submit-start}", flush=True)
     c = np.asarray(res)
