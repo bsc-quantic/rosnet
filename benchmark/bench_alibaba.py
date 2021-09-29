@@ -42,6 +42,7 @@ def main():
         default="flops",
     )
     parser.add_argument("--cut-temperature", type=float, default=0.01)
+    parser.add_argument("--directory", type=None, default=None)
 
     args = parser.parse_args()
     fn = args.filename
@@ -68,6 +69,7 @@ def main():
         score_compression=0.5,  # deliberately make the optimizer try many methods
         progbar=True,
         parallel=True,
+        directory=args.directory,
     )
 
     info = tn.contract(all, optimize=opt, get="path-info")
