@@ -4,6 +4,7 @@
 NUM_NODES=1
 USER=$(id -u -n)
 GROUP=$(id -g -n)
+BASE_LOG_DIR=/gpfs/scratch/$GROUP/$USER
 WORKER_WD=/gpfs/scratch/$GROUP/$USER
 MASTER_WD=/gpfs/scratch/$GROUP/$USER
 QOS=debug
@@ -30,6 +31,10 @@ while (( "$#" )); do
 			FLAGS+=(--tracing=$2)
 			shift 2
 			;;
+                --base_log_dir)
+                        BASE_LOG_DIR=$2
+                        shift 2
+                        ;;
 		--worker_working_dir)
 			WORKER_WD=$2
 			shift 2
@@ -78,4 +83,4 @@ if [[ "${PARAMS[0]}" != /* ]]; then
 	PARAMS[0]=$PWD/${PARAMS[0]}
 fi
 
-enqueue_compss --num_nodes=$NUM_NODES --qos=$QOS --worker_working_dir=$WORKER_WD --master_working_dir=$MASTER_WD --pythonpath=$PWD --summary ${FLAGS[*]} ${PARAMS[*]}
+enqueue_compss --num_nodes=$NUM_NODES --qos=$QOS --base_log_dir=$BASE_LOG_DIR --worker_working_dir=$WORKER_WD --master_working_dir=$MASTER_WD --pythonpath=$PWD --summary ${FLAGS[*]} ${PARAMS[*]}
