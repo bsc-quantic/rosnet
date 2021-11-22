@@ -39,7 +39,7 @@ class Tuner:
         else:
             mem_usage = a.blocknbytes + b.blocknbytes + blocknbytes
 
-        memory = 96 * 1024 ** 3
+        memory = 92 * 1024 ** 3
         par = min(int(ceil(core_count() * mem_usage / memory)), self.max_cpu)
 
         return (impl, par)
