@@ -67,6 +67,10 @@ while (( "$#" )); do
 			FLAGS+=(--graph)
 			shift 1
 			;;
+		--pyenv)
+			FLAGS+=(--python_interpreter=$(pyenv which python))
+			shift 1
+			;;
 		-*=*|--*=*)
 			echo "Error: Unsupported '=' syntax"
 			exit 1
