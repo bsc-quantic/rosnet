@@ -31,10 +31,10 @@ while (( "$#" )); do
 			FLAGS+=(--tracing=$2)
 			shift 2
 			;;
-                --base_log_dir)
-                        BASE_LOG_DIR=$2
-                        shift 2
-                        ;;
+		--base_log_dir)
+				BASE_LOG_DIR=$2
+				shift 2
+				;;
 		--worker_working_dir)
 			WORKER_WD=$2
 			shift 2
