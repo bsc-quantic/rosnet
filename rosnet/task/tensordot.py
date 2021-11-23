@@ -270,9 +270,3 @@ def commutative_24(res: ArrayWrapper, a, b, axes):
 
 
 commutative = commutative_1
-
-# TODO use tensordot(a, b, axes=0)
-@constraint(computing_units="$NCORES", memory_size="$MEMORY")
-@task(returns=np.ndarray)
-def kron(a: np.ndarray, b: np.ndarray):
-    return np.kron(a, b)
