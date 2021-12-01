@@ -28,9 +28,18 @@ def implements(np_function, cls):
     return registrar
 
 
-def isarray(o: object):
-    return (
-        isinstance(o, np.ndarray)
-        or issubclass(o, np.ndarray)
-        or hasattr(o, "__array__")
-    )
+def todo(func):
+    @functools.wraps(func)
+    def todo_msg(*args, **kwargs):
+        raise NotImplementedError(f"{func.__name__} is not implemented yet")
+
+    return todo_msg
+
+
+@todo
+def generic_task(func):
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        return task(func, None, **kwargs)(*args)
+
+    return wrapper(func)
