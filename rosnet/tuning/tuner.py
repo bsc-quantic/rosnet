@@ -2,14 +2,36 @@ from contextlib import contextmanager
 from typing import Tuple, Callable
 from math import ceil
 import numpy as np
-from .util import core_count
+from pycompss.api.api import compss_get_number_of_resources
+from pycompss.util.context import in_master, in_worker
 from rosnet import helper
 from rosnet.utils import result_shape, prod
 
 
+node_count = compss_get_number_of_resources
+
+
+def _core_count():
+    "Return the number of compute units."
+    if in_master():
+        import os
+
+        return os.cpu_count()
+    else:
+        import multiprocessing
+
+        return multiprocessing.cpu_count()
+
+
+def _flops_tensordot(a, b, axes):
+    outer_blockshape = list(result_shape(a, b, axes))
+    inner_blockshape = [a[i] for i in axes[0]]
+    return prod(outer_blockshape + inner_blockshape)
+
+
 class Tuner:
     def __init__(self, *args, **kwargs):
-        self.max_cpu = kwargs.get("max_cpu", core_count())
+        self.max_cpu = kwargs.get("max_cpu", _core_count())
         self.threshold_flops = kwargs.get("threshold_flops", 0)
         self.commutative_threshold = kwargs.get("threshold_k", 2)
 
