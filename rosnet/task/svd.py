@@ -19,9 +19,9 @@ def svdmatrix_async(U, Vh):
     m, n = Ut.shape
     mb, nb = U[0][0].shape
     for i, j in itertools.product(range(m // mb), range(n // nb)):
-        np.copyto(U[i][j], Ut[i*mb:(i+1)*mb, j*nb:(j+1)*nb], casting='no')
+        np.copyto(U[i][j], Ut[i * mb : (i + 1) * mb, j * nb : (j + 1) * nb], casting="no")
     for i, j in itertools.product(range(n // nb), range(n // nb)):
-        np.copyto(Vh[i][j], Vth[i*nb:(i+1)*nb, j*nb:(j+1)*nb], casting='no')
+        np.copyto(Vh[i][j], Vth[i * nb : (i + 1) * nb, j * nb : (j + 1) * nb], casting="no")
 
 
 @task(U={Type: COLLECTION_INOUT, Depth: 2}, V={Type: COLLECTION_INOUT, Depth: 2})
@@ -77,5 +77,5 @@ def _svd_rotate(coli_blocks, colj_blocks, J):
 
     block_size = coli_blocks[0].shape[0]
     for i, _ in enumerate(coli_blocks):
-        np.copyto(coli_blocks[i], coli_k[i * block_size:(i + 1) * block_size])
-        np.copyto(colj_blocks[i], colj_k[i * block_size:(i + 1) * block_size])
+        np.copyto(coli_blocks[i], coli_k[i * block_size : (i + 1) * block_size])
+        np.copyto(colj_blocks[i], colj_k[i * block_size : (i + 1) * block_size])

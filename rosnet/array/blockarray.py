@@ -38,9 +38,7 @@ class BlockArray(np.lib.mixins.NDArrayOperatorsMixin):
             self.__blockshape = kwargs["blockshape"]
             self.__dtype = kwargs.get("dtype")
         else:
-            raise TypeError(
-                "expected COMPSsArray or numpy.ndarray, got " % type(args[0])
-            )
+            raise TypeError("expected COMPSsArray or numpy.ndarray, got " % type(args[0]))
 
         if isinstance(self.dtype, type):
             self.__dtype = np.dtype(self.__dtype)
@@ -305,10 +303,7 @@ def full(shape, value, dtype=None, order="C", blockshape=None):
     grid = tuple(s // bs for s, bs in zip(shape, blockshape))
     dtype = dtype or np.dtype(type(value))
 
-    blocks = [
-        COMPSsArray(task.full(blockshape, value, dtype), shape=blockshape, dtype=dtype)
-        for _ in range(prod(grid))
-    ]
+    blocks = [COMPSsArray(task.full(blockshape, value, dtype), shape=blockshape, dtype=dtype) for _ in range(prod(grid))]
 
     blocks = ndarray_from_list(blocks, grid)
     return BlockArray(blocks, blockshape=blockshape, dtype=dtype)
@@ -319,10 +314,7 @@ def rand(shape, blockshape=None):
     grid = tuple(s // bs for s, bs in zip(shape, blockshape))
     dtype = np.dtype(np.float64)
 
-    blocks = [
-        COMPSsArray(task.init.rand(blockshape), shape=blockshape, dtype=dtype)
-        for _ in range(prod(grid))
-    ]
+    blocks = [COMPSsArray(task.init.rand(blockshape), shape=blockshape, dtype=dtype) for _ in range(prod(grid))]
 
     blocks = ndarray_from_list(blocks, grid)
     return BlockArray(blocks, blockshape=blockshape, dtype=dtype)

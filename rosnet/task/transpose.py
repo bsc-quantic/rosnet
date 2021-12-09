@@ -14,8 +14,8 @@ def transpose(block: np.ndarray, axes):
     block.data = tmp.data
 
 
-@implement(source_class='rosnet.task', method='transpose')
-@constraint(app_software='hptt')
+@implement(source_class="rosnet.task", method="transpose")
+@constraint(app_software="hptt")
 @task(block=IN, returns=np.ndarray)
 def __transpose_hptt(block: np.ndarray, axes):
     hptt.tensorTransposeAndUpdate(block, axes)

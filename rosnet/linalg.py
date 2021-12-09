@@ -19,20 +19,19 @@ def gemm(a: Tensor, b: Tensor, transpose_a: bool, transpose_b: bool) -> Tensor:
     blocks = np.empty(grid, dtype=object)
 
     tensorid = str(next(Tensor._newid))
-    with TaskGroup(tensorid, False), np.nditer(blocks, flags=['multi_index'], op_flags=['writeonly']) as it:
+    with TaskGroup(tensorid, False), np.nditer(blocks, flags=["multi_index"], op_flags=["writeonly"]) as it:
         for block in it:
             row, col = tuple(it)
             blocks_a = a._blocks[:, row] if transpose_a else a._blocks[row, :]
             blocks_b = b._blocks[col, :] if transpose_b else b._blocks[:, col]
-            block[...] = kernel.block_gemm(
-                blocks_a, blocks_b, transpose_a, transpose_b)
+            block[...] = kernel.block_gemm(blocks_a, blocks_b, transpose_a, transpose_b)
 
     return Tensor(blocks, shape, block_shape, True, tensorid)
 
 
 # TODO implement reduced SVD variants
 def svd(A: Tensor, eps=1e-9, copy=True, parallel=False) -> (Tensor, Tensor):
-    """ Computes the Singular Value Decomposition of `A`.
+    """Computes the Singular Value Decomposition of `A`.
 
     `A`: rank-2 `Tensor`.
 
@@ -52,8 +51,7 @@ def svd(A: Tensor, eps=1e-9, copy=True, parallel=False) -> (Tensor, Tensor):
 
     # call SVD asynchronously
     if parallel:
-        kernel.svdmatrix_async_nested(
-            U._blocks.tolist(), V._blocks.tolist(), eps)
+        kernel.svdmatrix_async_nested(U._blocks.tolist(), V._blocks.tolist(), eps)
     else:
         kernel.svdmatrix_async(U._blocks.tolist(), V._blocks.tolist())
 
@@ -69,8 +67,7 @@ def identity(n, block_shape, dtype=None) -> Tensor:
     grid = tuple(n // bs for bs in block_shape)
     tensorid = str(next(Tensor._newid))
     with TaskGroup(tensorid, False):
-        blocks = [kernel.block_identity(block_shape, n, i, j, dtype)
-                  for i, j in product(range(grid[0]), range(grid[1]))]
+        blocks = [kernel.block_identity(block_shape, n, i, j, dtype) for i, j in product(range(grid[0]), range(grid[1]))]
 
     blocks = ndarray_from_list(blocks, grid)
     return Tensor(blocks, (n, n), block_shape, True, tensorid)

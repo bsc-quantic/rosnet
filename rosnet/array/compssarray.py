@@ -32,17 +32,10 @@ class COMPSsArray(np.lib.mixins.NDArrayOperatorsMixin):
             self.__shape = ()
             self.__dtype = args[0].dtype
         elif hasattr(args[0], "__array__"):
-            self.__shape = (
-                args[0].shape if hasattr(args[0], "shape") else kwargs["shape"]
-            )
-            self.__dtype = (
-                args[0].dtype if hasattr(args[0], "dtype") else kwargs["dtype"]
-            )
+            self.__shape = args[0].shape if hasattr(args[0], "shape") else kwargs["shape"]
+            self.__dtype = args[0].dtype if hasattr(args[0], "dtype") else kwargs["dtype"]
         else:
-            raise TypeError(
-                "You must provide a np.ndarray or a COMPSs Future to a np.ndarray, but a %r was provided"
-                % type(args[0])
-            )
+            raise TypeError("You must provide a np.ndarray or a COMPSs Future to a np.ndarray, but a %r was provided" % type(args[0]))
 
         if isinstance(self.dtype, type):
             self.__dtype = np.dtype(self.__dtype)
@@ -103,9 +96,7 @@ class COMPSsArray(np.lib.mixins.NDArrayOperatorsMixin):
             return NotImplemented
 
         # get COMPSs reference if COMPSsArray
-        inputs = [
-            arg._ref if isinstance(arg, self.__class__) else arg for arg in inputs
-        ]
+        inputs = [arg._ref if isinstance(arg, self.__class__) else arg for arg in inputs]
 
         inplace = False
         if "out" in kwargs and kwargs["out"] == (self,):
@@ -128,9 +119,7 @@ class COMPSsArray(np.lib.mixins.NDArrayOperatorsMixin):
                 return self
             else:
                 ref = task.operate(ufunc, *inputs, **kwargs)
-                dtype = np.result_type(
-                    *(i.dtype if hasattr(i, "dtype") else i for i in inputs)
-                )
+                dtype = np.result_type(*(i.dtype if hasattr(i, "dtype") else i for i in inputs))
                 return COMPSsArray(ref, shape=self.shape, dtype=dtype)
 
         elif method == "outer":

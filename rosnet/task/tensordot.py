@@ -48,9 +48,7 @@ def dispatch_sequential(a: List, b: List, axes):
     import rosnet
 
     blockshape = result_shape(a[0].shape, b[0].shape, axes)
-    dtype = np.result_type(
-        *(i.dtype if hasattr(i, "dtype") else i for i in chain(a, b))
-    )
+    dtype = np.result_type(*(i.dtype if hasattr(i, "dtype") else i for i in chain(a, b)))
 
     # get ref if a,b are COMPSsArrays
     aref = [i._ref if hasattr(i, "_ref") else i for i in a]
@@ -143,9 +141,7 @@ def dispatch_tensordot(a: List, b: List, axes):
         raise ValueError()
 
     blockshape = result_shape(a[0].shape, b[0].shape, axes)
-    dtype = np.result_type(
-        *(i.dtype if hasattr(i, "dtype") else i for i in chain(a, b))
-    )
+    dtype = np.result_type(*(i.dtype if hasattr(i, "dtype") else i for i in chain(a, b)))
 
     # get ref if a,b are COMPSsArrays
     aref = [i._ref if hasattr(i, "_ref") else i for i in a][0]
@@ -211,9 +207,7 @@ def dispatch_commutative(a: List, b: List, axes):
     import rosnet
 
     blockshape = result_shape(a[0].shape, b[0].shape, axes)
-    dtype = np.result_type(
-        *(i.dtype if hasattr(i, "dtype") else i for i in chain(a, b))
-    )
+    dtype = np.result_type(*(i.dtype if hasattr(i, "dtype") else i for i in chain(a, b)))
 
     buffer = rosnet.task.tensordot.ArrayWrapper()
 

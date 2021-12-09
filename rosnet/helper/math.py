@@ -23,28 +23,18 @@ def ispower2(n: int):
 
 
 def isarray(o: object):
-    return (
-        isinstance(o, np.ndarray)
-        or issubclass(o.__class__, np.ndarray)
-        or hasattr(o, "__array__")
-    )
+    return isinstance(o, np.ndarray) or issubclass(o.__class__, np.ndarray) or hasattr(o, "__array__")
 
 
 def result_nblock(a, b, axes):
     "Returns the number of blocks of the resulting array after `tensordot`."
-    return prod(
-        prod(itertools.compress(grid, [x not in ax for x in range(len(grid))]))
-        for ax, grid in zip(axes, (a.grid, b.grid))
-    )
+    return prod(prod(itertools.compress(grid, [x not in ax for x in range(len(grid))])) for ax, grid in zip(axes, (a.grid, b.grid)))
 
 
 def result_shape(a, b, axes):
     "Returns the blockshape of the resulting array after `tensordot`."
     outer_axes = [tuple(set(range(len(bs))) - set(ax)) for ax, bs in zip(axes, (a, b))]
-    return functools.reduce(
-        op.add,
-        (tuple(i[ax] for ax in outer_ax) for outer_ax, i in zip(outer_axes, (a, b))),
-    )
+    return functools.reduce(op.add, (tuple(i[ax] for ax in outer_ax) for outer_ax, i in zip(outer_axes, (a, b))))
 
 
 def join_idx(outer, inner, axes):
