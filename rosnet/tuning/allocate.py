@@ -6,7 +6,7 @@ MEMORY = None
 
 
 @contextmanager
-def resources(**kwargs):
+def allocate(**kwargs):
     # pylint: disable=global-statement
     global NCORES
     global MEMORY

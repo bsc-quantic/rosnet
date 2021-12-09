@@ -217,7 +217,7 @@ def __block_tensordot(a: BlockArray, b: BlockArray, axes):
     # memory = a.blocknbytes + b.blocknbytes + prod(blockshape) * dtype.itemsize
     # pylint: enable=no-member
 
-    with tuning.resources(ncores=ncores):  # , memory=memory):
+    with tuning.allocate(ncores=ncores):  # , memory=memory):
         for _ in outer_iter_a:  # outer_i_a
             for _ in outer_iter_b:  # outer_i_b
                 idx = outer_iter_a.multi_index + outer_iter_b.multi_index
