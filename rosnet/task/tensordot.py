@@ -1,3 +1,4 @@
+from typing import List
 import os
 import numpy as np
 from pycompss.api.task import task
