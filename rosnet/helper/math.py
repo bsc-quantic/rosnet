@@ -1,4 +1,6 @@
 from typing import List
+import functools
+import itertools
 import numpy as np
 
 try:
