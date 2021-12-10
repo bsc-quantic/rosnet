@@ -1,6 +1,7 @@
 from typing import List
 import functools
 import itertools
+import operator as op
 import numpy as np
 
 try:
