@@ -1,7 +1,7 @@
 from typing import Tuple, Type
 import functools
 import numpy as np
-import pycompss.runtime.management.classes.Future as COMPSsFuture
+from pycompss.runtime.management.classes import Future as COMPSsFuture
 from pycompss.api.api import compss_delete_object, compss_wait_on
 from rosnet.helper.macros import todo, implements, numpy_dispatcher
 from rosnet.helper.math import prod, result_shape
