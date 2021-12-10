@@ -2,6 +2,7 @@ from typing import Tuple, Type
 import copy
 import numpy as np
 from pycompss.api.api import compss_wait_on
+from rosnet.array.compssarray import COMPSsArray
 from rosnet.helper.math import (
     prod,
     isunique,
