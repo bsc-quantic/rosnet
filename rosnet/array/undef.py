@@ -1,5 +1,5 @@
 import numpy as np
-from rosnet.helper import implements, numpy_dispatcher
+from rosnet.helper import implements
 
 
 class MaybeUnitializedArray(np.lib.mixins.NDArrayOperatorsMixin):
@@ -32,11 +32,16 @@ class MaybeUnitializedArray(np.lib.mixins.NDArrayOperatorsMixin):
             return NotImplemented
 
     def __array_function__(self, func, types, args, kwargs):
-        if func not in numpy_dispatcher[self.__class__]:
-            print("not in dispatcher")
-            return NotImplemented
+        try:
+            # use autoray for dispatching
+            # TODO use wrap for specialization?
+            f = autoray.get_lib_fn("rosnet", str(func))
 
-        return numpy_dispatcher[self.__class__][func](*args, **kwargs)
+            # multiple dispatch specialization takes place here with plum
+            return f(*args, **kwargs)
+
+        except AttributeError:
+            return NotImplemented
 
 
 @implements(np.save, ArrayWrapper)

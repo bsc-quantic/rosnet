@@ -1,11 +1,16 @@
-from typing import Tuple, Type
+from typing import Tuple, Type, Optional, Sequence, List
 import functools
+from contextlib import suppress
+from copy import deepcopy
 import numpy as np
+from plum import dispatch
+import autoray
 from pycompss.runtime.management.classes import Future as COMPSsFuture
 from pycompss.api.api import compss_delete_object, compss_wait_on
-from rosnet.helper.macros import todo, implements, numpy_dispatcher
+from rosnet.helper.macros import todo, implements
 from rosnet.helper.math import prod, result_shape
-from rosnet import task
+from rosnet.helper.typing import Array, SupportsArray
+from rosnet import task, tuning
 
 
 # TODO special variation for in-place functions? keep np.reshape/transpose/... as non-modifying -> create new COMPSsArray/BlockArray
@@ -19,28 +24,38 @@ class COMPSsArray(np.lib.mixins.NDArrayOperatorsMixin):
     """
 
     # pylint: disable=protected-access
+    @dispatch
+    def __init__(self, arr: SupportsArray):
+        "Constructor for generic arrays."
+        self._ref = np.array(arr)
+        self.__shape = arr.shape
+        self.__dtype = arr.dtype
 
-    def __init__(self, *args, **kwargs):
-        self._ref = args[0]
-        if issubclass(args[0].__class__, np.ndarray) or isinstance(args[0], np.ndarray):
-            self.__shape = args[0].shape
-            self.__dtype = args[0].dtype
-        elif isinstance(args[0], COMPSsFuture):
-            self.__shape = kwargs["shape"]
-            self.__dtype = kwargs["dtype"]
-        elif isinstance(args[0], np.generic):
-            self.__shape = ()
-            self.__dtype = args[0].dtype
-        elif hasattr(args[0], "__array__"):
-            self.__shape = args[0].shape if hasattr(args[0], "shape") else kwargs["shape"]
-            self.__dtype = args[0].dtype if hasattr(args[0], "dtype") else kwargs["dtype"]
-        else:
-            raise TypeError("You must provide a np.ndarray or a COMPSs Future to a np.ndarray, but a %r was provided" % type(args[0]))
+    @dispatch(precedence=1)
+    def __init__(self, arr: np.generic):
+        "Constructor for scalars."
+        self._ref = arr
+        self.__shape = ()
+        self.__dtype = arr.dtype
 
-        if isinstance(self.dtype, type):
-            self.__dtype = np.dtype(self.__dtype)
+    @dispatch
+    def __init__(self, arr: COMPSsFuture, shape, dtype):
+        "Constructor for future result of COMPSs tasks."
+        self._ref = arr
+        self.__shape = shape
+        self.__dtype = dtype
 
-        assert isinstance(self.dtype, np.dtype)
+    @dispatch
+    def __init__(self, arr, **kwargs):
+        if not hasattr(arr, "__array__"):
+            raise TypeError(f"You must provide a numpy.ndarray or a COMPSs future to a numpy.ndarray, but a {type(arr)} was provided")
+
+        self._ref = arr
+        self.__shape = arr.shape if hasattr(arr, "shape") else kwargs["shape"]
+        self.__dtype = arr.dtype if hasattr(arr, "dtype") else kwargs["dtype"]
+
+        assert isinstance(self.dtype, (np.dtype, type))
+        self.__dtype = np.dtype(self.__dtype)
 
     def __del__(self):
         compss_delete_object(self._ref)
@@ -84,9 +99,6 @@ class COMPSsArray(np.lib.mixins.NDArrayOperatorsMixin):
     def __deepcopy__(self, memo):
         ref = task.copy(self._ref)
         return COMPSsArray(ref, shape=self.shape, dtype=self.dtype)
-
-    # def sync(self):
-    #     self._ref = compss_wait_on(self._ref)
 
     def __array__(self) -> np.ndarray:
         return compss_wait_on(self._ref)
@@ -136,78 +148,200 @@ class COMPSsArray(np.lib.mixins.NDArrayOperatorsMixin):
             return NotImplemented
 
     def __array_function__(self, func, types, args, kwargs):
-        if func not in numpy_dispatcher[self.__class__]:
-            print("not in dispatcher")
-            return NotImplemented
-        if not all(t == self.__class__ for t in types):
-            print("bad type")
-            # TODO create COMPSsArray if np.ndarray implementation
-            return NotImplemented
+        # use autoray for dispatching
+        # TODO use wrap for specialization?
+        f = None
+        with suppress(AttributeError):
+            f = autoray.get_lib_fn("rosnet", func.__name__)
 
-        return numpy_dispatcher[self.__class__][func](*args, **kwargs)
+            if f is None:
+                f = autoray.get_lib_fn("rosnet.COMPSsArray", func.__name__)
 
-
-@implements(np.zeros, COMPSsArray)
-def __compss_zeros(shape, dtype=None, order="C"):
-    return np.full(shape, 0, dtype=dtype, order=order)
+        # multiple dispatch specialization takes place here with plum
+        return f(*args, **kwargs) if f else NotImplemented
 
 
-@implements(np.ones, COMPSsArray)
-def __compss_ones(shape, dtype=None, order="C"):
-    return np.full(shape, 1, dtype=dtype, order=order)
+@dispatch
+def to_numpy(arr: BlockArray[COMPSsArray]) -> np.ndarray:
+    blocks = np.empty_like(self._grid, dtype=object)
+    it = np.nditer(
+        self._grid,
+        flags=["refs_ok", "multi_index"],
+        op_flags=["readonly"],
+        op_axes=[tuple(range(self.ndim))],
+    )
+    with it:
+        for x in it:
+            blocks[it.multi_index] = compss_wait_on(np.array(x[()]))
+    return np.block(blocks)
 
 
-@implements(np.full, COMPSsArray)
-def __compss_full(shape, fill_value, dtype=None, order="C"):
+@implements(np.zeros, ext="COMPSsArray")
+def zeros(shape, dtype=None, order="C") -> COMPSsArray:
+    return COMPSsArray.full(shape, 0, dtype=dtype, order=order)
+
+
+@implements(np.ones, ext="COMPSsArray")
+def ones(shape, dtype=None, order="C") -> COMPSsArray:
+    return COMPSsArray.full(shape, 1, dtype=dtype, order=order)
+
+
+@implements(np.full, ext="COMPSsArray")
+def full(shape, fill_value, dtype=None, order="C") -> COMPSsArray:
     ref = task.full(shape, fill_value, dtype=dtype, order=order)
     return COMPSsArray(ref, shape=shape, dtype=dtype or np.dtype(type(fill_value)))
 
 
-# numpy: chainging array shape
-@implements(np.reshape, COMPSsArray)
-def __compss_reshape(a: COMPSsArray, newshape: Tuple[int], order="F"):
+@dispatch
+def zeros_like(a: COMPSsArray, dtype=None, order="K", subok=True, shape=None) -> COMPSsArray:
+    pass
+
+
+@dispatch
+def ones_like(a: COMPSsArray, dtype=None, order="K", subok=True, shape=None) -> COMPSsArray:
+    pass
+
+
+@dispatch
+def full_like(a: COMPSsArray, fill_value, dtype=None, order="K", subok=True, shape=None) -> COMPSsArray:
+    pass
+
+
+@dispatch
+def empty_like(prototype: COMPSsArray, dtype=None, order="K", subok=True, shape=None) -> COMPSsArray:
+    pass
+
+
+@dispatch
+def reshape(a: COMPSsArray, shape, order="F", inplace=True):
     # pylint: disable=protected-access
+    a = a if inplace else deepcopy(a)
+
     # TODO support order?
-    # TODO should return something?
-    task.reshape(a._ref, newshape)
+    task.reshape(a._ref, shape)
+    a.shape = shape
+    return a
 
 
-# numpy: transpose-like operations
-@implements(np.transpose, COMPSsArray)
-def __compss_transpose(a: COMPSsArray, axes: Tuple[int] = None):
+@dispatch
+def transpose(a: COMPSsArray, axes=None, inplace=True):
     # pylint: disable=protected-access
-    # TODO should return something?
+    if not isunique(axes):
+        raise ValueError("'axes' must be a unique list: %s" % axes)
+
+    a = a if inplace else deepcopy(a)
+
     task.transpose(a._ref, axes)
+    a.__shape = tuple(a.__shape[i] for i in axes)
+
+    return a
 
 
-# numpy: joining arrays
 @todo
-@implements(np.stack, COMPSsArray)
-def __compss_stack(self):
+@dispatch
+def stack(arrays: Sequence[COMPSsArray], axis=0, out=None) -> COMPSsArray:
     pass
 
 
-# numpy: splitting arrays
 @todo
-@implements(np.split, COMPSsArray)
-def __compss_split(self, indices_or_sections, axis=0):
+@dispatch
+def split(array: COMPSsArray, indices_or_sections, axis=0) -> List[COMPSsArray]:
     pass
 
 
-@implements(np.tensordot, COMPSsArray)
-def __compss_tensordot(a: COMPSsArray, b: COMPSsArray, axes):
+@dispatch.multi((COMPSsArray, SupportsArray), (SupportsArray, COMPSsArray))
+def tensordot(a: Union[COMPSsArray, SupportsArray], b: Union[COMPSsArray, SupportsArray], axes):
+    a = a if isinstance(a, COMPSsArray) else COMPSsArray(a)
+    b = b if isinstance(b, COMPSsArray) else COMPSsArray(b)
+    return tensordot.invoke(COMPSsArray, COMPSsArray)(a, b, axes)
+
+
+@dispatch(precedence=1)
+def tensordot(a: COMPSsArray, b: COMPSsArray, axes) -> COMPSsArray:
     # pylint: disable=protected-access
     # TODO assertions
-
-    # only support operating against COMPSsArray
-    if not all(isinstance(i, COMPSsArray) for i in (a, b)):
-        return NotImplemented
 
     dtype = np.result_type(a.dtype, b.dtype)
     shape = result_shape(a.shape, b.shape, axes)
 
     ref = task.tensordot.tensordot(a._ref, b._ref, axes)
     return COMPSsArray(ref, shape=shape, dtype=dtype)
+
+
+@dispatch(precedence=1)
+def tensordot(a: BlockArray[COMPSsArray], b: BlockArray[COMPSsArray], axes):
+    # pylint: disable=protected-access
+    # TODO assertions
+    # TODO selection of implementation based on input arrays
+
+    # iterators
+    outer_axes = [list(set(range(i.ndim)) - set(ax)) for ax, i in zip(axes, (a, b))]
+    outer_iter_a, inner_iter_a = np.nested_iters(
+        a._grid,
+        [outer_axes[0], axes[0]],
+        op_flags=["readonly"],
+        flags=["multi_index", "refs_ok"],
+    )
+    outer_iter_b, inner_iter_b = np.nested_iters(
+        b._grid,
+        [outer_axes[1], axes[1]],
+        op_flags=["readonly"],
+        flags=["multi_index", "refs_ok"],
+    )
+
+    grid = np.empty(outer_iter_a.shape + outer_iter_b.shape, dtype=COMPSsArray)
+    dtype = np.result_type(a.dtype, b.dtype)
+    blockshape = result_shape(a.blockshape, b.blockshape, axes)
+
+    # estimate number of cores per task for dynamic parallelism
+    impl, ncores = tuning.tensordot(a, b, axes)
+
+    # required memory per task
+    # pylint: disable=no-member
+    # memory = a.blocknbytes + b.blocknbytes + prod(blockshape) * dtype.itemsize
+    # pylint: enable=no-member
+
+    with tuning.allocate(ncores=ncores):  # , memory=memory):
+        for _ in outer_iter_a:  # outer_i_a
+            for _ in outer_iter_b:  # outer_i_b
+                idx = outer_iter_a.multi_index + outer_iter_b.multi_index
+
+                # call chosen implementation
+                blocks_a = list(
+                    map(
+                        lambda x: a._grid[x],
+                        (
+                            join_idx(
+                                outer_iter_a.multi_index,
+                                inner_iter_a.multi_index,
+                                axes[0],
+                            )
+                            for _ in inner_iter_a
+                        ),
+                    )
+                )
+                blocks_b = list(
+                    map(
+                        lambda x: b._grid[x],
+                        (
+                            join_idx(
+                                outer_iter_b.multi_index,
+                                inner_iter_b.multi_index,
+                                axes[1],
+                            )
+                            for _ in inner_iter_b
+                        ),
+                    )
+                )
+
+                grid[idx] = impl(blocks_a, blocks_b, axes)
+
+                # reset inner block iterators
+                inner_iter_a.reset()
+                inner_iter_b.reset()
+            outer_iter_b.reset()
+
+    return BlockArray(grid, blockshape=blockshape, dtype=dtype)
 
 
 # @implements(np.block, COMPSsArray)

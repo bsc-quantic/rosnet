@@ -1,3 +1,7 @@
+from typing import Callable
+from plum import dispatch
+from autoray import register_function
+
 # from https://github.com/dask/dask/blob/95fb60a31a87c6b94b01ed75ab6533fa04d51f19/dask/utils.py
 def inherit_doc(parent):
     def wrapper(method):
@@ -10,20 +14,26 @@ def inherit_doc(parent):
     return wrapper
 
 
-numpy_dispatcher = {}
-
-
-def implements(np_function, cls):
-    "Register an __array_function__ implementation."
-    # pylint: disable=protected-access
+@dispatch
+def implements(function: str, ext=None):
+    "Register a function (e.g. __array_function__) implementation."
 
     def registrar(func):
-        if cls not in numpy_dispatcher:
-            numpy_dispatcher.update({cls: {}})
-
-        numpy_dispatcher[cls].update({np_function: func})
-        inherit_doc(np_function)(func)
+        backend = f"rosnet.{ext}" if ext else "rosnet"
+        register_function(backend, function.__name__, func)
         return func
+
+    return registrar
+
+
+@dispatch
+def implements(function: Callable, ext=None):
+    "Register a function (e.g. __array_function__) implementation."
+
+    def registrar(func):
+        backend = f"rosnet.{ext}" if ext else "rosnet"
+        register_function(backend, function.__name__, func)
+        inherit_doc(function)(func)
 
     return registrar
 
