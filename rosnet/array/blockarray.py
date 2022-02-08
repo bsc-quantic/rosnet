@@ -172,9 +172,11 @@ class BlockArray(np.lib.mixins.NDArrayOperatorsMixin):
         return f(*args, **kwargs) if f else NotImplemented
 
 
+# NOTE Type hing "-> np.ndarray" makes plum to execute "type_of" and returns a Type. a bug? a desired side-effect?
+# TODO waiting for https://github.com/wesselb/plum/issues/37
 @dispatch
-def to_numpy(arr: BlockArray) -> np.ndarray:
-    return np.block(np._grid)
+def to_numpy(arr: BlockArray):
+    return np.block(arr._grid.tolist())
 
 
 @implements(np.zeros, ext="BlockArray")

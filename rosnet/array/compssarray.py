@@ -171,8 +171,9 @@ class COMPSsArray(np.lib.mixins.NDArrayOperatorsMixin):
         return f(*args, **kwargs) if f else NotImplemented
 
 
+# TODO waiting to https://github.com/wesselb/plum/issues/37
 @dispatch
-def to_numpy(arr: BlockArray[COMPSsArray]) -> np.ndarray:
+def to_numpy(arr: BlockArray[COMPSsArray]):
     blocks = np.empty_like(self._grid, dtype=object)
     it = np.nditer(
         self._grid,
