@@ -57,6 +57,13 @@ class COMPSsArray(np.lib.mixins.NDArrayOperatorsMixin):
         assert isinstance(self.dtype, (np.dtype, type))
         self.__dtype = np.dtype(self.__dtype)
 
+    @classmethod
+    @dispatch
+    def __infer_type_parameter__(cls, *args, **kwargs) -> Type:
+        "Returns the parameter type."
+        # TODO support more parametric types? cupy?
+        return np.ndarray
+
     def __del__(self):
         compss_delete_object(self._ref)
 
