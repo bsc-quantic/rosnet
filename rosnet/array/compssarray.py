@@ -164,6 +164,9 @@ class COMPSsArray(np.lib.mixins.NDArrayOperatorsMixin):
             if f is None:
                 f = autoray.get_lib_fn("rosnet.COMPSsArray", func.__name__)
 
+            if f is None:
+                f = autoray.get_lib_fn("rosnet.COMPSsArray.random", func.__name__)
+
         # multiple dispatch specialization takes place here with plum
         return f(*args, **kwargs) if f else NotImplemented
 
@@ -354,3 +357,10 @@ def tensordot(a: BlockArray[COMPSsArray], b: BlockArray[COMPSsArray], axes):
 # @implements(np.block, COMPSsArray)
 # def __compss_block(arrays):
 #     return np.block(compss_wait_on([a._ref for a in arrays]))
+
+
+@implements("random.rand", ext="COMPSsArray")
+def rand(shape):
+    # TODO support inner as in BlockArray
+    dtype = np.dtype(np.float64)
+    return COMPSsArray(task.init.rand(blockshape), shape=shape, dtype=dtype)

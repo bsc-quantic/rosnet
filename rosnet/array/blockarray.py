@@ -168,6 +168,9 @@ class BlockArray(np.lib.mixins.NDArrayOperatorsMixin):
             if f is None:
                 f = autoray.get_lib_fn("rosnet.BlockArray", func.__name__)
 
+            if f is None:
+                f = autoray.get_lib_fn("rosnet.BlockArray.random", func.__name__)
+
         # multiple dispatch specialization takes place here with plum
         return f(*args, **kwargs) if f else NotImplemented
 
@@ -178,12 +181,12 @@ def to_numpy(arr: BlockArray) -> np.ndarray:
 
 
 @implements(np.zeros, ext="BlockArray")
-def zeros(shape, dtype=None, order="C", blockshape=None) -> BlockArray:
+def zeros(shape, dtype=None, order="C", blockshape=None, inner="numpy") -> BlockArray:
     return autoray.do("full", shape, 0, dtype=dtype, order=order, blockshape=blockshape, backend="rosnet.BlockArray")
 
 
 @implements(np.ones, ext="BlockArray")
-def ones(shape, dtype=None, order="C", blockshape=None) -> BlockArray:
+def ones(shape, dtype=None, order="C", blockshape=None, inner="numpy") -> BlockArray:
     return autoray.do("full", shape, 1, dtype=dtype, order=order, blockshape=blockshape, backend="rosnet.BlockArray")
 
 
@@ -334,12 +337,12 @@ def tensordot(a: BlockArray, b: BlockArray, axes):
 #     return BlockArray(blocks, blockshape=blockshape, dtype=arr.dtype)
 
 
-# def rand(shape, blockshape=None):
-#     blockshape = shape if blockshape is None else blockshape
-#     grid = tuple(s // bs for s, bs in zip(shape, blockshape))
-#     dtype = np.dtype(np.float64)
+@implements("random.rand", ext="BlockArray")
+def rand(shape, blockshape=None, inner="numpy"):
+    blockshape = shape if blockshape is None else blockshape
+    grid = tuple(s // bs for s, bs in zip(shape, blockshape))
 
-#     blocks = [COMPSsArray(task.init.rand(blockshape), shape=blockshape, dtype=dtype) for _ in range(prod(grid))]
+    blocks = [autoray.do("random.rand", blockshape, backend=inner) for _ in range(prod(grid))]
 
-#     blocks = ndarray_from_list(blocks, grid)
-#     return BlockArray(blocks, blockshape=blockshape, dtype=dtype)
+    blocks = ndarray_from_list(blocks, grid)
+    return BlockArray(blocks, blockshape=blockshape, dtype=dtype)
