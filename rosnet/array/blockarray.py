@@ -12,7 +12,7 @@ from rosnet.helper.math import (
     join_idx,
 )
 from rosnet.helper.macros import todo, implements
-from rosnet.helper.typing import Array
+from rosnet.helper.typing import Array, NestedArray
 
 
 @parametric
@@ -28,9 +28,8 @@ class BlockArray(np.lib.mixins.NDArrayOperatorsMixin):
     __blockshape: Tuple = None
     __dtype: Type = None
 
-    # TODO how to detect 2-level ndarray?
     @dispatch
-    def __init__(self, grid: np.ndarray, blockshape: Optional[Sequence[int]] = None, dtype: Optional[np.dtype] = None):
+    def __init__(self, grid: NestedArray[1], blockshape: Optional[Sequence[int]] = None, dtype: Optional[np.dtype] = None):
         """Constructor.
 
         Arguments
@@ -43,7 +42,6 @@ class BlockArray(np.lib.mixins.NDArrayOperatorsMixin):
         self.__blockshape = tuple(blockshape or grid[0].shape)
         self.__dtype = dtype or grid[0].dtype
 
-    # TODO ambiguous case with top constructor?
     @dispatch
     def __init__(self, arr: Array):
         """Constructor.

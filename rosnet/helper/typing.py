@@ -1,5 +1,6 @@
 from typing import Protocol, Tuple
 import numpy as np
+from plum import parametric, type_of
 
 
 class SupportsArray(Protocol):
@@ -37,3 +38,20 @@ class Array(SupportsArray):
     @property
     def dtype(self) -> np.dtype:
         pass
+
+
+@parametric(runtime_type_of=True)
+class NestedArray(np.ndarray):
+    """A type for recursive numpy arrays (array of arrays) where the type parameter specifies the nesting level."""
+
+    pass
+
+
+@type_of.dispatch
+def type_of(x: np.ndarray):
+    level = 0
+    while isinstance(x.flat[0], np.ndarray):
+        level += 1
+        x = x.flat[0]
+
+    return NestedArray[level]
