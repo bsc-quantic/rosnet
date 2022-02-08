@@ -1,5 +1,5 @@
 __version__ = "0.1"
-from rosnet.array import COMPSsArray, BlockArray
+from rosnet.array import *
 from rosnet.numpy_interface import (
 	tensordot,
 	einsum,

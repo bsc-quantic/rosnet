@@ -1,4 +1,5 @@
 from typing import Callable
+from functools import wraps
 from plum import dispatch
 from autoray import register_function
 
@@ -20,7 +21,7 @@ def implements(function: str, ext=None):
 
     def registrar(func):
         backend = f"rosnet.{ext}" if ext else "rosnet"
-        register_function(backend, function.__name__, func)
+        register_function(backend, function, func)
         return func
 
     return registrar
@@ -39,7 +40,7 @@ def implements(function: Callable, ext=None):
 
 
 def todo(func):
-    @functools.wraps(func)
+    @wraps(func)
     def todo_msg(*args, **kwargs):
         raise NotImplementedError(f"{func.__name__} is not implemented yet")
 
@@ -48,7 +49,7 @@ def todo(func):
 
 @todo
 def generic_task(func):
-    @functools.wraps(func)
+    @wraps(func)
     def wrapper(*args, **kwargs):
         return task(func, None, **kwargs)(*args)
 

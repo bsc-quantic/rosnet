@@ -13,7 +13,6 @@ from rosnet.helper.math import (
 )
 from rosnet.helper.macros import todo, implements
 from rosnet.helper.typing import Array
-from rosnet import task, tuning
 
 
 @parametric
@@ -59,13 +58,13 @@ class BlockArray(np.lib.mixins.NDArrayOperatorsMixin):
 
     @classmethod
     @dispatch
-    def __infer_type_parameter__(self, grid: np.ndarray, *args, **kwargs) -> Type:
+    def __infer_type_parameter__(self, grid: np.ndarray, *args, **kwargs) -> type:
         "Returns the parameter type."
         return type(grid.flat[0])
 
     @classmethod
     @dispatch
-    def __infer_type_parameter__(cls, arr: Array, *args, **kwargs) -> Type:
+    def __infer_type_parameter__(cls, arr: Array, *args, **kwargs) -> type:
         "Returns the parameter type."
         return type(arr)
 
