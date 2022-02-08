@@ -1,8 +1,10 @@
+from contextlib import suppress
 import numpy as np
+import autoray
 from rosnet.helper import implements
 
 
-class MaybeUnitializedArray(np.lib.mixins.NDArrayOperatorsMixin):
+class MaybeArray(np.lib.mixins.NDArrayOperatorsMixin):
     def __init__(self, array=None):
         self.__array = array
 
@@ -32,30 +34,28 @@ class MaybeUnitializedArray(np.lib.mixins.NDArrayOperatorsMixin):
             return NotImplemented
 
     def __array_function__(self, func, types, args, kwargs):
-        try:
-            # use autoray for dispatching
-            # TODO use wrap for specialization?
+        f = None
+        with suppress(AttributeError):
             f = autoray.get_lib_fn("rosnet", str(func))
 
-            # multiple dispatch specialization takes place here with plum
-            return f(*args, **kwargs)
+            if f is None:
+                f = autoray.get_lib_fn("rosnet.MaybeArray")
 
-        except AttributeError:
-            return NotImplemented
+        return f(*args, **kwargs) if f else NotImplemented
 
 
-@implements(np.save, ArrayWrapper)
-def __maybeunitialized_save(file, arr: ArrayWrapper(), **kwargs):
+@implements(np.save, ext="MaybeArray")
+def __maybeunitialized_save(file, arr, MaybeArray, **kwargs):
     if arr.initialized:
         np.savez(file, init=arr.initialized, array=np.array(arr))
     else:
         np.savez(file, init=arr.initialized)
 
 
-@implements(np.load, ArrayWrapper)
-def __maybeunitialized_load(file, **kwargs):
+@implements(np.load, ext="MaybeArray")
+def __maybeunitialized_load(file, **kwargs) -> MaybeArray:
     m = np.load(file, **kwargs)
     if m["init"]:
-        return ArrayWrapper(m["array"])
+        return MaybeArray(m["array"])
     else:
-        return ArrayWrapper()
+        return MaybeArray()
