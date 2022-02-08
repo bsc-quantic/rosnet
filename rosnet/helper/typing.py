@@ -1,6 +1,6 @@
 from typing import Protocol, Tuple
 import numpy as np
-from plum import parametric, type_of
+from plum import parametric, type_of, ptype
 
 
 class SupportsArray(Protocol):
@@ -54,4 +54,5 @@ def type_of(x: np.ndarray):
         level += 1
         x = x.flat[0]
 
-    return NestedArray[level]
+    # TODO waiting for https://github.com/wesselb/plum/issues/37
+    return ptype(NestedArray[level])
