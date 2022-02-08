@@ -249,6 +249,61 @@ def transpose(a: BlockArray, axes=None, inplace=True):
     return a
 
 
+@dispatch
+def tensordot(a: BlockArray, b: BlockArray, axes):
+    # pylint: disable=protected-access
+    # TODO assertions
+    # TODO generic BlockArray implementation and call to specialized tensordot of lists of blocks?
+
+    outer_axes = [list(set(range(i.ndim)) - set(ax)) for ax, i in zip(axes, (a, b))]
+    outer_iter_a, inner_iter_a = np.nested_iters(
+        a._grid,
+        [outer_axes[0], axes[0]],
+        op_flags=["readonly"],
+        flags=["multi_index", "refs_ok"],
+    )
+    outer_iter_b, inner_iter_b = np.nested_iters(
+        b._grid,
+        [outer_axes[1], axes[1]],
+        op_flags=["readonly"],
+        flags=["multi_index", "refs_ok"],
+    )
+
+    grid = np.empty(outer_iter_a.shape + outer_iter_b.shape)
+    dtype = np.result_type(a.dtype, b.dtype)
+    blockshape = result_shape(a.blockshape, b.blockshape, axes)
+
+    for _ in outer_iter_a:
+        for _ in outer_iter_b:
+            idx = outer_iter_a.multi_index + outer_iter_b.multi_index
+
+            bid_a = (
+                join_idx(
+                    outer_iter_a.multi_index,
+                    inner_iter_a.multi_index,
+                    axes[0],
+                )
+                for _ in inner_iter_a
+            )
+            bid_b = (
+                join_idx(
+                    outer_iter_b.multi_index,
+                    inner_iter_b.multi_index,
+                    axes[1],
+                )
+                for _ in inner_iter_b
+            )
+
+            grid[idx] = np.sum(np.tensordot(a._grid[ba], b._grid[bb], axes) for ba, bb in zip(bid_a, bid_b))
+
+            # reset inner block iterators
+            inner_iter_a.reset()
+            inner_iter_b.reset()
+        outer_iter_b.reset()
+
+    return BlockArray(grid, blockshape=blockshape, dtype=dtype)
+
+
 # @todo
 # @implements(np.array, BlockArray)
 # def array(
