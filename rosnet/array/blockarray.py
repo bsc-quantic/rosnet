@@ -65,7 +65,7 @@ class BlockArray(np.lib.mixins.NDArrayOperatorsMixin):
 
     @classmethod
     @dispatch
-    def __infer_type_parameter__(self, arr: Array, *args, **kwargs) -> Type:
+    def __infer_type_parameter__(cls, arr: Array, *args, **kwargs) -> Type:
         "Returns the parameter type."
         return type(arr)
 
