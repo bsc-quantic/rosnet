@@ -1,5 +1,6 @@
 from typing import Tuple, Type, List, Sequence, Optional
 from copy import deepcopy
+from functools import reduce
 import numpy as np
 from plum import dispatch, parametric
 import autoray
@@ -12,7 +13,7 @@ from rosnet.helper.math import (
     join_idx,
 )
 from rosnet.helper.macros import todo, implements
-from rosnet.helper.typing import Array, NestedArray
+from rosnet.helper.typing import Array, NestedArray, NestedList
 
 
 @parametric
@@ -25,6 +26,36 @@ class BlockArray(np.lib.mixins.NDArrayOperatorsMixin):
     """
 
     _grid: np.ndarray = None
+
+    @dispatch
+    def __init__(self, blocks: NestedList[Array]):
+        """Constructor.
+
+        Arguments
+        ---------
+        - blocks: NestedList[Array]. Nested list of arrays.
+        """
+        self._grid = np.empty_like(blocks, dtype=object)
+
+        it = np.nditer(self._grid, flags=["refs_ok", "multi_index"], op_flags=["writeonly"])
+
+        with it:
+            for block in it:
+                block[()] = reduce(lambda a, b,: a[b], it.multi_index, initial=blocks)
+
+    @dispatch
+    def __init__(self, blocks: List[Array], grid: Sequence[int]):
+        """Constructor.
+
+        Arguments
+        ---------
+        - blocks: List[Array]. List of blocks.
+        - grid: Sequence[int]. Shape of the grid of blocks.
+        """
+        if len(blocks) != len(grid):
+            raise ValueError("blocks and grid must have the same length")
+
+        self._grid = np.array(blocks).reshape(grid)
 
     @dispatch
     def __init__(self, grid: NestedArray[1]):
@@ -50,7 +81,17 @@ class BlockArray(np.lib.mixins.NDArrayOperatorsMixin):
 
     @classmethod
     @dispatch
-    def __infer_type_parameter__(self, grid: np.ndarray, *args, **kwargs) -> type:
+    def __inter_type_paramater__(cls, blocks: NestedList[Array], *args, **kwargs) -> type:
+        "Returns the parameter type."
+        x = blocks
+        while isinstance(x[0], List):
+            x = x[0]
+
+        return type(x)
+
+    @classmethod
+    @dispatch
+    def __infer_type_parameter__(cls, grid: NestedArray[1], *args, **kwargs) -> type:
         "Returns the parameter type."
         return type(grid.flat[0])
 
