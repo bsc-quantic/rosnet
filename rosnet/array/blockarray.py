@@ -77,7 +77,8 @@ class BlockArray(np.lib.mixins.NDArrayOperatorsMixin):
         ---------
         - arr: Array-like. e.g. COMPSsArray.
         """
-        self._grid = arr
+        self._grid = np.empty(tuple(1 for _ in arr.shape), dtype=object)
+        self._grid.flat[0] = arr
 
     @classmethod
     @dispatch
