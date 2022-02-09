@@ -26,7 +26,7 @@ class BlockArray(np.lib.mixins.NDArrayOperatorsMixin):
     - All blocks are expected to be equally sized.
     """
 
-    _grid: np.ndarray = None
+    data: np.ndarray = None
 
     @dispatch
     def __init__(self, blocks: NestedList[Array]):
@@ -36,9 +36,9 @@ class BlockArray(np.lib.mixins.NDArrayOperatorsMixin):
         ---------
         - blocks: NestedList[Array]. Nested list of arrays.
         """
-        self._grid = np.empty_like(blocks, dtype=object)
+        self.data = np.empty_like(blocks, dtype=object)
 
-        it = np.nditer(self._grid, flags=["refs_ok", "multi_index"], op_flags=["writeonly"])
+        it = np.nditer(self.data, flags=["refs_ok", "multi_index"], op_flags=["writeonly"])
 
         with it:
             for block in it:
@@ -56,7 +56,7 @@ class BlockArray(np.lib.mixins.NDArrayOperatorsMixin):
         if len(blocks) != len(grid):
             raise ValueError("blocks and grid must have the same length")
 
-        self._grid = np.array(blocks).reshape(grid)
+        self.data = np.array(blocks).reshape(grid)
 
     @dispatch
     def __init__(self, grid: NestedArray[1]):
@@ -68,7 +68,7 @@ class BlockArray(np.lib.mixins.NDArrayOperatorsMixin):
         - blockshape: Optional[Sequence[int]]. If None, infer from grid content. None by default.
         - dtype: Optional[np.dtype]. If None, infer from grid content. None by default.
         """
-        self._grid = grid.copy()
+        self.data = grid.copy()
 
     @dispatch
     def __init__(self, arr: Array):
@@ -78,8 +78,8 @@ class BlockArray(np.lib.mixins.NDArrayOperatorsMixin):
         ---------
         - arr: Array-like. e.g. COMPSsArray.
         """
-        self._grid = np.empty(tuple(1 for _ in arr.shape), dtype=object)
-        self._grid.flat[0] = arr
+        self.data = np.empty(tuple(1 for _ in arr.shape), dtype=object)
+        self.data.flat[0] = arr
 
     @classmethod
     @dispatch
@@ -120,7 +120,7 @@ class BlockArray(np.lib.mixins.NDArrayOperatorsMixin):
         gid = [i // s for i, s in zip(key, self.blockshape)]
         bid = [i % s for i, s in zip(key, self.blockshape)]
 
-        return self._grid[gid][bid]
+        return self.data[gid][bid]
 
     @dispatch
     def __setitem__(self, key: List[int], value):
@@ -131,7 +131,7 @@ class BlockArray(np.lib.mixins.NDArrayOperatorsMixin):
         gid = [i // s for i, s in zip(key, self.blockshape)]
         bid = [i % s for i, s in zip(key, self.blockshape)]
 
-        self._grid[gid][bid] = value
+        self.data[gid][bid] = value
 
     @property
     def shape(self) -> Tuple[int]:
@@ -139,15 +139,15 @@ class BlockArray(np.lib.mixins.NDArrayOperatorsMixin):
 
     @property
     def blockshape(self) -> Tuple[int]:
-        return self._grid.flat[0].shape
+        return self.data.flat[0].shape
 
     @property
     def nblock(self) -> int:
-        return self._grid.size
+        return self.data.size
 
     @property
     def grid(self) -> Tuple[int]:
-        return self._grid.shape
+        return self.data.shape
 
     @property
     def size(self) -> int:
@@ -175,12 +175,12 @@ class BlockArray(np.lib.mixins.NDArrayOperatorsMixin):
 
     @property
     def dtype(self) -> np.dtype:
-        return self._grid.flat[0].dtype
+        return self.data.flat[0].dtype
 
     def __deepcopy__(self, memo):
-        grid = np.empty_like(self._grid)
+        grid = np.empty_like(self.data)
         for i in self.nblock:
-            grid.flat[i] = deepcopy(self._grid.flat[i])
+            grid.flat[i] = deepcopy(self.data.flat[i])
 
         return BlockArray(grid)
 
@@ -211,7 +211,7 @@ class BlockArray(np.lib.mixins.NDArrayOperatorsMixin):
 
 @dispatch
 def to_numpy(arr: BlockArray) -> np.ndarray:
-    return np.block(arr._grid.tolist())
+    return np.block(arr.data.tolist())
 
 
 @implements(np.zeros, ext="BlockArray")
@@ -261,8 +261,8 @@ def reshape(a: BlockArray, shape, order="F", inplace=True):
     a = a if inplace else deepcopy(a)
 
     # TODO reshape blocks? or blockshape? for now, blockshape
-    for i, block in enumerate(a._grid.flat):
-        a._grid.flat[i] = autoray.do("reshape", block, shape, order=order)
+    for i, block in enumerate(a.data.flat):
+        a.data.flat[i] = autoray.do("reshape", block, shape, order=order)
 
     a.__blockshape = shape
 
@@ -277,10 +277,10 @@ def transpose(a: BlockArray, axes=None, inplace=True):
 
     a = a if inplace else deepcopy(a)
 
-    for i, block in enumerate(a._grid.flat):
-        a._grid.flat[i] = autoray.do("transpose", block, axes)
+    for i, block in enumerate(a.data.flat):
+        a.data.flat[i] = autoray.do("transpose", block, axes)
 
-    a._grid = np.transpose(a._grid, axes)
+    a.data = np.transpose(a.data, axes)
     a.__blockshape = tuple(a.__blockshape[i] for i in axes)
 
     return a
@@ -294,13 +294,13 @@ def tensordot(a: BlockArray, b: BlockArray, axes):
 
     outer_axes = [list(set(range(i.ndim)) - set(ax)) for ax, i in zip(axes, (a, b))]
     outer_iter_a, inner_iter_a = np.nested_iters(
-        a._grid,
+        a.data,
         [outer_axes[0], axes[0]],
         op_flags=["readonly"],
         flags=["multi_index", "refs_ok"],
     )
     outer_iter_b, inner_iter_b = np.nested_iters(
-        b._grid,
+        b.data,
         [outer_axes[1], axes[1]],
         op_flags=["readonly"],
         flags=["multi_index", "refs_ok"],
@@ -331,7 +331,7 @@ def tensordot(a: BlockArray, b: BlockArray, axes):
                 for _ in inner_iter_b
             )
 
-            grid[idx] = np.sum(np.tensordot(a._grid[ba], b._grid[bb], axes) for ba, bb in zip(bid_a, bid_b))
+            grid[idx] = np.sum(np.tensordot(a.data[ba], b.data[bb], axes) for ba, bb in zip(bid_a, bid_b))
 
             # reset inner block iterators
             inner_iter_a.reset()

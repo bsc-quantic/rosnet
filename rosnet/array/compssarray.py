@@ -175,9 +175,9 @@ class COMPSsArray(np.lib.mixins.NDArrayOperatorsMixin):
 # TODO waiting to https://github.com/wesselb/plum/issues/37
 @dispatch
 def to_numpy(arr: BlockArray[COMPSsArray]):
-    blocks = np.empty_like(self._grid, dtype=object)
+    blocks = np.empty_like(self.data, dtype=object)
     it = np.nditer(
-        self._grid,
+        self.data,
         flags=["refs_ok", "multi_index"],
         op_flags=["readonly"],
         op_axes=[tuple(range(self.ndim))],
@@ -289,13 +289,13 @@ def tensordot(a: BlockArray[COMPSsArray], b: BlockArray[COMPSsArray], axes):
     # iterators
     outer_axes = [list(set(range(i.ndim)) - set(ax)) for ax, i in zip(axes, (a, b))]
     outer_iter_a, inner_iter_a = np.nested_iters(
-        a._grid,
+        a.data,
         [outer_axes[0], axes[0]],
         op_flags=["readonly"],
         flags=["multi_index", "refs_ok"],
     )
     outer_iter_b, inner_iter_b = np.nested_iters(
-        b._grid,
+        b.data,
         [outer_axes[1], axes[1]],
         op_flags=["readonly"],
         flags=["multi_index", "refs_ok"],
@@ -321,7 +321,7 @@ def tensordot(a: BlockArray[COMPSsArray], b: BlockArray[COMPSsArray], axes):
                 # call chosen implementation
                 blocks_a = list(
                     map(
-                        lambda x: a._grid[x],
+                        lambda x: a.data[x],
                         (
                             join_idx(
                                 outer_iter_a.multi_index,
@@ -334,7 +334,7 @@ def tensordot(a: BlockArray[COMPSsArray], b: BlockArray[COMPSsArray], axes):
                 )
                 blocks_b = list(
                     map(
-                        lambda x: b._grid[x],
+                        lambda x: b.data[x],
                         (
                             join_idx(
                                 outer_iter_b.multi_index,
