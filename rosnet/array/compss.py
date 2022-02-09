@@ -81,8 +81,7 @@ class COMPSsArray(np.lib.mixins.NDArrayOperatorsMixin):
     @todo
     @shape.setter
     def _(self, value: Tuple[int]):
-        # self.reshape(value)
-        pass
+        raise NotImplementedError("reshape call from shape.setter not implemented")
 
     @property
     def size(self) -> int:
