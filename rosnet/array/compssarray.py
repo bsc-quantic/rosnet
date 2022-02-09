@@ -2,13 +2,14 @@ from typing import Tuple, Type, Optional, Sequence, List
 import functools
 from contextlib import suppress
 from copy import deepcopy
+from math import prod
 import numpy as np
 from plum import dispatch
 import autoray
 from pycompss.runtime.management.classes import Future as COMPSsFuture
 from pycompss.api.api import compss_delete_object, compss_wait_on
 from rosnet.helper.macros import todo, implements
-from rosnet.helper.math import prod, result_shape
+from rosnet.helper.math import result_shape
 from rosnet.helper.typing import Array, SupportsArray
 from rosnet import task, tuning
 

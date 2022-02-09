@@ -2,14 +2,8 @@ from typing import List
 import functools
 import itertools
 import operator as op
+from math import prod
 import numpy as np
-
-try:
-    from math import prod
-except ImportError:
-
-    def prod(x):
-        return functools.reduce(op.mul, x, 1)
 
 
 def isunique(l: List) -> bool:

@@ -1,11 +1,11 @@
 from contextlib import contextmanager
 from typing import Tuple, Callable
-from math import ceil
+from math import ceil, prod
 import numpy as np
 from pycompss.api.api import compss_get_number_of_resources
 from pycompss.util.context import in_master, in_worker
 from rosnet import helper
-from rosnet.utils import result_shape, prod
+from rosnet.utils import result_shape
 
 
 node_count = compss_get_number_of_resources

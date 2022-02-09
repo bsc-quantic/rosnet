@@ -1,11 +1,11 @@
 from typing import Tuple, Type, List, Sequence, Optional
+from math import prod
 from copy import deepcopy
 from functools import reduce
 import numpy as np
 from plum import dispatch, parametric
 import autoray
 from rosnet.helper.math import (
-    prod,
     isunique,
     ndarray_from_list,
     space,
