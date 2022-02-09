@@ -109,6 +109,10 @@ class COMPSsArray(np.lib.mixins.NDArrayOperatorsMixin):
     def __array__(self) -> np.ndarray:
         return compss_wait_on(self._ref)
 
+    def __array_priority__(self) -> int:
+        # NOTE higher priority than numpy.ndarray, lower than DataClayArray
+        return 1
+
     def __array_ufunc__(self, ufunc: np.ufunc, method: str, *inputs, **kwargs):
         if ufunc.nin > 2:
             return NotImplemented
