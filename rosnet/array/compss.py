@@ -59,7 +59,6 @@ class COMPSsArray(np.lib.mixins.NDArrayOperatorsMixin):
         self.__dtype = np.dtype(self.__dtype)
 
     @classmethod
-    @dispatch
     def __infer_type_parameter__(cls, *args, **kwargs) -> Type:
         "Returns the parameter type."
         # TODO support more parametric types? cupy?
