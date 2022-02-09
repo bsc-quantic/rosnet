@@ -25,11 +25,9 @@ class BlockArray(np.lib.mixins.NDArrayOperatorsMixin):
     """
 
     _grid: np.ndarray = None
-    __blockshape: Tuple = None
-    __dtype: Type = None
 
     @dispatch
-    def __init__(self, grid: NestedArray[1], blockshape: Optional[Sequence[int]] = None, dtype: Optional[np.dtype] = None):
+    def __init__(self, grid: NestedArray[1]):
         """Constructor.
 
         Arguments
@@ -39,8 +37,6 @@ class BlockArray(np.lib.mixins.NDArrayOperatorsMixin):
         - dtype: Optional[np.dtype]. If None, infer from grid content. None by default.
         """
         self._grid = grid.copy()
-        self.__blockshape = tuple(blockshape or grid[0].shape)
-        self.__dtype = dtype or grid[0].dtype
 
     @dispatch
     def __init__(self, arr: Array):
@@ -50,9 +46,7 @@ class BlockArray(np.lib.mixins.NDArrayOperatorsMixin):
         ---------
         - arr: Array-like. e.g. COMPSsArray.
         """
-        self._grid = np.array(arr)
-        self.__blockshape = tuple(arr.shape)
-        self.__dtype = arr.dtype
+        self._grid = arr
 
     @classmethod
     @dispatch
@@ -98,11 +92,11 @@ class BlockArray(np.lib.mixins.NDArrayOperatorsMixin):
 
     @property
     def shape(self) -> Tuple[int]:
-        return tuple(np.multiply(self._grid.shape, self.__blockshape))
+        return tuple(np.multiply(self.grid, self.blockshape))
 
     @property
     def blockshape(self) -> Tuple[int]:
-        return self.__blockshape
+        return self._grid.flat[0].shape
 
     @property
     def nblock(self) -> int:
@@ -138,14 +132,14 @@ class BlockArray(np.lib.mixins.NDArrayOperatorsMixin):
 
     @property
     def dtype(self) -> np.dtype:
-        return self.__dtype
+        return self._grid.flat[0].dtype
 
     def __deepcopy__(self, memo):
         grid = np.empty_like(self._grid)
         for i in self.nblock:
             grid.flat[i] = deepcopy(self._grid.flat[i])
 
-        return BlockArray(grid, self.blockshape)
+        return BlockArray(grid)
 
     def __array__(self) -> np.ndarray:
         "Returns a numpy.ndarray. Uses class-parametric specialization with plum."
@@ -196,7 +190,7 @@ def full(shape, fill_value, dtype=None, order="C", blockshape=None, inner="numpy
     blocks = [autoray.do("full", blockshape, value, dtype=dtype, order=order, backend=inner) for _ in range(prod(grid))]
 
     blocks = ndarray_from_list(blocks, grid)
-    return BlockArray(blocks, blockshape=blockshape, dtype=dtype or np.dtype(type(fill_value)))
+    return BlockArray(blocks)
 
 
 @dispatch
@@ -301,7 +295,7 @@ def tensordot(a: BlockArray, b: BlockArray, axes):
             inner_iter_b.reset()
         outer_iter_b.reset()
 
-    return BlockArray(grid, blockshape=blockshape, dtype=dtype)
+    return BlockArray(grid)
 
 
 # @todo
@@ -331,7 +325,7 @@ def tensordot(a: BlockArray, b: BlockArray, axes):
 #         blocks.append(COMPSsArray(block, shape=blockshape, dtype=arr.dtype))
 
 #     blocks = ndarray_from_list(blocks, grid)
-#     return BlockArray(blocks, blockshape=blockshape, dtype=arr.dtype)
+#     return BlockArray(blocks)
 
 
 @implements("random.rand", ext="BlockArray")
@@ -342,4 +336,4 @@ def rand(shape, blockshape=None, inner="numpy"):
     blocks = [autoray.do("random.rand", blockshape, backend=inner) for _ in range(prod(grid))]
 
     blocks = ndarray_from_list(blocks, grid)
-    return BlockArray(blocks, blockshape=blockshape, dtype=dtype)
+    return BlockArray(blocks)

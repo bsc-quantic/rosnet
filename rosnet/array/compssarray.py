@@ -352,7 +352,7 @@ def tensordot(a: BlockArray[COMPSsArray], b: BlockArray[COMPSsArray], axes):
                 inner_iter_b.reset()
             outer_iter_b.reset()
 
-    return BlockArray(grid, blockshape=blockshape, dtype=dtype)
+    return BlockArray(grid)
 
 
 # @implements(np.block, COMPSsArray)
