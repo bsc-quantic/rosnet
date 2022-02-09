@@ -20,9 +20,10 @@ from rosnet.helper.typing import Array, NestedArray, NestedList
 class BlockArray(np.lib.mixins.NDArrayOperatorsMixin):
     """A n-dimensional array divided in blocks.
 
-    Notes
-    -----------
-    - All blocks have same `blockshape` and `dtype`.
+    Implementation notes
+    --------------------
+    - All blocks are expected to have the same type and `dtype`.
+    - All blocks are expected to be equally sized.
     """
 
     _grid: np.ndarray = None
@@ -112,24 +113,24 @@ class BlockArray(np.lib.mixins.NDArrayOperatorsMixin):
 
     @dispatch
     def __getitem__(self, index: List[int]):
+        # TODO advanced indexing
         if len(index) != self.ndim:
             raise IndexError(f"Invalid indexing: index={index}")
 
         gid = [i // s for i, s in zip(key, self.blockshape)]
         bid = [i % s for i, s in zip(key, self.blockshape)]
 
-        # TODO call task and compss_wait_on if COMPSsArray
         return self._grid[gid][bid]
 
     @dispatch
     def __setitem__(self, key: List[int], value):
+        # TODO advanced indexing
         if len(key) != self.ndim:
             raise IndexError(f"Invalid indexing: key={key}")
 
         gid = [i // s for i, s in zip(key, self.blockshape)]
         bid = [i % s for i, s in zip(key, self.blockshape)]
 
-        # TODO call task if COMPSsArray
         self._grid[gid][bid] = value
 
     @property
