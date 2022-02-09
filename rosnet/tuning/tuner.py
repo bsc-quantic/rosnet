@@ -4,7 +4,7 @@ from math import ceil, prod
 import numpy as np
 from pycompss.api.api import compss_get_number_of_resources
 from pycompss.util.context import in_master, in_worker
-from rosnet import helper
+from rosnet.task.tensordot import dispatch_tensordot, dispatch_sequential, dispatch_commutative
 from rosnet.utils import result_shape
 
 
@@ -42,19 +42,19 @@ class Tuner:
         blocknbytes = prod(blockshape) * typ.itemsize
 
         # choose implementation by means of number of blocks
-        impl = helper.tensordot_sequential
+        impl = dispatch_sequential
 
         if nblock == 1:
-            impl = helper.tensordot_tensordot
+            impl = dispatch_tensordot
 
         if nblock > self.commutative_threshold:
-            impl = helper.tensordot_commutative
+            impl = dispatch_commutative
 
         # choose parallelism conservatively based on calculated memory usage
         mem_usage = 0
-        if impl == helper.tensordot_sequential:
+        if impl == dispatch_sequential:
             mem_usage = blocknbytes + nblock * (a.blocknbytes + b.blocknbytes)
-        elif impl == helper.tensordot_commutative:
+        elif impl == dispatch_commutative:
             # NOTE without the x2 factor, it goes Out-Of-Memory
             # don't know why this happens
             mem_usage = 2 * (a.blocknbytes + b.blocknbytes + blocknbytes)
