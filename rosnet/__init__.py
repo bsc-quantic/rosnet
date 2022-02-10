@@ -1,4 +1,4 @@
-__version__ = "0.1"
+__version__ = "0.2"
 from rosnet.array import COMPSsArray, BlockArray, full, ones, zeros, rand, array
 
 # opt-einsum support
