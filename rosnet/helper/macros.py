@@ -45,12 +45,3 @@ def todo(func):
         raise NotImplementedError(f"{func.__name__} is not implemented yet")
 
     return todo_msg
-
-
-@todo
-def generic_task(func):
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        return task(func, None, **kwargs)(*args)
-
-    return wrapper(func)

@@ -7,7 +7,6 @@ from plum import dispatch, parametric
 import autoray
 from rosnet.helper.math import (
     isunique,
-    ndarray_from_list,
     space,
     result_shape,
     join_idx,
@@ -226,13 +225,14 @@ def ones(shape, dtype=None, order="C", blockshape=None, inner="numpy") -> BlockA
 
 @implements(np.full, ext="BlockArray")
 def full(shape, fill_value, dtype=None, order="C", blockshape=None, inner="numpy") -> BlockArray:
-    blockshape = shape if blockshape is None else blockshape
-    grid = tuple(s // bs for s, bs in zip(shape, blockshape))
     dtype = dtype or np.dtype(type(value))
+    blocks = np.empty_like(blocks, dtype=object)
+    it = np.nditer(blocks, flags=["refs_ok", "multi_index"], op_flags=["writeonly"])
 
-    blocks = [autoray.do("full", blockshape, value, dtype=dtype, order=order, backend=inner) for _ in range(prod(grid))]
+    with it:
+        for block in it:
+            block[()] = autoray.do("full", blockshape, value, dtype=dtype, order=order, backend=inner)
 
-    blocks = ndarray_from_list(blocks, grid)
     return BlockArray(blocks)
 
 
@@ -374,9 +374,11 @@ def tensordot(a: BlockArray, b: BlockArray, axes):
 @implements("random.rand", ext="BlockArray")
 def rand(shape, blockshape=None, inner="numpy"):
     blockshape = shape if blockshape is None else blockshape
-    grid = tuple(s // bs for s, bs in zip(shape, blockshape))
+    blocks = np.empty_like(blocks, dtype=object)
+    it = np.nditer(blocks, flags=["refs_ok", "multi_index"], op_flags=["writeonly"])
 
-    blocks = [autoray.do("random.rand", blockshape, backend=inner) for _ in range(prod(grid))]
+    with it:
+        for block in it:
+            block[()] = autoray.do("random.rand", blockshape, backend=inner)
 
-    blocks = ndarray_from_list(blocks, grid)
     return BlockArray(blocks)
