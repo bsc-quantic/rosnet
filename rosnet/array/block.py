@@ -52,10 +52,14 @@ class BlockArray(np.lib.mixins.NDArrayOperatorsMixin):
         - blocks: List[Array]. List of blocks.
         - grid: Sequence[int]. Shape of the grid of blocks.
         """
-        if len(blocks) != len(grid):
+        if len(blocks) != prod(grid):
             raise ValueError("blocks and grid must have the same length")
 
-        self.data = np.array(blocks).reshape(grid)
+        self.data = np.empty((len(blocks),), dtype=object)
+        for i, block in enumerate(blocks):
+            self.data[i] = block
+
+        self.data = self.data.reshape(grid)
 
     @dispatch
     def __init__(self, grid: NestedArray[1]):
