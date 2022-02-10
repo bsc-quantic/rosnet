@@ -1,4 +1,4 @@
-from typing import Tuple, Type, List, Sequence, Optional
+from typing import Tuple, Type, List, Sequence
 from math import prod
 from copy import deepcopy
 from functools import reduce
