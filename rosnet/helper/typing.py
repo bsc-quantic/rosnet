@@ -37,7 +37,7 @@ def type_of(x: np.ndarray):
         x = x.flat[0]
 
     # TODO waiting for https://github.com/wesselb/plum/issues/37
-    return ptype(NestedArray[level])
+    return ptype(NestedArray[level]) if level else np.ndarray
 
 
 @parametric(runtime_type_of=True)
@@ -55,4 +55,4 @@ def type_of(x: List):
     typ = type(x[0])
 
     # TODO waiting for https://github.com/wesselb/plum/issues/37
-    return ptype(NestedList[typ, level])
+    return ptype(NestedList[typ, level]) if level else List[typ]
