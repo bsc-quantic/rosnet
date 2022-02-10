@@ -1,4 +1,4 @@
-from typing import Tuple, Type, List, Sequence
+from typing import Tuple, Type, List, Sequence, Optional
 from math import prod
 from copy import deepcopy
 from functools import reduce
@@ -10,9 +10,10 @@ from rosnet.helper.math import (
     space,
     result_shape,
     join_idx,
+    recurse,
 )
 from rosnet.helper.macros import todo, implements
-from rosnet.helper.typing import Array, NestedArray, NestedList
+from rosnet.helper.typing import Array, SupportsArray
 
 
 @parametric
@@ -27,84 +28,69 @@ class BlockArray(np.lib.mixins.NDArrayOperatorsMixin):
 
     data: np.ndarray = None
 
-    @dispatch
-    def __init__(self, blocks: NestedList[Array]):
+    def __init__(self, *args, **kwargs):
+        if isinstance(args[0], List):
+            self.__init_with_list__(*args, **kwargs)
+        elif isinstance(args[0], np.ndarray):
+            self.__init_with_array__(*args, **kwargs)
+        else:
+            raise ValueError("invalid constructor")
+
+    def __init_with_list__(self, blocks: List, grid: Optional[Sequence[int]] = None):
         """Constructor.
 
         Arguments
         ---------
-        - blocks: NestedList[Array]. Nested list of arrays.
+        - blocks: List[Array]. Nested list of arrays.
         """
-        self.data = np.empty_like(blocks, dtype=object)
+        if grid is None:
+            grid = []
+            for i in recurse(blocks):
+                grid += [len(i)]
+
+            grid = tuple(grid)
+
+        self.data = np.empty(grid, dtype=object)
 
         it = np.nditer(self.data, flags=["refs_ok", "multi_index"], op_flags=["writeonly"])
 
         with it:
             for block in it:
-                block[()] = reduce(lambda a, b,: a[b], it.multi_index, initial=blocks)
+                data = reduce(lambda a, b,: a[b], it.multi_index, blocks)
 
-    @dispatch
-    def __init__(self, blocks: List[Array], grid: Sequence[int]):
-        """Constructor.
+                if isinstance(data, Array):
+                    block[()] = data
+                elif isinstance(data, SupportsArray):
+                    block[()] = np.array(data)
+                else:
+                    raise ValueError("blocks must provide an array-like interface")
 
-        Arguments
-        ---------
-        - blocks: List[Array]. List of blocks.
-        - grid: Sequence[int]. Shape of the grid of blocks.
-        """
-        if len(blocks) != prod(grid):
-            raise ValueError("blocks and grid must have the same length")
+        if grid:
+            self.data = self.data.reshape(grid)
 
-        self.data = np.empty((len(blocks),), dtype=object)
-        for i, block in enumerate(blocks):
-            self.data[i] = block
+    def __init_with_array__(self, arr):
+        """Constructor."""
 
-        self.data = self.data.reshape(grid)
+        level = 0
+        for i in recurse(arr):
+            level += 1
 
-    @dispatch
-    def __init__(self, grid: NestedArray[1]):
-        """Constructor.
-
-        Arguments
-        ---------
-        - grid: np.ndarray of Array. Grid of blocks.
-        - blockshape: Optional[Sequence[int]]. If None, infer from grid content. None by default.
-        - dtype: Optional[np.dtype]. If None, infer from grid content. None by default.
-        """
-        self.data = grid.copy()
-
-    @dispatch
-    def __init__(self, arr: Array):
-        """Constructor.
-
-        Arguments
-        ---------
-        - arr: Array-like. e.g. COMPSsArray.
-        """
-        self.data = np.empty(tuple(1 for _ in arr.shape), dtype=object)
-        self.data.flat[0] = arr
+        if level:
+            self.data = arr.copy()
+        else:
+            self.data = np.empty(tuple(1 for _ in arr.shape), dtype=object)
+            self.data.flat[0] = arr
 
     @classmethod
-    @dispatch
-    def __inter_type_paramater__(cls, blocks: NestedList[Array], *args, **kwargs) -> type:
-        "Returns the parameter type."
-        x = blocks
-        while isinstance(x[0], List):
-            x = x[0]
+    def __infer_type_parameter__(cls, *args, **kwargs) -> type:
+        "Returns the type parameter."
 
-        return type(x)
-
-    @classmethod
-    @dispatch
-    def __infer_type_parameter__(cls, grid: NestedArray[1], *args, **kwargs) -> type:
-        "Returns the parameter type."
-        return type(grid.flat[0])
-
-    @classmethod
-    @dispatch
-    def __infer_type_parameter__(cls, arr: Array, *args, **kwargs) -> type:
-        "Returns the parameter type."
-        return type(arr)
+        x = args[0]
+        try:
+            while True:
+                x = x.flat[0] if isinstance(x, np.ndarray) else x[0]
+        except:
+            return type(x)
 
     def __str__(self):
         return "BlockArray(shape=%r, grid=%r, blockshape=%r, dtype=%r)" % (

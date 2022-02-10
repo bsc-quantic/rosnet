@@ -4,6 +4,7 @@ import itertools
 import operator as op
 from math import prod
 import numpy as np
+from plum import dispatch
 
 
 def isunique(l: List) -> bool:
@@ -35,3 +36,17 @@ def join_idx(outer, inner, axes):
         res[axe] = v
 
     return tuple(res)
+
+
+@dispatch
+def recurse(x):
+    while isinstance(x[0], List):
+        x = x[0]
+        yield x
+
+
+@dispatch
+def recurse(x: np.ndarray):
+    while isinstance(x.flat[0], np.ndarray):
+        x = x.flat[0]
+        yield x

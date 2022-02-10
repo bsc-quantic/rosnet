@@ -22,37 +22,3 @@ class Array(SupportsArray, Protocol):
 
     def dtype(self) -> np.dtype:
         pass
-
-
-@parametric(runtime_type_of=True)
-class NestedArray(np.ndarray):
-    """A type for recursive numpy arrays (array of arrays) where the type parameter specifies the nesting level."""
-
-
-@type_of.dispatch
-def type_of(x: np.ndarray):
-    level = 0
-    while isinstance(x.flat[0], np.ndarray):
-        level += 1
-        x = x.flat[0]
-
-    # TODO waiting for https://github.com/wesselb/plum/issues/37
-    return ptype(NestedArray[level]) if level else np.ndarray
-
-
-@parametric(runtime_type_of=True)
-class NestedList(list):
-    """A type for recursive lists where the type parameter specifies the nesting level."""
-
-
-@type_of.dispatch
-def type_of(x: List):
-    level = 0
-    while isinstance(x[0], List):
-        level += 1
-        x = x[0]
-
-    typ = type(x[0])
-
-    # TODO waiting for https://github.com/wesselb/plum/issues/37
-    return ptype(NestedList[typ, level]) if level else List[typ]
