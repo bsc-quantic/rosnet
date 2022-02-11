@@ -11,7 +11,8 @@ from rosnet.helper.math import (
     space,
     result_shape,
     join_idx,
-    recurse,
+    measure_shape,
+    nest_level,
 )
 from rosnet.helper.macros import todo, implements
 from rosnet.helper.typing import Array, SupportsArray
@@ -45,11 +46,7 @@ class BlockArray(np.lib.mixins.NDArrayOperatorsMixin):
         - blocks: List[Array]. Nested list of arrays.
         """
         if grid is None:
-            grid = [len(blocks)]
-            for i in recurse(blocks):
-                grid += [len(i)]
-
-            grid = tuple(grid)
+            grid = measure_shape(blocks)
 
         self.data = np.empty(grid, dtype=object)
 
@@ -76,18 +73,11 @@ class BlockArray(np.lib.mixins.NDArrayOperatorsMixin):
                 else:
                     raise ValueError("blocks must provide an array-like interface")
 
-        if grid:
-            self.data = self.data.reshape(grid)
-
     def __init_with_array__(self, arr):
         """Constructor."""
 
-        level = 0
-        for i in recurse(arr):
-            level += 1
-
-        if level:
-            self.data = arr.copy()
+        if nest_level(arr):
+            self.data = arr
         else:
             self.data = np.empty(tuple(1 for _ in arr.shape), dtype=object)
             self.data.flat[0] = arr
