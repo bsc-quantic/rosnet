@@ -5,6 +5,7 @@ import operator as op
 from math import prod
 import numpy as np
 from plum import dispatch
+from rosnet.helper.typing import Array
 
 
 def isunique(l: List) -> bool:
@@ -39,14 +40,25 @@ def join_idx(outer, inner, axes):
 
 
 @dispatch
-def recurse(x):
-    while isinstance(x[0], List):
-        x = x[0]
-        yield x
+def __recurse(x):
+    yield None
 
 
 @dispatch
-def recurse(x: np.ndarray):
-    while isinstance(x.flat[0], np.ndarray):
-        x = x.flat[0]
+def __recurse(x: list):
+    yield x
+    yield from recurse(x[0])
+
+
+@dispatch
+def __recurse(x: np.ndarray):
+    if isinstance(x.flat[0], np.ndarray):
         yield x
+        yield from recurse(x.flat[0])
+    # NOTE NumPy's scalar types fulfill the SupportsArray protocol, and we don't want that
+    elif isinstance(x.flat[0], Array):
+        yield x
+
+
+def recurse(x):
+    yield from filter(lambda x: x is not None, __recurse(x))
