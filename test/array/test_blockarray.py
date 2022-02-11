@@ -82,3 +82,16 @@ class TestConstructors:
 
 class TestNumpy:
     pass
+
+
+def test_tensordot():
+    blockshape = (4, 1, 1)
+    grid = (2, 2, 2)
+    a = BlockArray([np.ones(blockshape)] * 8, grid=grid)
+    b = BlockArray([np.ones(blockshape)] * 8, grid=grid)
+    axes = [(0, 1), (0, 2)]
+    c = np.tensordot(a, b, axes)
+
+    assert c.shape == (2, 2)
+    assert c.blockshape == (1, 1)
+    assert c.grid == (2, 2)
