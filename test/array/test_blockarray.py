@@ -52,11 +52,11 @@ class TestConstructors:
         assert arr.dtype == self.dtype
 
     def test_ndarray(self):
-        data = np.zeros(self.shape, dtype=self.dtype)
+        data = np.zeros(self.blockshape, dtype=self.dtype)
         arr = BlockArray(data)
 
         assert arr.grid == tuple(1 for _ in self.gridshape)
-        assert arr.blockshape == arr.shape == self.shape
+        assert arr.blockshape == arr.shape == self.blockshape
         assert arr.dtype == self.dtype
 
     def test_array(self):
