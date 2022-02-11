@@ -14,7 +14,7 @@ class TestConstructors:
     def shape(self) -> Tuple[int]:
         return tuple(g * b for g, b in zip(self.gridshape, self.blockshape))
 
-    def test_nested_list_of_array(self):
+    def test_nested_list_of_ndarray(self):
         data = np.empty(self.gridshape, dtype=object)
         it = np.nditer(data, flags=["refs_ok", "multi_index"], op_flags=["writeonly"])
 
@@ -28,7 +28,7 @@ class TestConstructors:
         assert arr.blockshape == self.blockshape
         assert arr.dtype == self.dtype
 
-    def test_list_of_array(self):
+    def test_list_of_ndarray(self):
         data = [np.zeros(self.blockshape, dtype=self.dtype)] * prod(self.gridshape)
 
         arr = BlockArray(data, grid=self.gridshape)
@@ -37,7 +37,7 @@ class TestConstructors:
         assert arr.blockshape == self.blockshape
         assert arr.dtype == self.dtype
 
-    def test_nested_array(self):
+    def test_nested_ndarray(self):
         data = np.empty(self.gridshape, dtype=object)
         it = np.nditer(data, flags=["refs_ok", "multi_index"], op_flags=["writeonly"])
 
