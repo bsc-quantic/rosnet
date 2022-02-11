@@ -332,7 +332,7 @@ def tensordot(a: BlockArray, b: BlockArray, axes):
                 for _ in inner_iter_b
             )
 
-            grid[idx] = np.sum(np.tensordot(a.data[ba], b.data[bb], axes) for ba, bb in zip(bid_a, bid_b))
+            grid[idx] = sum(np.tensordot(a.data[ba], b.data[bb], axes) for ba, bb in zip(bid_a, bid_b))
 
             # reset inner block iterators
             inner_iter_a.reset()
