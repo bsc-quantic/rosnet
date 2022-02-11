@@ -37,7 +37,7 @@ class MockArray:
 class TestRecurseNestLevel:
     @staticmethod
     def nest_level(x):
-        level = -1
+        level = 0
         for i in recurse(x):
             level += 1
 
@@ -88,24 +88,24 @@ class TestRecurseShapeTracker:
     def test_ndarray(self):
         arr = np.empty((1,))
 
-        assert self.measure_shape(arr) == (1,)
+        assert self.measure_shape(arr) == ()
 
     def test_array(self):
         arr = MockArray((1,), dtype=np.generic)
 
-        assert self.measure_shape(arr) == (1,)
+        assert self.measure_shape(arr) == ()
 
     def test_ndarray_ndarray(self):
         arr = np.empty((1,), dtype=object)
         arr.flat[0] = np.empty((1,))
 
-        assert self.measure_shape(arr) == (1, 1)
+        assert self.measure_shape(arr) == (1,)
 
     def test_ndarray_array(self):
         arr = np.empty((1,), dtype=object)
         arr.flat[0] = MockArray((1,), dtype=np.generic)
 
-        assert self.measure_shape(arr) == (1, 1)
+        assert self.measure_shape(arr) == (1,)
 
     @pytest.mark.parametrize("level", [1, 2, 3, 4, 5])
     def test_nested_list_of_ndarray(self, level):
