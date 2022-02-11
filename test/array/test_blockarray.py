@@ -59,25 +59,37 @@ class TestConstructors:
         assert arr.blockshape == arr.shape == self.shape
         assert arr.dtype == self.dtype
 
-    # def test_array(self):
-    #     class MockArray:
-    #         def __array__(self):
-    #             pass
+    def test_array(self):
+        blockshape = self.blockshape
+        dtype = self.dtype
 
-    #         def __array_ufunc__(self, ufunc, method, *inputs, **kwargs):
-    #             pass
+        class MockArray:
+            def __array__(self):
+                return np.zeros(blockshape, dtype=dtype)
 
-    #         def __array_function__(self, function, types, args, kwargs):
-    #             pass
+            def __array_ufunc__(self, ufunc, method, *inputs, **kwargs):
+                return NotImplemented
 
-    #         def shape(self) -> Tuple[int]:
-    #             pass
+            def __array_function__(self, function, types, args, kwargs):
+                return NotImplemented
 
-    #         def dtype(self) -> np.dtype:
-    #             pass
+            def __getitem__(self, key):
+                return 0
 
-    #     arr = MockArray()
-    #     rn.
+            @property
+            def shape(self) -> Tuple[int]:
+                return blockshape
+
+            @property
+            def dtype(self) -> np.dtype:
+                return dtype
+
+        data = MockArray()
+        arr = BlockArray(data)
+
+        assert arr.grid == tuple(1 for _ in self.gridshape)
+        assert arr.blockshape == arr.shape == self.blockshape
+        assert arr.dtype == self.dtype
 
 
 class TestNumpy:
