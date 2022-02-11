@@ -307,9 +307,7 @@ def tensordot(a: BlockArray, b: BlockArray, axes):
         flags=["multi_index", "refs_ok"],
     )
 
-    grid = np.empty(outer_iter_a.shape + outer_iter_b.shape)
-    dtype = np.result_type(a.dtype, b.dtype)
-    blockshape = result_shape(a.blockshape, b.blockshape, axes)
+    grid = np.empty(outer_iter_a.shape + outer_iter_b.shape, dtype=object)
 
     for _ in outer_iter_a:
         for _ in outer_iter_b:
