@@ -32,7 +32,7 @@ class BlockArray(np.lib.mixins.NDArrayOperatorsMixin):
     def __init__(self, *args, **kwargs):
         if isinstance(args[0], List):
             self.__init_with_list__(*args, **kwargs)
-        elif isinstance(args[0], np.ndarray):
+        elif isinstance(args[0], SupportsArray):
             self.__init_with_array__(*args, **kwargs)
         else:
             raise ValueError("invalid constructor")
