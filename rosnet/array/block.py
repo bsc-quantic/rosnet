@@ -44,7 +44,7 @@ class BlockArray(np.lib.mixins.NDArrayOperatorsMixin):
         - blocks: List[Array]. Nested list of arrays.
         """
         if grid is None:
-            grid = []
+            grid = [len(blocks)]
             for i in recurse(blocks):
                 grid += [len(i)]
 
@@ -56,7 +56,14 @@ class BlockArray(np.lib.mixins.NDArrayOperatorsMixin):
 
         with it:
             for block in it:
-                data = reduce(lambda a, b,: a[b], it.multi_index, blocks)
+                # case for nested list of arrays
+                if isinstance(blocks[0], List):
+                    data = blocks
+                    for i in it.multi_index:
+                        data = data[i]
+                # case for list of arrays
+                else:
+                    data = blocks[it.iterindex]
 
                 if isinstance(data, Array):
                     block[()] = data
