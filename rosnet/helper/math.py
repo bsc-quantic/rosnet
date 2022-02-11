@@ -62,3 +62,11 @@ def __recurse(x: np.ndarray):
 
 def recurse(x):
     yield from filter(lambda x: x is not None, __recurse(x))
+
+
+def nest_level(x):
+    return sum(1 for _ in recurse(x))
+
+
+def measure_shape(x):
+    return tuple(len(i) for i in recurse(x))

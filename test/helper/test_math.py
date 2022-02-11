@@ -1,7 +1,7 @@
 import pytest
 from typing import Tuple
 import numpy as np
-from rosnet.helper.math import recurse
+from rosnet.helper.math import recurse, nest_level, measure_shape
 
 
 class MockArray:
@@ -35,88 +35,76 @@ class MockArray:
 
 
 class TestRecurseNestLevel:
-    @staticmethod
-    def nest_level(x):
-        level = 0
-        for i in recurse(x):
-            level += 1
-
-        return level
-
     def test_ndarray(self):
         arr = np.empty((1,))
 
-        assert self.nest_level(arr) == 0
+        assert nest_level(arr) == 0
 
     def test_array(self):
         arr = MockArray((1,), dtype=np.generic)
 
-        assert self.nest_level(arr) == 0
+        assert nest_level(arr) == 0
 
     def test_ndarray_ndarray(self):
         arr = np.empty((1,), dtype=object)
         arr.flat[0] = np.empty((1,))
 
-        assert self.nest_level(arr) == 1
+        assert nest_level(arr) == 1
 
     def test_ndarray_array(self):
         arr = np.empty((1,), dtype=object)
         arr.flat[0] = MockArray((1,), dtype=np.generic)
 
-        assert self.nest_level(arr) == 1
+        assert nest_level(arr) == 1
 
     @pytest.mark.parametrize("level", [1, 2, 3, 4, 5])
     def test_nested_list_of_ndarray(self, level):
         arr = np.empty(tuple([1] * level), dtype=object)
         arr.flat[0] = np.zeros((1,))
 
-        assert self.nest_level(arr.tolist()) == level
+        assert nest_level(arr.tolist()) == level
 
     @pytest.mark.parametrize("level", [1, 2, 3, 4, 5])
     def test_nested_list_of_array(self, level):
         arr = np.empty(tuple([1] * level), dtype=object)
         arr.flat[0] = MockArray((1,))
 
-        assert self.nest_level(arr.tolist()) == level
+        assert nest_level(arr.tolist()) == level
 
 
 class TestRecurseShapeTracker:
-    @staticmethod
-    def measure_shape(x):
-        return tuple(len(i) for i in recurse(x))
-
     def test_ndarray(self):
         arr = np.empty((1,))
 
-        assert self.measure_shape(arr) == ()
+        assert measure_shape(arr) == ()
 
     def test_array(self):
         arr = MockArray((1,), dtype=np.generic)
 
-        assert self.measure_shape(arr) == ()
+        assert measure_shape(arr) == ()
 
     def test_ndarray_ndarray(self):
         arr = np.empty((1,), dtype=object)
         arr.flat[0] = np.empty((1,))
 
-        assert self.measure_shape(arr) == (1,)
+        assert measure_shape(arr) == (1,)
 
     def test_ndarray_array(self):
         arr = np.empty((1,), dtype=object)
         arr.flat[0] = MockArray((1,), dtype=np.generic)
 
-        assert self.measure_shape(arr) == (1,)
+        assert measure_shape(arr) == (1,)
 
     @pytest.mark.parametrize("level", [1, 2, 3, 4, 5])
     def test_nested_list_of_ndarray(self, level):
         arr = np.empty(tuple([1] * level), dtype=object)
         arr.flat[0] = np.zeros((1,))
 
-        assert self.measure_shape(arr.tolist()) == tuple([1] * level)
+        assert measure_shape(arr.tolist()) == tuple([1] * level)
 
     @pytest.mark.parametrize("level", [1, 2, 3, 4, 5])
     def test_nested_list_of_array(self, level):
         arr = np.empty(tuple([1] * level), dtype=object)
         arr.flat[0] = MockArray((1,))
 
-        assert self.measure_shape(arr.tolist()) == tuple([1] * level)
+        assert measure_shape(arr.tolist()) == tuple([1] * level)
