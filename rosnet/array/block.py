@@ -2,6 +2,7 @@ from typing import Tuple, Type, List, Sequence, Optional
 from math import prod
 from copy import deepcopy
 from functools import reduce
+from contextlib import suppress
 import numpy as np
 from plum import dispatch, parametric
 import autoray
