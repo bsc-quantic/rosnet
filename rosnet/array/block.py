@@ -65,6 +65,9 @@ class BlockArray(np.lib.mixins.NDArrayOperatorsMixin):
                 else:
                     data = blocks[it.iterindex]
 
+                if data.ndim != self.data.ndim:
+                    raise ValueError("blocks and grid should have same ndim. append single-dimensions (1) where needed")
+
                 if isinstance(data, Array):
                     block[()] = data
                 elif isinstance(data, SupportsArray):
