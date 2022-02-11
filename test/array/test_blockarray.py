@@ -5,6 +5,36 @@ import numpy as np
 from rosnet import BlockArray
 
 
+class MockArray:
+    def __init__(self, shape, **kwargs):
+        self.__shape = shape
+        self.__dtype = kwargs.get("dtype", np.generic)
+
+    def __array__(self):
+        return np.zeros(blockshape, dtype=dtype)
+
+    def __array_ufunc__(self, ufunc, method, *inputs, **kwargs):
+        return NotImplemented
+
+    def __array_function__(self, function, types, args, kwargs):
+        return NotImplemented
+
+    def __getitem__(self, key):
+        return 0
+
+    @property
+    def shape(self) -> Tuple[int]:
+        return self.__shape
+
+    @property
+    def dtype(self) -> np.dtype:
+        return self.__dtype
+
+    @property
+    def ndim(self) -> int:
+        return len(self.shape)
+
+
 class TestConstructors:
     gridshape = (2, 2, 2)
     blockshape = (4, 8, 1)
@@ -28,8 +58,31 @@ class TestConstructors:
         assert arr.blockshape == self.blockshape
         assert arr.dtype == self.dtype
 
+    def test_nested_list_of_array(self):
+        data = np.empty(self.gridshape, dtype=object)
+        it = np.nditer(data, flags=["refs_ok", "multi_index"], op_flags=["writeonly"])
+
+        with it:
+            for block in it:
+                block[()] = MockArray(self.blockshape, dtype=self.dtype)
+
+        arr = BlockArray(data.tolist())
+
+        assert arr.grid == self.gridshape
+        assert arr.blockshape == self.blockshape
+        assert arr.dtype == self.dtype
+
     def test_list_of_ndarray(self):
         data = [np.zeros(self.blockshape, dtype=self.dtype)] * prod(self.gridshape)
+
+        arr = BlockArray(data, grid=self.gridshape)
+
+        assert arr.grid == self.gridshape
+        assert arr.blockshape == self.blockshape
+        assert arr.dtype == self.dtype
+
+    def test_list_of_array(self):
+        data = [MockArray(self.blockshape, dtype=self.dtype)] * prod(self.gridshape)
 
         arr = BlockArray(data, grid=self.gridshape)
 
@@ -51,6 +104,22 @@ class TestConstructors:
         assert arr.blockshape == self.blockshape
         assert arr.dtype == self.dtype
 
+    def test_nested_array(self):
+        data = np.empty(self.gridshape, dtype=object)
+        it = np.nditer(data, flags=["refs_ok", "multi_index"], op_flags=["writeonly"])
+
+        with it:
+            for block in it:
+                block[()] = MockArray(self.blockshape, dtype=self.dtype)
+
+        arr = BlockArray(data)
+        print(f"[out]arr.grid={arr.grid}")
+        print(f"[out]arr.blockshape={arr.blockshape}")
+
+        assert arr.grid == self.gridshape
+        assert arr.blockshape == self.blockshape
+        assert arr.dtype == self.dtype
+
     def test_ndarray(self):
         data = np.zeros(self.blockshape, dtype=self.dtype)
         arr = BlockArray(data)
@@ -60,31 +129,7 @@ class TestConstructors:
         assert arr.dtype == self.dtype
 
     def test_array(self):
-        blockshape = self.blockshape
-        dtype = self.dtype
-
-        class MockArray:
-            def __array__(self):
-                return np.zeros(blockshape, dtype=dtype)
-
-            def __array_ufunc__(self, ufunc, method, *inputs, **kwargs):
-                return NotImplemented
-
-            def __array_function__(self, function, types, args, kwargs):
-                return NotImplemented
-
-            def __getitem__(self, key):
-                return 0
-
-            @property
-            def shape(self) -> Tuple[int]:
-                return blockshape
-
-            @property
-            def dtype(self) -> np.dtype:
-                return dtype
-
-        data = MockArray()
+        data = MockArray(self.blockshape, dtype=self.dtype)
         arr = BlockArray(data)
 
         assert arr.grid == tuple(1 for _ in self.gridshape)
