@@ -206,12 +206,12 @@ def to_numpy(arr: BlockArray) -> np.ndarray:
 
 @implements(np.zeros, ext="BlockArray")
 def zeros(shape, dtype=None, order="C", blockshape=None, inner="numpy") -> BlockArray:
-    return autoray.do("full", shape, 0, dtype=dtype, order=order, blockshape=blockshape, backend="rosnet.BlockArray")
+    return autoray.do("full", shape, 0, dtype=dtype, order=order, blockshape=blockshape, inner=inner, like="rosnet.BlockArray")
 
 
 @implements(np.ones, ext="BlockArray")
 def ones(shape, dtype=None, order="C", blockshape=None, inner="numpy") -> BlockArray:
-    return autoray.do("full", shape, 1, dtype=dtype, order=order, blockshape=blockshape, backend="rosnet.BlockArray")
+    return autoray.do("full", shape, 1, dtype=dtype, order=order, blockshape=blockshape, inner=inner, like="rosnet.BlockArray")
 
 
 @implements(np.full, ext="BlockArray")
@@ -222,7 +222,7 @@ def full(shape, fill_value, dtype=None, order="C", blockshape=None, inner="numpy
 
     with it:
         for block in it:
-            block[()] = autoray.do("full", blockshape, value, dtype=dtype, order=order, backend=inner)
+            block[()] = autoray.do("full", blockshape, fill_value, dtype=dtype, order=order, like=inner)
 
     return BlockArray(blocks)
 
@@ -368,6 +368,6 @@ def rand(shape, blockshape=None, inner="numpy"):
 
     with it:
         for block in it:
-            block[()] = autoray.do("random.rand", blockshape, backend=inner)
+            block[()] = autoray.do("random.rand", blockshape, like=inner)
 
     return BlockArray(blocks)
