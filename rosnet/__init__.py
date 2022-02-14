@@ -23,3 +23,16 @@ from rosnet.array.block import (
     full,
     rand,
 )
+
+from rosnet.linalg import (
+    dot,
+    vdot,
+    inner,
+    outer,
+    matmul,
+    tensordot,
+    einsum,
+    einsum_path,
+    kron,
+    trace,
+)
