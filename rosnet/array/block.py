@@ -216,8 +216,11 @@ def ones(shape, dtype=None, order="C", blockshape=None, inner="numpy") -> BlockA
 
 @implements(np.full, ext="BlockArray")
 def full(shape, fill_value, dtype=None, order="C", blockshape=None, inner="numpy") -> BlockArray:
-    dtype = dtype or np.dtype(type(value))
-    blocks = np.empty_like(blocks, dtype=object)
+    dtype = dtype or np.dtype(type(fill_value))
+    blockshape = blockshape or shape
+    grid = tuple(s // bs for s, bs in zip(shape, blockshape))
+
+    blocks = np.empty(grid, dtype=object)
     it = np.nditer(blocks, flags=["refs_ok", "multi_index"], op_flags=["writeonly"])
 
     with it:
