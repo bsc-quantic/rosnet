@@ -22,3 +22,9 @@ class Array(SupportsArray, Protocol):
 
     def dtype(self) -> np.dtype:
         pass
+
+
+@runtime_checkable
+class Future:
+    def ref(self):
+        pass
