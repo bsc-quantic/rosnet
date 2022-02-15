@@ -23,12 +23,6 @@ def _core_count():
         return multiprocessing.cpu_count()
 
 
-def _flops_tensordot(a, b, axes):
-    outer_blockshape = list(result_shape(a, b, axes))
-    inner_blockshape = [a[i] for i in axes[0]]
-    return prod(outer_blockshape + inner_blockshape)
-
-
 class Tuner:
     def __init__(self, *args, **kwargs):
         self.max_cpu = kwargs.get("max_cpu", _core_count())
