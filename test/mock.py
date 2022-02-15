@@ -1,5 +1,6 @@
 from typing import Tuple
 import numpy as np
+from math import prod
 
 
 class MockArray:
@@ -30,3 +31,15 @@ class MockArray:
     @property
     def ndim(self) -> int:
         return len(self.shape)
+
+    @property
+    def size(self) -> int:
+        return prod(self.shape)
+
+    @property
+    def itemsize(self) -> int:
+        return self.dtype.itemsize
+
+    @property
+    def nbytes(self) -> int:
+        return self.size * self.itemsize
