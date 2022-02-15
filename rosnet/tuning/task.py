@@ -1,4 +1,5 @@
 import functools
+from rosnet.helper.typing import Future
 from pycompss.api.task import task
 from pycompss.api.constraint import constraint
 
@@ -23,6 +24,9 @@ class TunableTask:
         if self.fn is None:
             self.fn = args[0]
             return self
+
+        # automatic unpacking of wrapper objects
+        args = [arg.ref if isinstance(arg, Future) else arg for arg in args]
 
         return self.generate_variant()(*args, **kwargs)
 
