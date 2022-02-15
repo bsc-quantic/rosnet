@@ -2,25 +2,6 @@ from contextlib import contextmanager
 from typing import Tuple, Callable
 from math import ceil, prod
 import numpy as np
-from pycompss.api.api import compss_get_number_of_resources
-from pycompss.util.context import in_master, in_worker
-from rosnet.task.tensordot import dispatch_tensordot, dispatch_sequential, dispatch_commutative
-from rosnet.utils import result_shape
-
-
-node_count = compss_get_number_of_resources
-
-
-def _core_count():
-    "Return the number of compute units."
-    if in_master():
-        import os
-
-        return os.cpu_count()
-    else:
-        import multiprocessing
-
-        return multiprocessing.cpu_count()
 
 
 class Tuner:
