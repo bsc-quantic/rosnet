@@ -1,7 +1,5 @@
 import functools
 from rosnet.helper.typing import Future
-from pycompss.api.task import task
-from pycompss.api.constraint import constraint
 
 
 class TunableTask:
@@ -15,6 +13,9 @@ class TunableTask:
 
     @functools.lru_cache
     def generate_variant(self, **kwargs):
+        from pycompss.api.task import task
+        from pycompss.api.constraint import constraint
+
         return constraint(**kwargs)(task(**self.task_info)(self.fn))
 
     def __getitem__(self, **kwargs):
