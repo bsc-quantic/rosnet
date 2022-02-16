@@ -288,7 +288,7 @@ def tensordot(a: COMPSsArray, b: COMPSsArray, axes) -> COMPSsArray:
 @dispatch
 def tensordot(a: List[COMPSsArray], b: List[COMPSsArray], axes) -> COMPSsArray:
     dtype = np.result_type(a.dtype, b.dtype)
-    shape = result_shape(a.shape, b.shape, axes)
+    shape = result_shape(a[0].shape, b[0].shape, axes)
 
     ref = task.tensordot.sequential([i.ref for i in a], [i.ref for i in b], axes)
     return COMPSsArray(ref, shape=shape, dtype=dtype)
