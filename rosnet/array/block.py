@@ -288,11 +288,16 @@ def transpose(a: BlockArray, axes=None, inplace=True):
     return a
 
 
+# TODO fix plum.dispatch to distinguish parametric type specialization in arguments
+@dispatch
+def tensordot(a: List[Array], b: List[Array], axes) -> Array:
+    return sum(np.tensordot(ai, bi, axes) for ai, bi in zip(a, b))
+
+
 @dispatch
 def tensordot(a: BlockArray, b: BlockArray, axes):
     # pylint: disable=protected-access
     # TODO assertions
-    # TODO generic BlockArray implementation and call to specialized tensordot of lists of blocks?
 
     outer_axes = [list(set(range(i.ndim)) - set(ax)) for ax, i in zip(axes, (a, b))]
     outer_iter_a, inner_iter_a = np.nested_iters(
@@ -331,7 +336,8 @@ def tensordot(a: BlockArray, b: BlockArray, axes):
                 for _ in inner_iter_b
             )
 
-            grid[idx] = sum(np.tensordot(a.data[ba], b.data[bb], axes) for ba, bb in zip(bid_a, bid_b))
+            # call specialized tensordot routine
+            grid[idx] = tensordot([a.data[i] for i in bid_a], [b.data[i] for i in bid_b], axes)
 
             # reset inner block iterators
             inner_iter_a.reset()
