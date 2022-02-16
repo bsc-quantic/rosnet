@@ -28,21 +28,21 @@ class COMPSsArray(np.lib.mixins.NDArrayOperatorsMixin):
     @dispatch
     def __init__(self, arr: SupportsArray):
         "Constructor for generic arrays."
-        self._ref = np.array(arr)
+        self.data = np.array(arr)
         self.__shape = arr.shape
         self.__dtype = arr.dtype
 
     @dispatch(precedence=1)
     def __init__(self, arr: np.generic):
         "Constructor for scalars."
-        self._ref = arr
+        self.data = arr
         self.__shape = ()
         self.__dtype = arr.dtype
 
     @dispatch
     def __init__(self, arr: COMPSsFuture, shape, dtype):
         "Constructor for future result of COMPSs tasks."
-        self._ref = arr
+        self.data = arr
         self.__shape = shape
         self.__dtype = dtype
 
@@ -51,7 +51,7 @@ class COMPSsArray(np.lib.mixins.NDArrayOperatorsMixin):
         if not hasattr(arr, "__array__"):
             raise TypeError(f"You must provide a numpy.ndarray or a COMPSs future to a numpy.ndarray, but a {type(arr)} was provided")
 
-        self._ref = arr
+        self.data = arr
         self.__shape = arr.shape if hasattr(arr, "shape") else kwargs["shape"]
         self.__dtype = arr.dtype if hasattr(arr, "dtype") else kwargs["dtype"]
 
@@ -65,13 +65,17 @@ class COMPSsArray(np.lib.mixins.NDArrayOperatorsMixin):
         return np.ndarray
 
     def __del__(self):
-        compss_delete_object(self._ref)
+        compss_delete_object(self.data)
 
     def __getitem__(self, idx) -> COMPSsFuture:
-        return compss_wait_on(task.getitem(self._ref, idx))
+        return compss_wait_on(task.getitem(self.data, idx))
 
     def __setitem__(self, key, value):
-        task.setitem(self._ref, key, value)
+        task.setitem(self.data, key, value)
+
+    @property
+    def ref(self):
+        return self.data
 
     @property
     def shape(self) -> Tuple[int]:
@@ -103,11 +107,11 @@ class COMPSsArray(np.lib.mixins.NDArrayOperatorsMixin):
         return self.__dtype
 
     def __deepcopy__(self, memo):
-        ref = task.copy(self._ref)
+        ref = task.copy(self.data)
         return COMPSsArray(ref, shape=self.shape, dtype=self.dtype)
 
     def __array__(self) -> np.ndarray:
-        return compss_wait_on(self._ref)
+        return compss_wait_on(self.data)
 
     def __array_priority__(self) -> int:
         # NOTE higher priority than numpy.ndarray, lower than DataClayArray
@@ -118,12 +122,12 @@ class COMPSsArray(np.lib.mixins.NDArrayOperatorsMixin):
             return NotImplemented
 
         # get COMPSs reference if COMPSsArray
-        inputs = [arg._ref if isinstance(arg, self.__class__) else arg for arg in inputs]
+        inputs = [arg.data if isinstance(arg, self.__class__) else arg for arg in inputs]
 
         inplace = False
         if "out" in kwargs and kwargs["out"] == (self,):
             inplace = True
-            kwargs["out"] = (self._ref,)
+            kwargs["out"] = (self.data,)
 
         # 'at' operates in-place
         if method == "at":
@@ -232,7 +236,7 @@ def reshape(a: COMPSsArray, shape, order="F", inplace=True):
     a = a if inplace else deepcopy(a)
 
     # TODO support order?
-    task.reshape(a._ref, shape)
+    task.reshape(a.data, shape)
     a.shape = shape
     return a
 
@@ -245,7 +249,7 @@ def transpose(a: COMPSsArray, axes=None, inplace=True):
 
     a = a if inplace else deepcopy(a)
 
-    task.transpose(a._ref, axes)
+    task.transpose(a.data, axes)
     a.__shape = tuple(a.__shape[i] for i in axes)
 
     return a
@@ -272,13 +276,10 @@ def tensordot(a: Union[COMPSsArray, SupportsArray], b: Union[COMPSsArray, Suppor
 
 @dispatch(precedence=1)
 def tensordot(a: COMPSsArray, b: COMPSsArray, axes) -> COMPSsArray:
-    # pylint: disable=protected-access
-    # TODO assertions
-
     dtype = np.result_type(a.dtype, b.dtype)
     shape = result_shape(a.shape, b.shape, axes)
 
-    ref = task.tensordot.tensordot(a._ref, b._ref, axes)
+    ref = task.tensordot.tensordot(a._data, b.data, axes)
     return COMPSsArray(ref, shape=shape, dtype=dtype)
 
 
@@ -360,7 +361,7 @@ def tensordot(a: BlockArray[COMPSsArray], b: BlockArray[COMPSsArray], axes):
 
 # @implements(np.block, COMPSsArray)
 # def __compss_block(arrays):
-#     return np.block(compss_wait_on([a._ref for a in arrays]))
+#     return np.block(compss_wait_on([a.data for a in arrays]))
 
 
 @implements("random.rand", ext="COMPSsArray")
