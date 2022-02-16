@@ -283,80 +283,15 @@ def tensordot(a: COMPSsArray, b: COMPSsArray, axes) -> COMPSsArray:
     return COMPSsArray(ref, shape=shape, dtype=dtype)
 
 
-@dispatch(precedence=1)
-def tensordot(a: BlockArray[COMPSsArray], b: BlockArray[COMPSsArray], axes):
-    # pylint: disable=protected-access
-    # TODO assertions
-    # TODO selection of implementation based on input arrays
-
-    # iterators
-    outer_axes = [list(set(range(i.ndim)) - set(ax)) for ax, i in zip(axes, (a, b))]
-    outer_iter_a, inner_iter_a = np.nested_iters(
-        a.data,
-        [outer_axes[0], axes[0]],
-        op_flags=["readonly"],
-        flags=["multi_index", "refs_ok"],
-    )
-    outer_iter_b, inner_iter_b = np.nested_iters(
-        b.data,
-        [outer_axes[1], axes[1]],
-        op_flags=["readonly"],
-        flags=["multi_index", "refs_ok"],
-    )
-
-    grid = np.empty(outer_iter_a.shape + outer_iter_b.shape, dtype=COMPSsArray)
+# TODO how to call commutative?
+# TODO need to fix plum.dispatch for recognizing parametric types!!
+@dispatch
+def tensordot(a: List[COMPSsArray], b: List[COMPSsArray], axes) -> COMPSsArray:
     dtype = np.result_type(a.dtype, b.dtype)
-    blockshape = result_shape(a.blockshape, b.blockshape, axes)
+    shape = result_shape(a.shape, b.shape, axes)
 
-    # estimate number of cores per task for dynamic parallelism
-    impl, ncores = tuning.tensordot(a, b, axes)
-
-    # required memory per task
-    # pylint: disable=no-member
-    # memory = a.blocknbytes + b.blocknbytes + prod(blockshape) * dtype.itemsize
-    # pylint: enable=no-member
-
-    with tuning.allocate(ncores=ncores):  # , memory=memory):
-        for _ in outer_iter_a:  # outer_i_a
-            for _ in outer_iter_b:  # outer_i_b
-                idx = outer_iter_a.multi_index + outer_iter_b.multi_index
-
-                # call chosen implementation
-                blocks_a = list(
-                    map(
-                        lambda x: a.data[x],
-                        (
-                            join_idx(
-                                outer_iter_a.multi_index,
-                                inner_iter_a.multi_index,
-                                axes[0],
-                            )
-                            for _ in inner_iter_a
-                        ),
-                    )
-                )
-                blocks_b = list(
-                    map(
-                        lambda x: b.data[x],
-                        (
-                            join_idx(
-                                outer_iter_b.multi_index,
-                                inner_iter_b.multi_index,
-                                axes[1],
-                            )
-                            for _ in inner_iter_b
-                        ),
-                    )
-                )
-
-                grid[idx] = impl(blocks_a, blocks_b, axes)
-
-                # reset inner block iterators
-                inner_iter_a.reset()
-                inner_iter_b.reset()
-            outer_iter_b.reset()
-
-    return BlockArray(grid)
+    ref = task.tensordot.sequential([i.ref for i in a], [i.ref for i in b], axes)
+    return COMPSsArray(ref, shape=shape, dtype=dtype)
 
 
 # @implements(np.block, COMPSsArray)
