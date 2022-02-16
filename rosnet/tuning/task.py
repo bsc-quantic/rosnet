@@ -4,8 +4,11 @@ from math import ceil
 from rosnet.helper.typing import Future
 from rosnet.helper.macros import todo
 
-
-class TunableTask:
+# TODO how to do @implements on this? maybe add an extra .dispatch/.register for multiple implementations? multi-gpu?
+# TODO save new ""task"" in self? so we know which fn to generate in generate_variant for multi-gpu
+# TODO how to skip this if local execution?
+# TODO how to write numerical methods that do iterations -> support nested tasks -> how to wrap this methods for local and distributed execution?
+class autotune:
     def __init__(self, **kwargs):
         self.task_info = kwargs
         self.__fn = None
