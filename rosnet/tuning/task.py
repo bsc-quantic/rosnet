@@ -2,6 +2,7 @@ from typing import Callable, Dict
 import functools
 from math import ceil
 from rosnet.helper.typing import Future
+from rosnet.helper.macros import todo
 
 
 class TunableTask:
@@ -19,6 +20,19 @@ class TunableTask:
         from pycompss.api.constraint import constraint
 
         return constraint(**kwargs)(task(**self.task_info)(self.fn))
+
+    @todo
+    def register(self, *args, **kwargs):
+        """Registers another implementation of the COMPSs task. e.g. GPU impl., implementation if some library is available"""
+
+        def registrar(fn):
+            from pycompss.api.task import task
+            from pycompss.api.constraint import constraint
+
+            constraint(**kwargs)(task(**self.task_info)(fn))
+            return self
+
+        return registrar
 
     def __getitem__(self, **kwargs):
         return self.generate_variant(**kwargs)
