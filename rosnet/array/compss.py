@@ -12,6 +12,7 @@ from rosnet.helper.macros import todo, implements
 from rosnet.helper.math import result_shape
 from rosnet.helper.typing import Array, SupportsArray
 from rosnet import task, tuning
+from rosnet.array.maybe import MaybeArray
 
 
 # TODO special variation for in-place functions? keep np.reshape/transpose/... as non-modifying -> create new COMPSsArray/BlockArray
@@ -283,14 +284,27 @@ def tensordot(a: COMPSsArray, b: COMPSsArray, axes) -> COMPSsArray:
     return COMPSsArray(ref, shape=shape, dtype=dtype)
 
 
-# TODO how to call commutative?
 # TODO need to fix plum.dispatch for recognizing parametric types!!
 @dispatch
-def tensordot(a: List[COMPSsArray], b: List[COMPSsArray], axes) -> COMPSsArray:
+def tensordot(a: List[COMPSsArray], b: List[COMPSsArray], axes, method="sequential") -> COMPSsArray:
     dtype = np.result_type(a.dtype, b.dtype)
     shape = result_shape(a[0].shape, b[0].shape, axes)
 
-    ref = task.tensordot.sequential([i.ref for i in a], [i.ref for i in b], axes)
+    # TODO refactor method names
+    if method == "sequential":
+        a = [i.ref for i in a]
+        b = [i.ref for i in b]
+        ref = task.tensordot.sequential(a, b, axes)
+    elif method == "commutative":
+        ref = MaybeArray()
+        for ia, ib in zip(a, b):
+            task.tensordot.commutative(ref, ia, ib, axes)
+    elif method == "commutative-but-first":
+        ref = task.tensordot.tensordot(a[0].ref, b[0].ref, axes)
+        for ia, ib in zip(a[1:], b[1:]):
+            task.tensordot.commutative(ref, ia, ib, axes)
+    else:
+        raise ValueError("invalid method")
     return COMPSsArray(ref, shape=shape, dtype=dtype)
 
 
