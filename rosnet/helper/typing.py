@@ -25,6 +25,6 @@ class Array(SupportsArray, Protocol):
 
 
 @runtime_checkable
-class Future:
+class Future(Protocol):
     def ref(self):
         pass
