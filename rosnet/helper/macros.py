@@ -35,6 +35,7 @@ def implements(function: Callable, ext=None):
         backend = f"rosnet.{ext}" if ext else "rosnet"
         register_function(backend, function.__name__, func)
         inherit_doc(function)(func)
+        return func
 
     return registrar
 
