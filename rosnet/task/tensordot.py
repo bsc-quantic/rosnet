@@ -23,6 +23,12 @@ def tensordot(ba: np.ndarray, bb: np.ndarray, axes):
     return np.tensordot(ba, bb, axes)
 
 
+# @tensordot.register(processors=[{"processorType": "GPU", "computingUnits": "1"}])
+# def tensordot_gpu(ba: np.ndarray, bb: np.ndarray, axes):
+#     _fix_blas_threads()
+#     return do("tensordot", ba, bb, axes, like="cupy")
+
+
 @autotune(res=COMMUTATIVE)
 def commutative(res: MaybeArray, a: np.ndarray, b: np.ndarray, axes):
     _fix_blas_threads()
