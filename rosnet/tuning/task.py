@@ -31,8 +31,9 @@ class autotune:
         def registrar(fn):
             from pycompss.api.task import task
             from pycompss.api.constraint import constraint
+            from pycompss.api.implements import pycompss_implements
 
-            constraint(**kwargs)(task(**self.task_info)(fn))
+            pycompss_implements(source_class=self.fn.__module__, method=self.fn.__name__)(constraint(**kwargs)(task(**self.task_info)(fn)))
             return self
 
         return registrar
@@ -43,6 +44,10 @@ class autotune:
     def __call__(self, *args, **kwargs):
         if self.fn is None:
             self.fn = args[0]
+
+            # generate primer task, need to register task before any call autotune.register
+            _ = self.generate_variant()
+
             return self
 
         constraints = tune(self.fn, *args, **kwargs)
