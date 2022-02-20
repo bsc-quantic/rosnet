@@ -14,6 +14,21 @@ def tensordot(a: Array, b: Array, axes) -> int:
     return a.nbytes + b.nbytes + prod(shape) * dtype.itemsize
 
 
+@implements("tensordot", ext="tuning.mem")
+def sequential(a: list[Array], b: list[Array], axes) -> int:
+    assert all(a[0].shape == ai.shape for ai in a)
+    assert all(bi[0].shape == bi for bi in b)
+
+    shape = result_shape(a.shape, b.shape, axes)
+    dtype = np.result_type(a.dtype, b.dtype)
+    return sum(ai.nbytes for ai in a) + sum(bi.nbytes for bi in b) + prod(shape) * dtype.itemsize
+
+
+@implements("commutative", ext="tuning.mem")
+def commutative(buffer, a: Array, b: Array, axes):
+    return tensordot(a, b, axes)  # + buffer.size * buffer.itemsize
+
+
 @implements("full", ext="tuning.mem")
 def full(shape, fill_value, dtype=None, **kwargs) -> int:
     dtype = dtype or np.dtype(type(fill_value))
