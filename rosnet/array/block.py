@@ -1,4 +1,4 @@
-from typing import Tuple, Type, List, Sequence, Optional
+from typing import Tuple, Type, List, Sequence, Optional, Generic, TypeVar
 from math import prod
 from copy import deepcopy
 from functools import reduce
@@ -17,9 +17,11 @@ from rosnet.helper.math import (
 from rosnet.helper.macros import todo, implements
 from rosnet.helper.typing import Array, SupportsArray
 
+T = TypeVar("T", Array, np.ndarray, covariant=True)
+
 
 @parametric
-class BlockArray(np.lib.mixins.NDArrayOperatorsMixin):
+class BlockArray(np.lib.mixins.NDArrayOperatorsMixin, Generic[T]):
     """A n-dimensional array divided in blocks.
 
     Implementation notes
@@ -81,6 +83,12 @@ class BlockArray(np.lib.mixins.NDArrayOperatorsMixin):
         else:
             self.data = np.empty(tuple(1 for _ in arr.shape), dtype=object)
             self.data.flat[0] = arr
+
+    def __class_getitem__(cls, key):
+        if not isinstance(key, Array):
+            raise TypeError(f"'BlockArray[{key.__name__}]' is not a valid type as '{key.__name__}' does not fulfill the Array protocol")
+
+        return super().__class_getitem__(key)
 
     @classmethod
     def __infer_type_parameter__(cls, *args, **kwargs) -> type:
