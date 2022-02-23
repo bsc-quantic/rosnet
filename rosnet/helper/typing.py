@@ -1,6 +1,5 @@
 from typing import Protocol, Tuple, List, runtime_checkable
 import numpy as np
-from plum import parametric, type_of, ptype
 
 
 @runtime_checkable
