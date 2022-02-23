@@ -4,7 +4,7 @@ import itertools
 import operator as op
 from math import prod
 import numpy as np
-from plum import dispatch
+from multimethod import multimethod
 from rosnet.helper.typing import Array
 
 
@@ -39,18 +39,18 @@ def join_idx(outer, inner, axes):
     return tuple(res)
 
 
-@dispatch
+@multimethod
 def __recurse(x):
     yield None
 
 
-@dispatch
+@multimethod
 def __recurse(x: list):
     yield x
     yield from recurse(x[0])
 
 
-@dispatch
+@multimethod
 def __recurse(x: np.ndarray):
     if isinstance(x.flat[0], np.ndarray):
         yield x

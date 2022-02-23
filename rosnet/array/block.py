@@ -4,7 +4,7 @@ from copy import deepcopy
 from functools import reduce
 from contextlib import suppress
 import numpy as np
-from plum import dispatch, parametric
+from multimethod import multimethod
 import autoray
 from rosnet.helper.math import (
     isunique,
@@ -16,11 +16,11 @@ from rosnet.helper.math import (
 )
 from rosnet.helper.macros import todo, implements
 from rosnet.helper.typing import Array, SupportsArray
+from rosnet import numpy_interface as iface
 
 T = TypeVar("T", Array, np.ndarray, covariant=True)
 
 
-@parametric
 class BlockArray(np.lib.mixins.NDArrayOperatorsMixin, Generic[T]):
     """A n-dimensional array divided in blocks.
 
@@ -109,8 +109,8 @@ class BlockArray(np.lib.mixins.NDArrayOperatorsMixin, Generic[T]):
             self.dtype,
         )
 
-    @dispatch
-    def __getitem__(self, index: List[int]):
+    @multimethod
+    def __getitem__(self, index: Sequence[int]):
         # TODO advanced indexing
         if len(index) != self.ndim:
             raise IndexError(f"Invalid indexing: index={index}")
@@ -120,8 +120,8 @@ class BlockArray(np.lib.mixins.NDArrayOperatorsMixin, Generic[T]):
 
         return self.data[gid][bid]
 
-    @dispatch
-    def __setitem__(self, key: List[int], value):
+    @multimethod
+    def __setitem__(self, key: Sequence[int], value):
         # TODO advanced indexing
         if len(key) != self.ndim:
             raise IndexError(f"Invalid indexing: key={key}")
@@ -183,7 +183,7 @@ class BlockArray(np.lib.mixins.NDArrayOperatorsMixin, Generic[T]):
         return BlockArray(grid)
 
     def __array__(self) -> np.ndarray:
-        "Returns a numpy.ndarray. Uses class-parametric specialization with plum."
+        "Returns a numpy.ndarray. Uses class-parametric specialization with multimethod."
         return to_numpy(self)
 
     @todo
@@ -203,11 +203,11 @@ class BlockArray(np.lib.mixins.NDArrayOperatorsMixin, Generic[T]):
             if f is None:
                 f = autoray.get_lib_fn("rosnet.BlockArray.random", func.__name__)
 
-        # multiple dispatch specialization takes place here with plum
+        # multiple dispatch specialization takes place here with multimethod
         return f(*args, **kwargs) if f else NotImplemented
 
 
-@dispatch
+@iface.to_numpy.register
 def to_numpy(arr: BlockArray) -> np.ndarray:
     return np.block(arr.data.tolist())
 
@@ -238,27 +238,27 @@ def full(shape, fill_value, dtype=None, order="C", blockshape=None, inner="numpy
     return BlockArray(blocks)
 
 
-@dispatch
+@iface.zeros_like.register
 def zeros_like(a: BlockArray, dtype=None, order="K", subok=True, shape=None) -> BlockArray:
     pass
 
 
-@dispatch
+@iface.ones_like.register
 def ones_like(a: BlockArray, dtype=None, order="K", subok=True, shape=None) -> BlockArray:
     pass
 
 
-@dispatch
+@iface.full_like.register
 def full_like(a: BlockArray, fill_value, dtype=None, order="K", subok=True, shape=None) -> BlockArray:
     pass
 
 
-@dispatch
+@iface.empty_like.register
 def empty_like(prototype: BlockArray, dtype=None, order="K", subok=True, shape=None) -> BlockArray:
     pass
 
 
-@dispatch
+@iface.reshape.register
 def reshape(a: BlockArray, shape, order="F", inplace=True):
     a = a if inplace else deepcopy(a)
 
@@ -271,7 +271,7 @@ def reshape(a: BlockArray, shape, order="F", inplace=True):
     return a
 
 
-@dispatch
+@iface.transpose.register
 def transpose(a: BlockArray, axes=None, inplace=True):
     # pylint: disable=protected-access
     if not isunique(axes):
@@ -288,13 +288,12 @@ def transpose(a: BlockArray, axes=None, inplace=True):
     return a
 
 
-# TODO fix plum.dispatch to distinguish parametric type specialization in arguments
-@dispatch
+@iface.tensordot.register
 def tensordot(a: List[Array], b: List[Array], axes) -> Array:
     return sum(np.tensordot(ai, bi, axes) for ai, bi in zip(a, b))
 
 
-@dispatch
+@iface.tensordot.register
 def tensordot(a: BlockArray, b: BlockArray, axes):
     # pylint: disable=protected-access
     # TODO assertions

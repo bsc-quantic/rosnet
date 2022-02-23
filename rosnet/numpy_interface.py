@@ -1,69 +1,75 @@
 import numpy as np
-from plum import dispatch
+from multimethod import multimethod
 from rosnet.helper.macros import implements
 
-
+# numpy
 @implements(np.tensordot)
-@dispatch.abstract
-def tensordot(a, b, axes):
-    pass
+@multimethod
+def tensordot(*args, **kwargs):
+    raise NotImplementedError()
 
 
 @implements(np.einsum)
-@dispatch.abstract
-def einsum():
-    pass
+@multimethod
+def einsum(*args, **kwargs):
+    raise NotImplementedError()
 
 
 @implements(np.reshape)
-@dispatch.abstract
-def reshape():
-    pass
+@multimethod
+def reshape(*args, **kwargs):
+    raise NotImplementedError()
 
 
 @implements(np.transpose)
-@dispatch.abstract
-def transpose():
-    pass
+@multimethod
+def transpose(*args, **kwargs):
+    raise NotImplementedError()
 
 
 @implements(np.stack)
-@dispatch.abstract
-def stack():
-    pass
+@multimethod
+def stack(*args, **kwargs):
+    raise NotImplementedError()
 
 
 @implements(np.split)
-@dispatch.abstract
-def split():
-    pass
+@multimethod
+def split(*args, **kwargs):
+    raise NotImplementedError()
 
 
 @implements(np.block)
-@dispatch.abstract
-def block():
-    pass
+@multimethod
+def block(*args, **kwargs):
+    raise NotImplementedError()
 
 
 @implements(np.zeros_like)
-@dispatch.abstract
-def zeros_like():
-    pass
+@multimethod
+def zeros_like(*args, **kwargs):
+    raise NotImplementedError()
 
 
 @implements(np.ones_like)
-@dispatch.abstract
-def ones_like():
-    pass
+@multimethod
+def ones_like(*args, **kwargs):
+    raise NotImplementedError()
 
 
 @implements(np.full_like)
-@dispatch.abstract
-def full_like():
-    pass
+@multimethod
+def full_like(*args, **kwargs):
+    raise NotImplementedError()
 
 
 @implements(np.empty_like)
-@dispatch.abstract
-def empty_like():
-    pass
+@multimethod
+def empty_like(*args, **kwargs):
+    raise NotImplementedError()
+
+
+# custom
+@multimethod
+def to_numpy(*args, **kwargs):
+    raise NotImplementedError()
