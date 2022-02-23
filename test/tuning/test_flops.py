@@ -11,6 +11,6 @@ class TestTensordot:
     def test_matmul(self, m, n, k):
         a = MockArray((m, k), dtype=np.float64)
         b = MockArray((k, n), dtype=np.float64)
-        axes = [(1,), (0, 1)]
+        axes = [(1,), (0,)]
 
         assert do("tensordot", a, b, axes, like="rosnet.tuning.flops") == m * n * k
