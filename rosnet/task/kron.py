@@ -1,7 +1,7 @@
 import numpy as np
-from pycompss.api.task import task
+from rosnet.tuning.task import autotune
 
 
-@task(returns=np.ndarray)
+@autotune(returns=np.ndarray)
 def kron(a: np.ndarray, b: np.ndarray):
     return np.kron(a, b)
