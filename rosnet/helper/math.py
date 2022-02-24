@@ -5,7 +5,7 @@ import operator as op
 from math import prod
 import numpy as np
 from multimethod import multimethod
-from rosnet.helper.typing import Array
+from rosnet.numpy_interface import Array
 
 
 def isunique(l: Sequence) -> bool:
@@ -55,7 +55,7 @@ def __recurse(x: np.ndarray):
     if isinstance(x.flat[0], np.ndarray):
         yield x
         yield from recurse(x.flat[0])
-    # NOTE NumPy's scalar types fulfill the SupportsArray protocol, and we don't want that
+    # NOTE NumPy's scalar types fulfill the ArrayConvertable interface, and we don't want that
     elif isinstance(x.flat[0], Array):
         yield x
 

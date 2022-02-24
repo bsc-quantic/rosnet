@@ -10,7 +10,7 @@ from pycompss.runtime.management.classes import Future as COMPSsFuture
 from pycompss.api.api import compss_delete_object, compss_wait_on
 from rosnet.helper.macros import todo, implements
 from rosnet.helper.math import result_shape
-from rosnet.helper.typing import Array, SupportsArray
+from rosnet.numpy_interface import Array, ArrayConvertable
 from rosnet import task, tuning, numpy_interface as iface
 from rosnet.array.maybe import MaybeArray
 
@@ -27,7 +27,7 @@ class COMPSsArray(np.lib.mixins.NDArrayOperatorsMixin):
 
     # pylint: disable=protected-access
     @__init__.register
-    def __init__(self, arr: SupportsArray):
+    def __init__(self, arr: ArrayConvertable):
         "Constructor for generic arrays."
         self.data = np.array(arr)
         self.__shape = arr.shape
@@ -267,9 +267,9 @@ def split(array: COMPSsArray, indices_or_sections, axis=0) -> list[COMPSsArray]:
     pass
 
 
-@iface.tensordot.register(COMPSsArray, SupportsArray)
-@iface.tensordot.register(SupportsArray, COMPSsArray)
-def tensordot(a: Union[COMPSsArray, SupportsArray], b: Union[COMPSsArray, SupportsArray], axes):
+@iface.tensordot.register(COMPSsArray, ArrayConvertable)
+@iface.tensordot.register(ArrayConvertable, COMPSsArray)
+def tensordot(a: Union[COMPSsArray, ArrayConvertable], b: Union[COMPSsArray, ArrayConvertable], axes):
     a = a if isinstance(a, COMPSsArray) else COMPSsArray(a)
     b = b if isinstance(b, COMPSsArray) else COMPSsArray(b)
     return tensordot.invoke(COMPSsArray, COMPSsArray)(a, b, axes)
