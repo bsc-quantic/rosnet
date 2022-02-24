@@ -10,8 +10,8 @@ from pycompss.runtime.management.classes import Future as COMPSsFuture
 from pycompss.api.api import compss_delete_object, compss_wait_on
 from rosnet.helper.macros import todo, implements
 from rosnet.helper.math import result_shape
-from rosnet.numpy_interface import Array, ArrayConvertable
-from rosnet import task, tuning, numpy_interface as iface
+from rosnet.interface import Array, ArrayConvertable
+from rosnet import task, tuning, interface as iface
 from rosnet.array.maybe import MaybeArray
 
 

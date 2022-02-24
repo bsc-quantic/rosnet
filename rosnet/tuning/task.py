@@ -1,7 +1,7 @@
 from typing import Callable, Dict
 import functools
 from math import ceil
-from rosnet.numpy_interface import Future
+from rosnet.interface import Future
 from rosnet.helper.macros import todo
 from . import mem
 

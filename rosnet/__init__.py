@@ -1,7 +1,7 @@
 __version__ = "0.1"
 
 from rosnet.array import *
-from rosnet.numpy_interface import (
+from rosnet.interface import (
     tensordot,
     einsum,
     reshape,
