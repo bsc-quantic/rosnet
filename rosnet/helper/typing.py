@@ -1,4 +1,4 @@
-from typing import Protocol, Tuple, List, runtime_checkable
+from typing import Protocol, Tuple, runtime_checkable
 import numpy as np
 
 

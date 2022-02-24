@@ -1,4 +1,4 @@
-from typing import Tuple, Type, Optional, Sequence, List
+from typing import Tuple, Type, Optional, Sequence
 import functools
 from contextlib import suppress
 from copy import deepcopy
@@ -263,7 +263,7 @@ def stack(arrays: Sequence[COMPSsArray], axis=0, out=None) -> COMPSsArray:
 
 @todo
 @iface.split.register
-def split(array: COMPSsArray, indices_or_sections, axis=0) -> List[COMPSsArray]:
+def split(array: COMPSsArray, indices_or_sections, axis=0) -> list[COMPSsArray]:
     pass
 
 
@@ -284,9 +284,8 @@ def tensordot(a: COMPSsArray, b: COMPSsArray, axes) -> COMPSsArray:
     return COMPSsArray(ref, shape=shape, dtype=dtype)
 
 
-# TODO need to fix plum.dispatch for recognizing parametric types!!
 @iface.tensordot.register
-def tensordot(a: List[COMPSsArray], b: List[COMPSsArray], axes, method="sequential") -> COMPSsArray:
+def tensordot(a: Sequence[COMPSsArray], b: Sequence[COMPSsArray], axes, method="sequential") -> COMPSsArray:
     dtype = np.result_type(a.dtype, b.dtype)
     shape = result_shape(a[0].shape, b[0].shape, axes)
 

@@ -1,4 +1,4 @@
-from typing import Tuple, Type, List, Sequence, Optional, Generic, TypeVar
+from typing import Tuple, Type, Sequence, Optional, Generic, TypeVar
 from math import prod
 from copy import deepcopy
 from functools import reduce
@@ -33,19 +33,19 @@ class BlockArray(np.lib.mixins.NDArrayOperatorsMixin, Generic[T]):
     data: np.ndarray = None
 
     def __init__(self, *args, **kwargs):
-        if isinstance(args[0], List):
+        if isinstance(args[0], list):
             self.__init_with_list__(*args, **kwargs)
         elif isinstance(args[0], SupportsArray):
             self.__init_with_array__(*args, **kwargs)
         else:
             raise ValueError("invalid constructor")
 
-    def __init_with_list__(self, blocks: List, grid: Optional[Sequence[int]] = None):
+    def __init_with_list__(self, blocks: list, grid: Optional[Sequence[int]] = None):
         """Constructor.
 
         Arguments
         ---------
-        - blocks: List[Array]. Nested list of arrays.
+        - blocks: list[Array]. Nested list of arrays.
         """
         if grid is None:
             grid = measure_shape(blocks)
@@ -57,7 +57,7 @@ class BlockArray(np.lib.mixins.NDArrayOperatorsMixin, Generic[T]):
         with it:
             for block in it:
                 # case for nested list of arrays
-                if isinstance(blocks[0], List):
+                if isinstance(blocks[0], list):
                     data = blocks
                     for i in it.multi_index:
                         data = data[i]
@@ -289,7 +289,7 @@ def transpose(a: BlockArray, axes=None, inplace=True):
 
 
 @iface.tensordot.register
-def tensordot(a: List[Array], b: List[Array], axes) -> Array:
+def tensordot(a: Sequence[Array], b: Sequence[Array], axes) -> Array:
     return sum(np.tensordot(ai, bi, axes) for ai, bi in zip(a, b))
 
 
