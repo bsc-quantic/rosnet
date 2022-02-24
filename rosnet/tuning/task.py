@@ -3,6 +3,7 @@ import functools
 from math import ceil
 from rosnet.helper.typing import Future
 from rosnet.helper.macros import todo
+from . import mem
 
 # TODO how to do @implements on this? maybe add an extra .dispatch/.register for multiple implementations? multi-gpu?
 # TODO save new ""task"" in self? so we know which fn to generate in generate_variant for multi-gpu
@@ -63,7 +64,7 @@ def tune(fn: Callable, *args, **kwargs) -> Dict[str, int]:
 
     # dispatch cost function
     try:
-        mem_usage = do(fn.__name__, *args, **kwargs, like="rosnet.tuning.cost.mem")
+        mem_usage = getattr(mem, fn.__name__)("mem", *args, **kwargs)
     except:
         mem_usage = 1
 
