@@ -15,7 +15,7 @@ from rosnet.helper.math import (
     nest_level,
 )
 from rosnet.helper.macros import todo, implements
-from rosnet.helper.typing import Array, SupportsArray
+from rosnet.numpy_interface import Array, ArrayConvertable
 from rosnet import numpy_interface as iface
 
 T = TypeVar("T", Array, np.ndarray, covariant=True)
@@ -35,7 +35,7 @@ class BlockArray(np.lib.mixins.NDArrayOperatorsMixin, Generic[T]):
     def __init__(self, *args, **kwargs):
         if isinstance(args[0], list):
             self.__init_with_list__(*args, **kwargs)
-        elif isinstance(args[0], SupportsArray):
+        elif isinstance(args[0], ArrayConvertable):
             self.__init_with_array__(*args, **kwargs)
         else:
             raise ValueError("invalid constructor")
@@ -70,7 +70,7 @@ class BlockArray(np.lib.mixins.NDArrayOperatorsMixin, Generic[T]):
 
                 if isinstance(data, Array):
                     block[()] = data
-                elif isinstance(data, SupportsArray):
+                elif isinstance(data, ArrayConvertable):
                     block[()] = np.array(data)
                 else:
                     raise ValueError("blocks must provide an array-like interface")

@@ -1,7 +1,7 @@
 from math import prod
 import numpy as np
 from rosnet.helper.macros import implements
-from rosnet.helper.typing import Array
+from rosnet.numpy_interface import Array
 from rosnet.helper.math import result_shape
 
 
