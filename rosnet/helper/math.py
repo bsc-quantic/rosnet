@@ -5,7 +5,7 @@ import operator as op
 from math import prod
 import numpy as np
 from multimethod import multimethod
-from rosnet.numpy_interface import Array
+from rosnet.interface import Array
 
 
 def isunique(l: Sequence) -> bool:

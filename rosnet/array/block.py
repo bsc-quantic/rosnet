@@ -15,8 +15,8 @@ from rosnet.helper.math import (
     nest_level,
 )
 from rosnet.helper.macros import todo, implements
-from rosnet.numpy_interface import Array, ArrayConvertable
-from rosnet import numpy_interface as iface
+from rosnet.interface import Array, ArrayConvertable
+from rosnet import interface as iface
 
 T = TypeVar("T", Array, np.ndarray, covariant=True)
 
