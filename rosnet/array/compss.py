@@ -1,17 +1,18 @@
-from typing import Tuple, Type, Optional, Sequence, List
+from typing import Tuple, Type, Optional, Sequence
 import functools
 from contextlib import suppress
 from copy import deepcopy
 from math import prod
 import numpy as np
-from plum import dispatch
+from multimethod import multimethod
 import autoray
 from pycompss.runtime.management.classes import Future as COMPSsFuture
 from pycompss.api.api import compss_delete_object, compss_wait_on
 from rosnet.helper.macros import todo, implements
 from rosnet.helper.math import result_shape
 from rosnet.helper.typing import Array, SupportsArray
-from rosnet import task, tuning
+from rosnet import task, tuning, numpy_interface as iface
+from rosnet.array.maybe import MaybeArray
 
 
 # TODO special variation for in-place functions? keep np.reshape/transpose/... as non-modifying -> create new COMPSsArray/BlockArray
@@ -25,33 +26,33 @@ class COMPSsArray(np.lib.mixins.NDArrayOperatorsMixin):
     """
 
     # pylint: disable=protected-access
-    @dispatch
+    @__init__.register
     def __init__(self, arr: SupportsArray):
         "Constructor for generic arrays."
-        self._ref = np.array(arr)
+        self.data = np.array(arr)
         self.__shape = arr.shape
         self.__dtype = arr.dtype
 
-    @dispatch(precedence=1)
+    @__init__.register
     def __init__(self, arr: np.generic):
         "Constructor for scalars."
-        self._ref = arr
+        self.data = arr
         self.__shape = ()
         self.__dtype = arr.dtype
 
-    @dispatch
+    @__init__.register
     def __init__(self, arr: COMPSsFuture, shape, dtype):
         "Constructor for future result of COMPSs tasks."
-        self._ref = arr
+        self.data = arr
         self.__shape = shape
         self.__dtype = dtype
 
-    @dispatch
+    @multimethod
     def __init__(self, arr, **kwargs):
         if not hasattr(arr, "__array__"):
             raise TypeError(f"You must provide a numpy.ndarray or a COMPSs future to a numpy.ndarray, but a {type(arr)} was provided")
 
-        self._ref = arr
+        self.data = arr
         self.__shape = arr.shape if hasattr(arr, "shape") else kwargs["shape"]
         self.__dtype = arr.dtype if hasattr(arr, "dtype") else kwargs["dtype"]
 
@@ -65,13 +66,17 @@ class COMPSsArray(np.lib.mixins.NDArrayOperatorsMixin):
         return np.ndarray
 
     def __del__(self):
-        compss_delete_object(self._ref)
+        compss_delete_object(self.data)
 
     def __getitem__(self, idx) -> COMPSsFuture:
-        return compss_wait_on(task.getitem(self._ref, idx))
+        return compss_wait_on(task.getitem(self.data, idx))
 
     def __setitem__(self, key, value):
-        task.setitem(self._ref, key, value)
+        task.setitem(self.data, key, value)
+
+    @property
+    def ref(self):
+        return self.data
 
     @property
     def shape(self) -> Tuple[int]:
@@ -103,11 +108,11 @@ class COMPSsArray(np.lib.mixins.NDArrayOperatorsMixin):
         return self.__dtype
 
     def __deepcopy__(self, memo):
-        ref = task.copy(self._ref)
+        ref = task.copy(self.data)
         return COMPSsArray(ref, shape=self.shape, dtype=self.dtype)
 
     def __array__(self) -> np.ndarray:
-        return compss_wait_on(self._ref)
+        return compss_wait_on(self.data)
 
     def __array_priority__(self) -> int:
         # NOTE higher priority than numpy.ndarray, lower than DataClayArray
@@ -118,12 +123,12 @@ class COMPSsArray(np.lib.mixins.NDArrayOperatorsMixin):
             return NotImplemented
 
         # get COMPSs reference if COMPSsArray
-        inputs = [arg._ref if isinstance(arg, self.__class__) else arg for arg in inputs]
+        inputs = [arg.data if isinstance(arg, self.__class__) else arg for arg in inputs]
 
         inplace = False
         if "out" in kwargs and kwargs["out"] == (self,):
             inplace = True
-            kwargs["out"] = (self._ref,)
+            kwargs["out"] = (self.data,)
 
         # 'at' operates in-place
         if method == "at":
@@ -170,12 +175,11 @@ class COMPSsArray(np.lib.mixins.NDArrayOperatorsMixin):
             if f is None:
                 f = autoray.get_lib_fn("rosnet.COMPSsArray.random", func.__name__)
 
-        # multiple dispatch specialization takes place here with plum
+        # multiple dispatch specialization takes place here with multimethod
         return f(*args, **kwargs) if f else NotImplemented
 
 
-# TODO waiting to https://github.com/wesselb/plum/issues/37
-@dispatch
+@iface.to_numpy.register
 def to_numpy(arr: BlockArray[COMPSsArray]):
     blocks = np.empty_like(self.data, dtype=object)
     it = np.nditer(
@@ -206,38 +210,38 @@ def full(shape, fill_value, dtype=None, order="C") -> COMPSsArray:
     return COMPSsArray(ref, shape=shape, dtype=dtype or np.dtype(type(fill_value)))
 
 
-@dispatch
+@iface.zeros_like.register
 def zeros_like(a: COMPSsArray, dtype=None, order="K", subok=True, shape=None) -> COMPSsArray:
     pass
 
 
-@dispatch
+@iface.ones_like.register
 def ones_like(a: COMPSsArray, dtype=None, order="K", subok=True, shape=None) -> COMPSsArray:
     pass
 
 
-@dispatch
+@iface.full_like.register
 def full_like(a: COMPSsArray, fill_value, dtype=None, order="K", subok=True, shape=None) -> COMPSsArray:
     pass
 
 
-@dispatch
+@iface.empty_like.register
 def empty_like(prototype: COMPSsArray, dtype=None, order="K", subok=True, shape=None) -> COMPSsArray:
     pass
 
 
-@dispatch
+@iface.reshape.register
 def reshape(a: COMPSsArray, shape, order="F", inplace=True):
     # pylint: disable=protected-access
     a = a if inplace else deepcopy(a)
 
     # TODO support order?
-    task.reshape(a._ref, shape)
+    task.reshape(a.data, shape)
     a.shape = shape
     return a
 
 
-@dispatch
+@iface.transpose.register
 def transpose(a: COMPSsArray, axes=None, inplace=True):
     # pylint: disable=protected-access
     if not isunique(axes):
@@ -245,122 +249,67 @@ def transpose(a: COMPSsArray, axes=None, inplace=True):
 
     a = a if inplace else deepcopy(a)
 
-    task.transpose(a._ref, axes)
+    task.transpose(a.data, axes)
     a.__shape = tuple(a.__shape[i] for i in axes)
 
     return a
 
 
 @todo
-@dispatch
+@iface.stack.register
 def stack(arrays: Sequence[COMPSsArray], axis=0, out=None) -> COMPSsArray:
     pass
 
 
 @todo
-@dispatch
-def split(array: COMPSsArray, indices_or_sections, axis=0) -> List[COMPSsArray]:
+@iface.split.register
+def split(array: COMPSsArray, indices_or_sections, axis=0) -> list[COMPSsArray]:
     pass
 
 
-@dispatch.multi((COMPSsArray, SupportsArray), (SupportsArray, COMPSsArray))
+@iface.tensordot.register(COMPSsArray, SupportsArray)
+@iface.tensordot.register(SupportsArray, COMPSsArray)
 def tensordot(a: Union[COMPSsArray, SupportsArray], b: Union[COMPSsArray, SupportsArray], axes):
     a = a if isinstance(a, COMPSsArray) else COMPSsArray(a)
     b = b if isinstance(b, COMPSsArray) else COMPSsArray(b)
     return tensordot.invoke(COMPSsArray, COMPSsArray)(a, b, axes)
 
 
-@dispatch(precedence=1)
+@iface.tensordot.register
 def tensordot(a: COMPSsArray, b: COMPSsArray, axes) -> COMPSsArray:
-    # pylint: disable=protected-access
-    # TODO assertions
-
     dtype = np.result_type(a.dtype, b.dtype)
     shape = result_shape(a.shape, b.shape, axes)
 
-    ref = task.tensordot.tensordot(a._ref, b._ref, axes)
+    ref = task.tensordot.tensordot(a._data, b.data, axes)
     return COMPSsArray(ref, shape=shape, dtype=dtype)
 
 
-@dispatch(precedence=1)
-def tensordot(a: BlockArray[COMPSsArray], b: BlockArray[COMPSsArray], axes):
-    # pylint: disable=protected-access
-    # TODO assertions
-    # TODO selection of implementation based on input arrays
-
-    # iterators
-    outer_axes = [list(set(range(i.ndim)) - set(ax)) for ax, i in zip(axes, (a, b))]
-    outer_iter_a, inner_iter_a = np.nested_iters(
-        a.data,
-        [outer_axes[0], axes[0]],
-        op_flags=["readonly"],
-        flags=["multi_index", "refs_ok"],
-    )
-    outer_iter_b, inner_iter_b = np.nested_iters(
-        b.data,
-        [outer_axes[1], axes[1]],
-        op_flags=["readonly"],
-        flags=["multi_index", "refs_ok"],
-    )
-
-    grid = np.empty(outer_iter_a.shape + outer_iter_b.shape, dtype=COMPSsArray)
+@iface.tensordot.register
+def tensordot(a: Sequence[COMPSsArray], b: Sequence[COMPSsArray], axes, method="sequential") -> COMPSsArray:
     dtype = np.result_type(a.dtype, b.dtype)
-    blockshape = result_shape(a.blockshape, b.blockshape, axes)
+    shape = result_shape(a[0].shape, b[0].shape, axes)
 
-    # estimate number of cores per task for dynamic parallelism
-    impl, ncores = tuning.tensordot(a, b, axes)
-
-    # required memory per task
-    # pylint: disable=no-member
-    # memory = a.blocknbytes + b.blocknbytes + prod(blockshape) * dtype.itemsize
-    # pylint: enable=no-member
-
-    with tuning.allocate(ncores=ncores):  # , memory=memory):
-        for _ in outer_iter_a:  # outer_i_a
-            for _ in outer_iter_b:  # outer_i_b
-                idx = outer_iter_a.multi_index + outer_iter_b.multi_index
-
-                # call chosen implementation
-                blocks_a = list(
-                    map(
-                        lambda x: a.data[x],
-                        (
-                            join_idx(
-                                outer_iter_a.multi_index,
-                                inner_iter_a.multi_index,
-                                axes[0],
-                            )
-                            for _ in inner_iter_a
-                        ),
-                    )
-                )
-                blocks_b = list(
-                    map(
-                        lambda x: b.data[x],
-                        (
-                            join_idx(
-                                outer_iter_b.multi_index,
-                                inner_iter_b.multi_index,
-                                axes[1],
-                            )
-                            for _ in inner_iter_b
-                        ),
-                    )
-                )
-
-                grid[idx] = impl(blocks_a, blocks_b, axes)
-
-                # reset inner block iterators
-                inner_iter_a.reset()
-                inner_iter_b.reset()
-            outer_iter_b.reset()
-
-    return BlockArray(grid)
+    # TODO refactor method names
+    if method == "sequential":
+        a = [i.ref for i in a]
+        b = [i.ref for i in b]
+        ref = task.tensordot.sequential(a, b, axes)
+    elif method == "commutative":
+        ref = MaybeArray()
+        for ia, ib in zip(a, b):
+            task.tensordot.commutative(ref, ia, ib, axes)
+    elif method == "commutative-but-first":
+        ref = task.tensordot.tensordot(a[0].ref, b[0].ref, axes)
+        for ia, ib in zip(a[1:], b[1:]):
+            task.tensordot.commutative(ref, ia, ib, axes)
+    else:
+        raise ValueError("invalid method")
+    return COMPSsArray(ref, shape=shape, dtype=dtype)
 
 
 # @implements(np.block, COMPSsArray)
 # def __compss_block(arrays):
-#     return np.block(compss_wait_on([a._ref for a in arrays]))
+#     return np.block(compss_wait_on([a.data for a in arrays]))
 
 
 @implements("random.rand", ext="COMPSsArray")

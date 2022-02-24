@@ -12,6 +12,12 @@ class MaybeArray(np.lib.mixins.NDArrayOperatorsMixin):
     def isinit(self) -> bool:
         return self.__array != None
 
+    def __getstate__(self):
+        return {"init": self.isinit, "array": self.__array}
+
+    def __setstate__(self, d):
+        self.__array = d["array"]
+
     def __array__(self) -> np.ndarray:
         if not self.isinit:
             raise ValueError("array not initialized")

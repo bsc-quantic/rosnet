@@ -1,6 +1,6 @@
 from typing import Callable
 from functools import wraps
-from plum import dispatch
+from multimethod import multimethod
 from autoray import register_function
 
 # from https://github.com/dask/dask/blob/95fb60a31a87c6b94b01ed75ab6533fa04d51f19/dask/utils.py
@@ -15,7 +15,7 @@ def inherit_doc(parent):
     return wrapper
 
 
-@dispatch
+@multimethod
 def implements(function: str, ext=None):
     "Register a function (e.g. __array_function__) implementation."
 
@@ -27,7 +27,7 @@ def implements(function: str, ext=None):
     return registrar
 
 
-@dispatch
+@multimethod
 def implements(function: Callable, ext=None):
     "Register a function (e.g. __array_function__) implementation."
 

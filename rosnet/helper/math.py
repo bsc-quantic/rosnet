@@ -1,14 +1,14 @@
-from typing import List
+from typing import Sequence
 import functools
 import itertools
 import operator as op
 from math import prod
 import numpy as np
-from plum import dispatch
+from multimethod import multimethod
 from rosnet.helper.typing import Array
 
 
-def isunique(l: List) -> bool:
+def isunique(l: Sequence) -> bool:
     """Checks whether all the elements in `l` are unique in `l`"""
     return len(set(l)) == len(l)
 
@@ -39,18 +39,18 @@ def join_idx(outer, inner, axes):
     return tuple(res)
 
 
-@dispatch
+@multimethod
 def __recurse(x):
     yield None
 
 
-@dispatch
+@multimethod
 def __recurse(x: list):
     yield x
     yield from recurse(x[0])
 
 
-@dispatch
+@multimethod
 def __recurse(x: np.ndarray):
     if isinstance(x.flat[0], np.ndarray):
         yield x

@@ -1,6 +1,5 @@
-from typing import Protocol, Tuple, List, runtime_checkable
+from typing import Protocol, Tuple, runtime_checkable
 import numpy as np
-from plum import parametric, type_of, ptype
 
 
 @runtime_checkable
@@ -21,4 +20,10 @@ class Array(SupportsArray, Protocol):
         pass
 
     def dtype(self) -> np.dtype:
+        pass
+
+
+@runtime_checkable
+class Future(Protocol):
+    def ref(self):
         pass

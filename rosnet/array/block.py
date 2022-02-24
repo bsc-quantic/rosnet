@@ -1,10 +1,10 @@
-from typing import Tuple, Type, List, Sequence, Optional, Generic, TypeVar
+from typing import Tuple, Type, Sequence, Optional, Generic, TypeVar
 from math import prod
 from copy import deepcopy
 from functools import reduce
 from contextlib import suppress
 import numpy as np
-from plum import dispatch, parametric
+from multimethod import multimethod
 import autoray
 from rosnet.helper.math import (
     isunique,
@@ -16,11 +16,11 @@ from rosnet.helper.math import (
 )
 from rosnet.helper.macros import todo, implements
 from rosnet.helper.typing import Array, SupportsArray
+from rosnet import numpy_interface as iface
 
 T = TypeVar("T", Array, np.ndarray, covariant=True)
 
 
-@parametric
 class BlockArray(np.lib.mixins.NDArrayOperatorsMixin, Generic[T]):
     """A n-dimensional array divided in blocks.
 
@@ -33,19 +33,19 @@ class BlockArray(np.lib.mixins.NDArrayOperatorsMixin, Generic[T]):
     data: np.ndarray = None
 
     def __init__(self, *args, **kwargs):
-        if isinstance(args[0], List):
+        if isinstance(args[0], list):
             self.__init_with_list__(*args, **kwargs)
         elif isinstance(args[0], SupportsArray):
             self.__init_with_array__(*args, **kwargs)
         else:
             raise ValueError("invalid constructor")
 
-    def __init_with_list__(self, blocks: List, grid: Optional[Sequence[int]] = None):
+    def __init_with_list__(self, blocks: list, grid: Optional[Sequence[int]] = None):
         """Constructor.
 
         Arguments
         ---------
-        - blocks: List[Array]. Nested list of arrays.
+        - blocks: list[Array]. Nested list of arrays.
         """
         if grid is None:
             grid = measure_shape(blocks)
@@ -57,7 +57,7 @@ class BlockArray(np.lib.mixins.NDArrayOperatorsMixin, Generic[T]):
         with it:
             for block in it:
                 # case for nested list of arrays
-                if isinstance(blocks[0], List):
+                if isinstance(blocks[0], list):
                     data = blocks
                     for i in it.multi_index:
                         data = data[i]
@@ -109,8 +109,8 @@ class BlockArray(np.lib.mixins.NDArrayOperatorsMixin, Generic[T]):
             self.dtype,
         )
 
-    @dispatch
-    def __getitem__(self, index: List[int]):
+    @multimethod
+    def __getitem__(self, index: Sequence[int]):
         # TODO advanced indexing
         if len(index) != self.ndim:
             raise IndexError(f"Invalid indexing: index={index}")
@@ -120,8 +120,8 @@ class BlockArray(np.lib.mixins.NDArrayOperatorsMixin, Generic[T]):
 
         return self.data[gid][bid]
 
-    @dispatch
-    def __setitem__(self, key: List[int], value):
+    @multimethod
+    def __setitem__(self, key: Sequence[int], value):
         # TODO advanced indexing
         if len(key) != self.ndim:
             raise IndexError(f"Invalid indexing: key={key}")
@@ -183,7 +183,7 @@ class BlockArray(np.lib.mixins.NDArrayOperatorsMixin, Generic[T]):
         return BlockArray(grid)
 
     def __array__(self) -> np.ndarray:
-        "Returns a numpy.ndarray. Uses class-parametric specialization with plum."
+        "Returns a numpy.ndarray. Uses class-parametric specialization with multimethod."
         return to_numpy(self)
 
     @todo
@@ -203,11 +203,11 @@ class BlockArray(np.lib.mixins.NDArrayOperatorsMixin, Generic[T]):
             if f is None:
                 f = autoray.get_lib_fn("rosnet.BlockArray.random", func.__name__)
 
-        # multiple dispatch specialization takes place here with plum
+        # multiple dispatch specialization takes place here with multimethod
         return f(*args, **kwargs) if f else NotImplemented
 
 
-@dispatch
+@iface.to_numpy.register
 def to_numpy(arr: BlockArray) -> np.ndarray:
     return np.block(arr.data.tolist())
 
@@ -238,27 +238,27 @@ def full(shape, fill_value, dtype=None, order="C", blockshape=None, inner="numpy
     return BlockArray(blocks)
 
 
-@dispatch
+@iface.zeros_like.register
 def zeros_like(a: BlockArray, dtype=None, order="K", subok=True, shape=None) -> BlockArray:
     pass
 
 
-@dispatch
+@iface.ones_like.register
 def ones_like(a: BlockArray, dtype=None, order="K", subok=True, shape=None) -> BlockArray:
     pass
 
 
-@dispatch
+@iface.full_like.register
 def full_like(a: BlockArray, fill_value, dtype=None, order="K", subok=True, shape=None) -> BlockArray:
     pass
 
 
-@dispatch
+@iface.empty_like.register
 def empty_like(prototype: BlockArray, dtype=None, order="K", subok=True, shape=None) -> BlockArray:
     pass
 
 
-@dispatch
+@iface.reshape.register
 def reshape(a: BlockArray, shape, order="F", inplace=True):
     a = a if inplace else deepcopy(a)
 
@@ -271,7 +271,7 @@ def reshape(a: BlockArray, shape, order="F", inplace=True):
     return a
 
 
-@dispatch
+@iface.transpose.register
 def transpose(a: BlockArray, axes=None, inplace=True):
     # pylint: disable=protected-access
     if not isunique(axes):
@@ -288,11 +288,15 @@ def transpose(a: BlockArray, axes=None, inplace=True):
     return a
 
 
-@dispatch
+@iface.tensordot.register
+def tensordot(a: Sequence[Array], b: Sequence[Array], axes) -> Array:
+    return sum(np.tensordot(ai, bi, axes) for ai, bi in zip(a, b))
+
+
+@iface.tensordot.register
 def tensordot(a: BlockArray, b: BlockArray, axes):
     # pylint: disable=protected-access
     # TODO assertions
-    # TODO generic BlockArray implementation and call to specialized tensordot of lists of blocks?
 
     outer_axes = [list(set(range(i.ndim)) - set(ax)) for ax, i in zip(axes, (a, b))]
     outer_iter_a, inner_iter_a = np.nested_iters(
@@ -331,7 +335,8 @@ def tensordot(a: BlockArray, b: BlockArray, axes):
                 for _ in inner_iter_b
             )
 
-            grid[idx] = sum(np.tensordot(a.data[ba], b.data[bb], axes) for ba, bb in zip(bid_a, bid_b))
+            # call specialized tensordot routine
+            grid[idx] = tensordot([a.data[i] for i in bid_a], [b.data[i] for i in bid_b], axes)
 
             # reset inner block iterators
             inner_iter_a.reset()
