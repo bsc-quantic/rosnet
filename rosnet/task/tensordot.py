@@ -1,4 +1,4 @@
-from typing import List
+from typing import Sequence
 import os
 import numpy as np
 from pycompss.api.parameter import IN, COLLECTION_IN, COMMUTATIVE, Type, Depth
@@ -12,7 +12,7 @@ def _fix_blas_threads():
 
 
 @autotune(a={Type: COLLECTION_IN, Depth: 1}, b={Type: COLLECTION_IN, Depth: 1}, returns=np.ndarray)
-def sequential(a: List[np.ndarray], b: List[np.ndarray], axes):
+def sequential(a: Sequence[np.ndarray], b: Sequence[np.ndarray], axes):
     _fix_blas_threads()
     return sum(np.tensordot(ba, bb, axes) for ba, bb in zip(a, b))
 

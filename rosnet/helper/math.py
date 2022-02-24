@@ -1,4 +1,4 @@
-from typing import List
+from typing import Sequence
 import functools
 import itertools
 import operator as op
@@ -8,7 +8,7 @@ from multimethod import multimethod
 from rosnet.helper.typing import Array
 
 
-def isunique(l: List) -> bool:
+def isunique(l: Sequence) -> bool:
     """Checks whether all the elements in `l` are unique in `l`"""
     return len(set(l)) == len(l)
 
