@@ -44,13 +44,13 @@ def __recurse(x):
     yield None
 
 
-@multimethod
+@__recurse.register
 def __recurse(x: list):
     yield x
     yield from recurse(x[0])
 
 
-@multimethod
+@__recurse.register
 def __recurse(x: np.ndarray):
     if isinstance(x.flat[0], np.ndarray):
         yield x

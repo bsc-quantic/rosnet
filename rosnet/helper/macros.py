@@ -27,7 +27,7 @@ def implements(function: str, ext=None):
     return registrar
 
 
-@multimethod
+@implements.register
 def implements(function: Callable, ext=None):
     "Register a function (e.g. __array_function__) implementation."
 
