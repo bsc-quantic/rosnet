@@ -8,10 +8,10 @@ from multimethod import multimethod
 import autoray
 from pycompss.runtime.management.classes import Future as COMPSsFuture
 from pycompss.api.api import compss_delete_object, compss_wait_on
-from rosnet.helper.macros import todo, implements
-from rosnet.helper.math import result_shape
-from rosnet.interface import Array, ArrayConvertable
-from rosnet import task, tuning, interface as iface
+from rosnet.core.macros import todo, implements
+from rosnet.core.math import result_shape
+from rosnet.core.interface import Array, ArrayConvertable
+from rosnet import task, tuning, dispatch as dispatcher
 from rosnet.array.maybe import MaybeArray
 
 
@@ -175,7 +175,7 @@ class COMPSsArray(np.lib.mixins.NDArrayOperatorsMixin):
         return f(*args, **kwargs) if f else NotImplemented
 
 
-@iface.to_numpy.register
+@dispatcher.to_numpy.register
 def to_numpy(arr: BlockArray[COMPSsArray]):
     blocks = np.empty_like(self.data, dtype=object)
     it = np.nditer(
@@ -206,27 +206,27 @@ def full(shape, fill_value, dtype=None, order="C") -> COMPSsArray:
     return COMPSsArray(ref, shape=shape, dtype=dtype or np.dtype(type(fill_value)))
 
 
-@iface.zeros_like.register
+@dispatcher.zeros_like.register
 def zeros_like(a: COMPSsArray, dtype=None, order="K", subok=True, shape=None) -> COMPSsArray:
     pass
 
 
-@iface.ones_like.register
+@dispatcher.ones_like.register
 def ones_like(a: COMPSsArray, dtype=None, order="K", subok=True, shape=None) -> COMPSsArray:
     pass
 
 
-@iface.full_like.register
+@dispatcher.full_like.register
 def full_like(a: COMPSsArray, fill_value, dtype=None, order="K", subok=True, shape=None) -> COMPSsArray:
     pass
 
 
-@iface.empty_like.register
+@dispatcher.empty_like.register
 def empty_like(prototype: COMPSsArray, dtype=None, order="K", subok=True, shape=None) -> COMPSsArray:
     pass
 
 
-@iface.reshape.register
+@dispatcher.reshape.register
 def reshape(a: COMPSsArray, shape, order="F", inplace=True):
     # pylint: disable=protected-access
     a = a if inplace else deepcopy(a)
@@ -237,7 +237,7 @@ def reshape(a: COMPSsArray, shape, order="F", inplace=True):
     return a
 
 
-@iface.transpose.register
+@dispatcher.transpose.register
 def transpose(a: COMPSsArray, axes=None, inplace=True):
     # pylint: disable=protected-access
     if not isunique(axes):
@@ -252,26 +252,26 @@ def transpose(a: COMPSsArray, axes=None, inplace=True):
 
 
 @todo
-@iface.stack.register
+@dispatcher.stack.register
 def stack(arrays: Sequence[COMPSsArray], axis=0, out=None) -> COMPSsArray:
     pass
 
 
 @todo
-@iface.split.register
+@dispatcher.split.register
 def split(array: COMPSsArray, indices_or_sections, axis=0) -> list[COMPSsArray]:
     pass
 
 
-@iface.tensordot.register(COMPSsArray, ArrayConvertable)
-@iface.tensordot.register(ArrayConvertable, COMPSsArray)
+@dispatcher.tensordot.register(COMPSsArray, ArrayConvertable)
+@dispatcher.tensordot.register(ArrayConvertable, COMPSsArray)
 def tensordot(a: Union[COMPSsArray, ArrayConvertable], b: Union[COMPSsArray, ArrayConvertable], axes):
     a = a if isinstance(a, COMPSsArray) else COMPSsArray(a)
     b = b if isinstance(b, COMPSsArray) else COMPSsArray(b)
     return tensordot.invoke(COMPSsArray, COMPSsArray)(a, b, axes)
 
 
-@iface.tensordot.register
+@dispatcher.tensordot.register
 def tensordot(a: COMPSsArray, b: COMPSsArray, axes) -> COMPSsArray:
     dtype = np.result_type(a.dtype, b.dtype)
     shape = result_shape(a.shape, b.shape, axes)
@@ -280,7 +280,7 @@ def tensordot(a: COMPSsArray, b: COMPSsArray, axes) -> COMPSsArray:
     return COMPSsArray(ref, shape=shape, dtype=dtype)
 
 
-@iface.tensordot.register
+@dispatcher.tensordot.register
 def tensordot(a: Sequence[COMPSsArray], b: Sequence[COMPSsArray], axes, method="sequential") -> COMPSsArray:
     dtype = np.result_type(a.dtype, b.dtype)
     shape = result_shape(a[0].shape, b[0].shape, axes)
