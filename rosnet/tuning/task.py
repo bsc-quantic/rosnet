@@ -5,7 +5,7 @@ from rosnet.core.interface import Future
 from rosnet.core.macros import todo
 from . import mem
 
-# TODO how to do @implements on this? maybe add an extra .dispatch/.register for multiple implementations? multi-gpu?
+# TODO maybe add an extra .dispatch/.register for multiple implementations? multi-gpu?
 # TODO save new ""task"" in self? so we know which fn to generate in generate_variant for multi-gpu
 # TODO how to skip this if local execution?
 # TODO how to write numerical methods that do iterations -> support nested tasks -> how to wrap this methods for local and distributed execution?

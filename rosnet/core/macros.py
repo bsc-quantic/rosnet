@@ -1,7 +1,4 @@
-from typing import Callable
 from functools import wraps
-from multimethod import multimethod
-from autoray import register_function
 
 # from https://github.com/dask/dask/blob/95fb60a31a87c6b94b01ed75ab6533fa04d51f19/dask/utils.py
 def inherit_doc(parent):
@@ -13,31 +10,6 @@ def inherit_doc(parent):
         return method
 
     return wrapper
-
-
-@multimethod
-def implements(function: str, ext=None):
-    "Register a function (e.g. __array_function__) implementation."
-
-    def registrar(func):
-        backend = f"rosnet.{ext}" if ext else "rosnet"
-        register_function(backend, function, func)
-        return func
-
-    return registrar
-
-
-@implements.register
-def implements(function: Callable, ext=None):
-    "Register a function (e.g. __array_function__) implementation."
-
-    def registrar(func):
-        backend = f"rosnet.{ext}" if ext else "rosnet"
-        register_function(backend, function.__name__, func)
-        inherit_doc(function)(func)
-        return func
-
-    return registrar
 
 
 def todo(func):
