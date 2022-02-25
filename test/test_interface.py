@@ -1,7 +1,7 @@
 import pytest
 import numpy as np
 from rosnet import BlockArray
-from rosnet.interface import ArrayConvertable, Array
+from rosnet.core.interface import ArrayConvertable, Array
 from test.mock import MockArray
 
 try:

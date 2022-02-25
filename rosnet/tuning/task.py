@@ -1,8 +1,8 @@
 from typing import Callable, Dict
 import functools
 from math import ceil
-from rosnet.interface import Future
-from rosnet.helper.macros import todo
+from rosnet.core.interface import Future
+from rosnet.core.macros import todo
 from . import mem
 
 # TODO how to do @implements on this? maybe add an extra .dispatch/.register for multiple implementations? multi-gpu?

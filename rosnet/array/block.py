@@ -6,7 +6,7 @@ from contextlib import suppress
 import numpy as np
 from multimethod import multimethod
 import autoray
-from rosnet.helper.math import (
+from rosnet.core.math import (
     isunique,
     space,
     result_shape,
@@ -14,9 +14,9 @@ from rosnet.helper.math import (
     measure_shape,
     nest_level,
 )
-from rosnet.helper.macros import todo, implements
-from rosnet.interface import Array, ArrayConvertable
-from rosnet import interface as iface
+from rosnet.core.macros import todo, implements
+from rosnet.core.interface import Array, ArrayConvertable
+from rosnet import dispatch as dispatcher
 
 T = TypeVar("T", Array, np.ndarray, covariant=True)
 
@@ -207,7 +207,7 @@ class BlockArray(np.lib.mixins.NDArrayOperatorsMixin, Generic[T]):
         return f(*args, **kwargs) if f else NotImplemented
 
 
-@iface.to_numpy.register
+@dispatcher.to_numpy.register
 def to_numpy(arr: BlockArray) -> np.ndarray:
     return np.block(arr.data.tolist())
 
@@ -238,27 +238,27 @@ def full(shape, fill_value, dtype=None, order="C", blockshape=None, inner="numpy
     return BlockArray(blocks)
 
 
-@iface.zeros_like.register
+@dispatcher.zeros_like.register
 def zeros_like(a: BlockArray, dtype=None, order="K", subok=True, shape=None) -> BlockArray:
     pass
 
 
-@iface.ones_like.register
+@dispatcher.ones_like.register
 def ones_like(a: BlockArray, dtype=None, order="K", subok=True, shape=None) -> BlockArray:
     pass
 
 
-@iface.full_like.register
+@dispatcher.full_like.register
 def full_like(a: BlockArray, fill_value, dtype=None, order="K", subok=True, shape=None) -> BlockArray:
     pass
 
 
-@iface.empty_like.register
+@dispatcher.empty_like.register
 def empty_like(prototype: BlockArray, dtype=None, order="K", subok=True, shape=None) -> BlockArray:
     pass
 
 
-@iface.reshape.register
+@dispatcher.reshape.register
 def reshape(a: BlockArray, shape, order="F", inplace=True):
     a = a if inplace else deepcopy(a)
 
@@ -271,7 +271,7 @@ def reshape(a: BlockArray, shape, order="F", inplace=True):
     return a
 
 
-@iface.transpose.register
+@dispatcher.transpose.register
 def transpose(a: BlockArray, axes=None, inplace=True):
     # pylint: disable=protected-access
     if not isunique(axes):
@@ -288,12 +288,12 @@ def transpose(a: BlockArray, axes=None, inplace=True):
     return a
 
 
-@iface.tensordot.register
+@dispatcher.tensordot.register
 def tensordot(a: Sequence[Array], b: Sequence[Array], axes) -> Array:
     return sum(np.tensordot(ai, bi, axes) for ai, bi in zip(a, b))
 
 
-@iface.tensordot.register
+@dispatcher.tensordot.register
 def tensordot(a: BlockArray, b: BlockArray, axes):
     # pylint: disable=protected-access
     # TODO assertions
