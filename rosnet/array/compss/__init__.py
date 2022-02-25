@@ -10,7 +10,8 @@ from pycompss.api.api import compss_delete_object, compss_wait_on
 from rosnet.core.macros import todo
 from rosnet.core.math import result_shape
 from rosnet.core.interface import Array, ArrayConvertable
-from rosnet import task, tuning, dispatch as dispatcher
+from rosnet import tuning, dispatch as dispatcher
+from . import task
 from rosnet.array.maybe import MaybeArray
 
 
