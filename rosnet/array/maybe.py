@@ -1,10 +1,10 @@
 from contextlib import suppress
 import numpy as np
 import autoray
-from rosnet.helper import implements
+from rosnet.core.mixin import ArrayFunctionMixin
 
 
-class MaybeArray(np.lib.mixins.NDArrayOperatorsMixin):
+class MaybeArray(np.lib.mixins.NDArrayOperatorsMixin, ArrayFunctionMixin):
     def __init__(self, array=None):
         self.__array = array
 
@@ -38,30 +38,3 @@ class MaybeArray(np.lib.mixins.NDArrayOperatorsMixin):
                     return other
         else:
             return NotImplemented
-
-    def __array_function__(self, func, types, args, kwargs):
-        f = None
-        with suppress(AttributeError):
-            f = autoray.get_lib_fn("rosnet", str(func))
-
-            if f is None:
-                f = autoray.get_lib_fn("rosnet.MaybeArray")
-
-        return f(*args, **kwargs) if f else NotImplemented
-
-
-@implements(np.save, ext="MaybeArray")
-def __maybeunitialized_save(file, arr, MaybeArray, **kwargs):
-    if arr.initialized:
-        np.savez(file, init=arr.initialized, array=np.array(arr))
-    else:
-        np.savez(file, init=arr.initialized)
-
-
-@implements(np.load, ext="MaybeArray")
-def __maybeunitialized_load(file, **kwargs) -> MaybeArray:
-    m = np.load(file, **kwargs)
-    if m["init"]:
-        return MaybeArray(m["array"])
-    else:
-        return MaybeArray()

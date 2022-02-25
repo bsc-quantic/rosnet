@@ -8,7 +8,7 @@ from multimethod import multimethod
 import autoray
 from pycompss.runtime.management.classes import Future as COMPSsFuture
 from pycompss.api.api import compss_delete_object, compss_wait_on
-from rosnet.core.macros import todo, implements
+from rosnet.core.macros import todo
 from rosnet.core.math import result_shape
 from rosnet.core.interface import Array, ArrayConvertable
 from rosnet import task, tuning, dispatch as dispatcher
@@ -17,7 +17,7 @@ from rosnet.array.maybe import MaybeArray
 
 # TODO special variation for in-place functions? keep np.reshape/transpose/... as non-modifying -> create new COMPSsArray/BlockArray
 # TODO support more properties of ndarray
-class COMPSsArray(np.lib.mixins.NDArrayOperatorsMixin):
+class COMPSsArray(np.lib.mixins.NDArrayOperatorsMixin, ArrayFunctionMixin):
     """Reference to a `numpy.ndarray` managed by COMPSs.
 
     Unlike a `numpy.ndarray`, a `COMPSsArray` is mutable and does not return views. As such, the following methods act in-place and return nothing:
@@ -158,22 +158,6 @@ class COMPSsArray(np.lib.mixins.NDArrayOperatorsMixin):
         else:
             return NotImplemented
 
-    def __array_function__(self, func, types, args, kwargs):
-        # use autoray for dispatching
-        # TODO use wrap for specialization?
-        f = None
-        with suppress(AttributeError):
-            f = autoray.get_lib_fn("rosnet", func.__name__)
-
-            if f is None:
-                f = autoray.get_lib_fn("rosnet.COMPSsArray", func.__name__)
-
-            if f is None:
-                f = autoray.get_lib_fn("rosnet.COMPSsArray.random", func.__name__)
-
-        # multiple dispatch specialization takes place here with multimethod
-        return f(*args, **kwargs) if f else NotImplemented
-
 
 @dispatcher.to_numpy.register
 def to_numpy(arr: BlockArray[COMPSsArray]):
@@ -190,17 +174,14 @@ def to_numpy(arr: BlockArray[COMPSsArray]):
     return np.block(blocks)
 
 
-@implements(np.zeros, ext="COMPSsArray")
 def zeros(shape, dtype=None, order="C") -> COMPSsArray:
     return COMPSsArray.full(shape, 0, dtype=dtype, order=order)
 
 
-@implements(np.ones, ext="COMPSsArray")
 def ones(shape, dtype=None, order="C") -> COMPSsArray:
     return COMPSsArray.full(shape, 1, dtype=dtype, order=order)
 
 
-@implements(np.full, ext="COMPSsArray")
 def full(shape, fill_value, dtype=None, order="C") -> COMPSsArray:
     ref = task.full(shape, fill_value, dtype=dtype, order=order)
     return COMPSsArray(ref, shape=shape, dtype=dtype or np.dtype(type(fill_value)))
@@ -308,7 +289,6 @@ def tensordot(a: Sequence[COMPSsArray], b: Sequence[COMPSsArray], axes, method="
 #     return np.block(compss_wait_on([a.data for a in arrays]))
 
 
-@implements("random.rand", ext="COMPSsArray")
 def rand(shape):
     # TODO support inner as in BlockArray
     dtype = np.dtype(np.float64)

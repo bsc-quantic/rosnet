@@ -14,14 +14,15 @@ from rosnet.core.math import (
     measure_shape,
     nest_level,
 )
-from rosnet.core.macros import todo, implements
+from rosnet.core.macros import todo
 from rosnet.core.interface import Array, ArrayConvertable
+from rosnet.core.mixin import ArrayFunctionMixin
 from rosnet import dispatch as dispatcher
 
 T = TypeVar("T", Array, np.ndarray, covariant=True)
 
 
-class BlockArray(np.lib.mixins.NDArrayOperatorsMixin, Generic[T]):
+class BlockArray(np.lib.mixins.NDArrayOperatorsMixin, ArrayFunctionMixin, Generic[T]):
     """A n-dimensional array divided in blocks.
 
     Implementation notes
@@ -190,39 +191,20 @@ class BlockArray(np.lib.mixins.NDArrayOperatorsMixin, Generic[T]):
     def __array_ufunc__(self, ufunc, method, *inputs, **kwargs):
         pass
 
-    def __array_function__(self, func, types, args, kwargs):
-        # use autoray for dispatching
-        # TODO use wrap for specialization?
-        f = None
-        with suppress(AttributeError):
-            f = autoray.get_lib_fn("rosnet", func.__name__)
-
-            if f is None:
-                f = autoray.get_lib_fn("rosnet.BlockArray", func.__name__)
-
-            if f is None:
-                f = autoray.get_lib_fn("rosnet.BlockArray.random", func.__name__)
-
-        # multiple dispatch specialization takes place here with multimethod
-        return f(*args, **kwargs) if f else NotImplemented
-
 
 @dispatcher.to_numpy.register
 def to_numpy(arr: BlockArray) -> np.ndarray:
     return np.block(arr.data.tolist())
 
 
-@implements(np.zeros, ext="BlockArray")
 def zeros(shape, dtype=None, order="C", blockshape=None, inner="numpy") -> BlockArray:
-    return autoray.do("full", shape, 0, dtype=dtype, order=order, blockshape=blockshape, inner=inner, like="rosnet.BlockArray")
+    return full(shape, 0, dtype=dtype, order=order, blockshape=blockshape, inner=inner)
 
 
-@implements(np.ones, ext="BlockArray")
 def ones(shape, dtype=None, order="C", blockshape=None, inner="numpy") -> BlockArray:
-    return autoray.do("full", shape, 1, dtype=dtype, order=order, blockshape=blockshape, inner=inner, like="rosnet.BlockArray")
+    return full(shape, 1, dtype=dtype, order=order, blockshape=blockshape, inner=inner)
 
 
-@implements(np.full, ext="BlockArray")
 def full(shape, fill_value, dtype=None, order="C", blockshape=None, inner="numpy") -> BlockArray:
     dtype = dtype or np.dtype(type(fill_value))
     blockshape = blockshape or shape
@@ -376,7 +358,6 @@ def tensordot(a: BlockArray, b: BlockArray, axes):
 #     return BlockArray(blocks)
 
 
-@implements("random.rand", ext="BlockArray")
 def rand(shape, blockshape=None, inner="numpy"):
     blockshape = shape if blockshape is None else blockshape
     blocks = np.empty_like(blocks, dtype=object)
