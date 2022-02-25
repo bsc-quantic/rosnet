@@ -1,73 +1,183 @@
-from copy import deepcopy
-from rosnet import Tensor, kernel
-from rosnet.utils import ndarray_from_list
 import numpy as np
-from itertools import product
-from pycompss.api.api import TaskGroup
+from multimethod import multimethod
+from rosnet.helper.macros import implements
 
 
-def gemm(a: Tensor, b: Tensor, transpose_a: bool, transpose_b: bool) -> Tensor:
-    if a.rank != 2 or b.rank != 2:
-        raise ValueError("a,b must be matrixes")
-
-    mi = 1 if transpose_a else 0
-    ni = 0 if transpose_b else 1
-
-    shape = (a.shape[mi], b.shape[ni])
-    block_shape = (a.block_shape[mi], b.block_shape[ni])
-    grid = [s // bs for s, bs in zip(shape, block_shape)]
-    blocks = np.empty(grid, dtype=object)
-
-    tensorid = str(next(Tensor._newid))
-    with TaskGroup(tensorid, False), np.nditer(blocks, flags=["multi_index"], op_flags=["writeonly"]) as it:
-        for block in it:
-            row, col = tuple(it)
-            blocks_a = a._blocks[:, row] if transpose_a else a._blocks[row, :]
-            blocks_b = b._blocks[col, :] if transpose_b else b._blocks[:, col]
-            block[...] = kernel.block_gemm(blocks_a, blocks_b, transpose_a, transpose_b)
-
-    return Tensor(blocks, shape, block_shape, True, tensorid)
+@implements("dot")
+@multimethod
+def dot(*args, **kwargs):
+    raise NotImplementedError()
 
 
-# TODO implement reduced SVD variants
-def svd(A: Tensor, eps=1e-9, copy=True, parallel=False) -> (Tensor, Tensor):
-    """Computes the Singular Value Decomposition of `A`.
-
-    `A`: rank-2 `Tensor`.
-
-    `eps`: Epsilon.
-    """
-    if A.rank != 2:
-        raise ValueError("A must be a matrix!")
-
-    m, n = A.shape
-    k = min(m, n)
-    mb, nb = A.block_shape
-    kb = min(mb, nb)
-
-    # generate U,V
-    U = deepcopy(A) if copy else A  # TODO is U.block_shape ok?
-    V = identity(n, (nb, nb))
-
-    # call SVD asynchronously
-    if parallel:
-        kernel.svdmatrix_async_nested(U._blocks.tolist(), V._blocks.tolist(), eps)
-    else:
-        kernel.svdmatrix_async(U._blocks.tolist(), V._blocks.tolist())
-
-    return (U, V)
+@implements("linalg.multi_dot")
+@multimethod
+def multi_dot(*args, **kwargs):
+    raise NotImplementedError()
 
 
-def identity(n, block_shape, dtype=None) -> Tensor:
-    if len(block_shape) != 2:
-        raise ValueError("block_shape needs to have 2 values")
-    if n < block_shape[0] or n < block_shape[1]:
-        raise ValueError("block is greater than the tensor")
+@implements("vdot")
+@multimethod
+def vdot(*args, **kwargs):
+    raise NotImplementedError()
 
-    grid = tuple(n // bs for bs in block_shape)
-    tensorid = str(next(Tensor._newid))
-    with TaskGroup(tensorid, False):
-        blocks = [kernel.block_identity(block_shape, n, i, j, dtype) for i, j in product(range(grid[0]), range(grid[1]))]
 
-    blocks = ndarray_from_list(blocks, grid)
-    return Tensor(blocks, (n, n), block_shape, True, tensorid)
+@implements("inner")
+@multimethod
+def inner():
+    raise NotImplementedError()
+
+
+@implements("outer")
+@multimethod
+def outer():
+    raise NotImplementedError()
+
+
+@implements("matmul")
+@multimethod
+def matmul():
+    raise NotImplementedError()
+
+
+@implements("tensordot")
+@multimethod
+def tensordot():
+    raise NotImplementedError()
+
+
+@implements("einsum")
+@multimethod
+def einsum(*args, **kwargs):
+    raise NotImplementedError()
+
+
+@implements("einsum_path")
+@multimethod
+def einsum_path(*args, **kwargs):
+    raise NotImplementedError()
+
+
+@implements("linalg.matrix_power")
+@multimethod
+def matrix_power(*args, **kwargs):
+    raise NotImplementedError()
+
+
+@implements("kron")
+@multimethod
+def kron():
+    raise NotImplementedError()
+
+
+@implements("linalg.cholesky")
+@multimethod
+def cholesky():
+    raise NotImplementedError()
+
+
+@implements("linalg.qr")
+@multimethod
+def qr():
+    raise NotImplementedError()
+
+
+@implements("linalg.svd")
+@multimethod
+def svd():
+    raise NotImplementedError()
+
+
+@implements("linalg.eig")
+@multimethod
+def eig():
+    raise NotImplementedError()
+
+
+@implements("linalg.eigh")
+@multimethod
+def eigh():
+    raise NotImplementedError()
+
+
+@implements("linalg.eigvals")
+@multimethod
+def eigvals(*args, **kwargs):
+    raise NotImplementedError()
+
+
+@implements("linalg.eigvalsh")
+@multimethod
+def eigvalsh(*args, **kwargs):
+    raise NotImplementedError()
+
+
+@implements("linalg.norm")
+@multimethod
+def norm():
+    raise NotImplementedError()
+
+
+@implements("linalg.cond")
+@multimethod
+def cond(*args, **kwargs):
+    raise NotImplementedError()
+
+
+@implements("linalg.det")
+@multimethod
+def det(*args, **kwargs):
+    raise NotImplementedError()
+
+
+@implements("matrix_rank")
+@multimethod
+def matrix_rank(*args, **kwargs):
+    raise NotImplementedError()
+
+
+@implements("linalg.slogdet")
+@multimethod
+def slogdet(*args, **kwargs):
+    raise NotImplementedError()
+
+
+@implements("trace")
+@multimethod
+def trace():
+    raise NotImplementedError()
+
+
+@implements("linalg.solve")
+@multimethod
+def solve(*args, **kwargs):
+    raise NotImplementedError()
+
+
+@implements("linalg.tensorsolve")
+@multimethod
+def tensorsolve(*args, **kwargs):
+    raise NotImplementedError()
+
+
+@implements("linalg.lstsq")
+@multimethod
+def lstsq(*args, **kwargs):
+    raise NotImplementedError()
+
+
+@implements("linalg.inv")
+@multimethod
+def inv(*args, **kwargs):
+    raise NotImplementedError()
+
+
+@implements("linalg.pinv")
+@multimethod
+def pinv(*args, **kwargs):
+    raise NotImplementedError()
+
+
+@implements("linalg.tensorinv")
+@multimethod
+def tensorinv(*args, **kwargs):
+    raise NotImplementedError()
