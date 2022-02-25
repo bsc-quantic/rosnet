@@ -75,10 +75,6 @@ class COMPSsArray(np.lib.mixins.NDArrayOperatorsMixin):
         task.setitem(self.data, key, value)
 
     @property
-    def ref(self):
-        return self.data
-
-    @property
     def shape(self) -> Tuple[int]:
         return self.__shape
 
@@ -291,15 +287,15 @@ def tensordot(a: Sequence[COMPSsArray], b: Sequence[COMPSsArray], axes, method="
 
     # TODO refactor method names
     if method == "sequential":
-        a = [i.ref for i in a]
-        b = [i.ref for i in b]
+        a = [i.data for i in a]
+        b = [i.data for i in b]
         ref = task.tensordot.sequential(a, b, axes)
     elif method == "commutative":
         ref = MaybeArray()
         for ia, ib in zip(a, b):
             task.tensordot.commutative(ref, ia, ib, axes)
     elif method == "commutative-but-first":
-        ref = task.tensordot.tensordot(a[0].ref, b[0].ref, axes)
+        ref = task.tensordot.tensordot(a[0].data, b[0].data, axes)
         for ia, ib in zip(a[1:], b[1:]):
             task.tensordot.commutative(ref, ia, ib, axes)
     else:
