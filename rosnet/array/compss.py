@@ -1,6 +1,5 @@
 from typing import Tuple, Type, Optional, Sequence
 import functools
-from contextlib import suppress
 from copy import deepcopy
 from math import prod
 import numpy as np

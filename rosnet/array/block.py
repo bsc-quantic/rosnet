@@ -1,8 +1,6 @@
 from typing import Tuple, Type, Sequence, Optional, Generic, TypeVar
 from math import prod
 from copy import deepcopy
-from functools import reduce
-from contextlib import suppress
 import numpy as np
 from multimethod import multimethod
 import autoray

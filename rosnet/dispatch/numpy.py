@@ -1,6 +1,6 @@
 from multimethod import multimethod
 
-# numpy
+
 @multimethod
 def tensordot(*args, **kwargs):
     raise NotImplementedError()
