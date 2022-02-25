@@ -1,165 +1,183 @@
 import numpy as np
-from plum import dispatch
+from multimethod import multimethod
 from rosnet.helper.macros import implements
 
 
 @implements("dot")
+@multimethod
 def dot(*args, **kwargs):
-    return NotImplemented
+    raise NotImplementedError()
 
 
 @implements("linalg.multi_dot")
+@multimethod
 def multi_dot(*args, **kwargs):
-    return NotImplemented
+    raise NotImplementedError()
 
 
 @implements("vdot")
+@multimethod
 def vdot(*args, **kwargs):
-    return NotImplemented
+    raise NotImplementedError()
 
 
 @implements("inner")
-@dispatch.abstract
+@multimethod
 def inner():
-    pass
+    raise NotImplementedError()
 
 
 @implements("outer")
-@dispatch.abstract
+@multimethod
 def outer():
-    pass
+    raise NotImplementedError()
 
 
 @implements("matmul")
-@dispatch.abstract
+@multimethod
 def matmul():
-    pass
+    raise NotImplementedError()
 
 
 @implements("tensordot")
-@dispatch.abstract
+@multimethod
 def tensordot():
-    pass
+    raise NotImplementedError()
 
 
 @implements("einsum")
+@multimethod
 def einsum(*args, **kwargs):
-    return NotImplemented
+    raise NotImplementedError()
 
 
 @implements("einsum_path")
+@multimethod
 def einsum_path(*args, **kwargs):
-    return NotImplemented
+    raise NotImplementedError()
 
 
 @implements("linalg.matrix_power")
+@multimethod
 def matrix_power(*args, **kwargs):
-    return NotImplemented
+    raise NotImplementedError()
 
 
 @implements("kron")
-@dispatch.abstract
+@multimethod
 def kron():
-    pass
+    raise NotImplementedError()
 
 
 @implements("linalg.cholesky")
-@dispatch.abstract
+@multimethod
 def cholesky():
-    pass
+    raise NotImplementedError()
 
 
 @implements("linalg.qr")
-@dispatch.abstract
+@multimethod
 def qr():
-    pass
+    raise NotImplementedError()
 
 
 @implements("linalg.svd")
-@dispatch.abstract
+@multimethod
 def svd():
-    pass
+    raise NotImplementedError()
 
 
 @implements("linalg.eig")
-@dispatch.abstract
+@multimethod
 def eig():
-    pass
+    raise NotImplementedError()
 
 
 @implements("linalg.eigh")
-@dispatch.abstract
+@multimethod
 def eigh():
-    pass
+    raise NotImplementedError()
 
 
 @implements("linalg.eigvals")
+@multimethod
 def eigvals(*args, **kwargs):
-    return NotImplemented
+    raise NotImplementedError()
 
 
 @implements("linalg.eigvalsh")
+@multimethod
 def eigvalsh(*args, **kwargs):
-    return NotImplemented
+    raise NotImplementedError()
 
 
 @implements("linalg.norm")
-@dispatch.abstract
+@multimethod
 def norm():
-    pass
+    raise NotImplementedError()
 
 
 @implements("linalg.cond")
+@multimethod
 def cond(*args, **kwargs):
-    return NotImplemented
+    raise NotImplementedError()
 
 
 @implements("linalg.det")
+@multimethod
 def det(*args, **kwargs):
-    return NotImplemented
+    raise NotImplementedError()
 
 
 @implements("matrix_rank")
+@multimethod
 def matrix_rank(*args, **kwargs):
-    return NotImplemented
+    raise NotImplementedError()
 
 
 @implements("linalg.slogdet")
+@multimethod
 def slogdet(*args, **kwargs):
-    return NotImplemented
+    raise NotImplementedError()
 
 
 @implements("trace")
-@dispatch.abstract
+@multimethod
 def trace():
-    pass
+    raise NotImplementedError()
 
 
 @implements("linalg.solve")
+@multimethod
 def solve(*args, **kwargs):
-    return NotImplemented
+    raise NotImplementedError()
 
 
 @implements("linalg.tensorsolve")
+@multimethod
 def tensorsolve(*args, **kwargs):
-    return NotImplemented
+    raise NotImplementedError()
 
 
 @implements("linalg.lstsq")
+@multimethod
 def lstsq(*args, **kwargs):
-    return NotImplemented
+    raise NotImplementedError()
 
 
 @implements("linalg.inv")
+@multimethod
 def inv(*args, **kwargs):
-    return NotImplemented
+    raise NotImplementedError()
 
 
 @implements("linalg.pinv")
+@multimethod
 def pinv(*args, **kwargs):
-    return NotImplemented
+    raise NotImplementedError()
 
 
 @implements("linalg.tensorinv")
+@multimethod
 def tensorinv(*args, **kwargs):
-    return NotImplemented
+    raise NotImplementedError()
