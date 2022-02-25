@@ -1,6 +1,4 @@
-from contextlib import suppress
 import numpy as np
-import autoray
 from rosnet.core.mixin import ArrayFunctionMixin
 
 
