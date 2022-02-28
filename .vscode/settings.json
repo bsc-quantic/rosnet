@@ -1,6 +1,6 @@
 {
 	"python.pythonPath": ".venv/bin/python",
-	"python.analysis.typeCheckingMode": "strict",
+	"python.analysis.typeCheckingMode": "basic",
 	"python.formatting.provider": "black",
 	"python.formatting.blackArgs": [
 		"--line-length=1000"
