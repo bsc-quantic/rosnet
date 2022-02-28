@@ -29,11 +29,13 @@ class DataClayBlock(DataClayObject):
     @dclayMethod(ufunc="numpy.ufunc", method="str", inputs="list", kwargs="dict", return_="anything")
     def __array_ufunc__(self, ufunc: np.ufunc, method: str, *inputs, **kwargs):
         "Bypasses computation to dataClay memory space. Uses numpy dispatch mechanism to call the correct implementation."
+        inputs = [i.data if isinstance(i, type(self)) else i for i in inputs]
         return ufunc(*inputs, **kwargs)
 
     @dclayMethod(function="anything", types="list", inputs="list", kwargs="dict", return_="anything")
     def __array_function__(self, function, types, inputs, kwargs):
         "Bypasses computation to dataClay memory space. Uses numpy dispatch mechanism to call the correct implementation."
+        inputs = [i.data if isinstance(i, type(self)) else i for i in inputs]
         return function(*inputs, **kwargs)
 
 
