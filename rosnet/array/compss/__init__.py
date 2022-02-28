@@ -14,6 +14,12 @@ from . import task
 from rosnet.array.block import BlockArray
 from rosnet.array.maybe import MaybeArray
 
+try:
+    from rosnet.array.compss.dataclay import DataClayBlock
+
+    DATACLAY = True
+except ImportError:
+    DATACLAY = False
 
 # TODO special variation for in-place functions? keep np.reshape/transpose/... as non-modifying -> create new COMPSsArray/BlockArray
 # TODO support more properties of ndarray
@@ -62,7 +68,10 @@ class COMPSsArray(np.lib.mixins.NDArrayOperatorsMixin, ArrayFunctionMixin):
         self.__dtype = dtype
 
     def __del__(self):
-        compss_delete_object(self.data)
+        if isinstance(self.data, "DataClayBlock"):
+            self.data.session_detach()  # TODO is this call ok?
+        else:
+            compss_delete_object(self.data)
 
     def __getitem__(self, idx) -> COMPSsFuture:
         return compss_wait_on(task.getitem(self.data, idx))
@@ -100,11 +109,16 @@ class COMPSsArray(np.lib.mixins.NDArrayOperatorsMixin, ArrayFunctionMixin):
         return self.__dtype
 
     def __deepcopy__(self, memo):
-        ref = task.copy(self.data)
+        if isinstance(self.data, COMPSsFuture):
+            ref = task.copy(self.data)
+        elif isinstance(self.data, "DataClayBlock"):
+            ref = self.data.dc_clone()
+        else:
+            ref = deepcopy(self.data)
         return COMPSsArray(ref, shape=self.shape, dtype=self.dtype)
 
     def __array__(self) -> np.ndarray:
-        return compss_wait_on(self.data)
+        return dispatcher.to_numpy(self.data)
 
     def __array_ufunc__(self, ufunc: np.ufunc, method: str, *inputs, **kwargs):
         if ufunc.nin > 2:
@@ -149,6 +163,16 @@ class COMPSsArray(np.lib.mixins.NDArrayOperatorsMixin, ArrayFunctionMixin):
         # 'reduce', 'accumulate', 'reduceat' not supported yet
         else:
             return NotImplemented
+
+
+@dispatcher.to_numpy.register
+def to_numpy(arr: COMPSsFuture):
+    return compss_wait_on(arr)
+
+
+@dispatcher.to_numpy.register
+def to_numpy(arr: COMPSsArray):
+    return dispatcher.to_numpy(arr.data)
 
 
 @dispatcher.to_numpy.register
