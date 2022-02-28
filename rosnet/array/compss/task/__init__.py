@@ -1,4 +1,4 @@
-import rosnet.task.tensordot
+from . import tensordot
 from .init import full, rand, upload
 from .util import reshape, setitem, getitem, copy
 from .transpose import transpose

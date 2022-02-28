@@ -1,15 +1,14 @@
-from typing import Tuple, Type, Optional, Sequence
+from typing import Tuple, Sequence, Union
 import functools
 from copy import deepcopy
 from math import prod
 import numpy as np
-from multimethod import multimethod
-import autoray
 from pycompss.runtime.management.classes import Future as COMPSsFuture
 from pycompss.api.api import compss_delete_object, compss_wait_on
 from rosnet.core.macros import todo
 from rosnet.core.math import result_shape
 from rosnet.core.interface import Array, ArrayConvertable
+from rosnet.core.mixin import ArrayFunctionMixin
 from rosnet import tuning, dispatch as dispatcher
 from . import task
 from rosnet.array.block import BlockArray
@@ -25,6 +24,8 @@ class COMPSsArray(np.lib.mixins.NDArrayOperatorsMixin, ArrayFunctionMixin):
     - `reshape`
     - `transpose`
     """
+
+    data: Union[Array, COMPSsFuture]
 
     # pylint: disable=protected-access
     def __init__(self, arr, **kwargs):
@@ -104,10 +105,6 @@ class COMPSsArray(np.lib.mixins.NDArrayOperatorsMixin, ArrayFunctionMixin):
 
     def __array__(self) -> np.ndarray:
         return compss_wait_on(self.data)
-
-    def __array_priority__(self) -> int:
-        # NOTE higher priority than numpy.ndarray, lower than DataClayArray
-        return 1
 
     def __array_ufunc__(self, ufunc: np.ufunc, method: str, *inputs, **kwargs):
         if ufunc.nin > 2:
@@ -244,7 +241,7 @@ def stack(arrays: Sequence[COMPSsArray], axis=0, out=None) -> COMPSsArray:
 
 @todo
 @dispatcher.split.register
-def split(array: COMPSsArray, indices_or_sections, axis=0) -> list[COMPSsArray]:
+def split(array: COMPSsArray, indices_or_sections, axis=0) -> Sequence[COMPSsArray]:
     pass
 
 
@@ -253,7 +250,7 @@ def split(array: COMPSsArray, indices_or_sections, axis=0) -> list[COMPSsArray]:
 def tensordot(a: Union[COMPSsArray, ArrayConvertable], b: Union[COMPSsArray, ArrayConvertable], axes):
     a = a if isinstance(a, COMPSsArray) else COMPSsArray(a)
     b = b if isinstance(b, COMPSsArray) else COMPSsArray(b)
-    return tensordot.invoke(COMPSsArray, COMPSsArray)(a, b, axes)
+    return dispatcher.tensordot[(COMPSsArray, COMPSsArray)](a, b, axes)
 
 
 @dispatcher.tensordot.register
@@ -261,13 +258,13 @@ def tensordot(a: COMPSsArray, b: COMPSsArray, axes) -> COMPSsArray:
     dtype = np.result_type(a.dtype, b.dtype)
     shape = result_shape(a.shape, b.shape, axes)
 
-    ref = task.tensordot.tensordot(a._data, b.data, axes)
+    ref = task.tensordot.tensordot(a.data, b.data, axes)
     return COMPSsArray(ref, shape=shape, dtype=dtype)
 
 
 @dispatcher.tensordot.register
 def tensordot(a: Sequence[COMPSsArray], b: Sequence[COMPSsArray], axes, method="sequential") -> COMPSsArray:
-    dtype = np.result_type(a.dtype, b.dtype)
+    dtype = np.result_type(a[0].dtype, b[0].dtype)
     shape = result_shape(a[0].shape, b[0].shape, axes)
 
     # TODO refactor method names
@@ -282,7 +279,7 @@ def tensordot(a: Sequence[COMPSsArray], b: Sequence[COMPSsArray], axes, method="
     elif method == "commutative-but-first":
         ref = task.tensordot.tensordot(a[0].data, b[0].data, axes)
         for ia, ib in zip(a[1:], b[1:]):
-            task.tensordot.commutative(ref, ia, ib, axes)
+            task.tensordot.commutative(ref, ia.data, ib.data, axes)
     else:
         raise ValueError("invalid method")
     return COMPSsArray(ref, shape=shape, dtype=dtype)
@@ -296,4 +293,4 @@ def tensordot(a: Sequence[COMPSsArray], b: Sequence[COMPSsArray], axes, method="
 def rand(shape):
     # TODO support inner as in BlockArray
     dtype = np.dtype(np.float64)
-    return COMPSsArray(task.init.rand(blockshape), shape=shape, dtype=dtype)
+    return COMPSsArray(task.init.rand(shape), shape=shape, dtype=dtype)
