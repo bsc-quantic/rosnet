@@ -68,10 +68,11 @@ class COMPSsArray(np.lib.mixins.NDArrayOperatorsMixin, ArrayFunctionMixin):
         self.__dtype = dtype
 
     def __del__(self):
-        if isinstance(self.data, "DataClayBlock"):
-            self.data.session_detach()  # TODO is this call ok?
-        else:
+        if isinstance(self.data, COMPSsFuture):
             compss_delete_object(self.data)
+        elif DATACLAY:
+            if isinstance(self.data, DataClayBlock):
+                self.data.session_detach()  # TODO is this call ok?
 
     def __getitem__(self, idx) -> COMPSsFuture:
         return compss_wait_on(task.getitem(self.data, idx))
@@ -111,8 +112,9 @@ class COMPSsArray(np.lib.mixins.NDArrayOperatorsMixin, ArrayFunctionMixin):
     def __deepcopy__(self, memo):
         if isinstance(self.data, COMPSsFuture):
             ref = task.copy(self.data)
-        elif isinstance(self.data, "DataClayBlock"):
-            ref = self.data.dc_clone()
+        elif DATACLAY:
+            if isinstance(self.data, DataClayBlock):
+                ref = self.data.dc_clone()
         else:
             ref = deepcopy(self.data)
         return COMPSsArray(ref, shape=self.shape, dtype=self.dtype)
