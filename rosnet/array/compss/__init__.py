@@ -170,11 +170,11 @@ def to_numpy(arr: BlockArray[COMPSsArray]):
 
 
 def zeros(shape, dtype=None, order="C") -> COMPSsArray:
-    return COMPSsArray.full(shape, 0, dtype=dtype, order=order)
+    return full(shape, 0, dtype=dtype, order=order)
 
 
 def ones(shape, dtype=None, order="C") -> COMPSsArray:
-    return COMPSsArray.full(shape, 1, dtype=dtype, order=order)
+    return full(shape, 1, dtype=dtype, order=order)
 
 
 def full(shape, fill_value, dtype=None, order="C") -> COMPSsArray:
@@ -183,18 +183,27 @@ def full(shape, fill_value, dtype=None, order="C") -> COMPSsArray:
 
 
 @dispatcher.zeros_like.register
-def zeros_like(a: COMPSsArray, dtype=None, order="K", subok=True, shape=None) -> COMPSsArray:
-    pass
+def zeros_like(a: COMPSsArray, dtype=None, order="K", subok=True, shape=None) -> Union[np.ndarray, COMPSsArray]:
+    if subok:
+        return zeros(shape or a.shape, dtype=dtype or a.dtype, order=order)
+    else:
+        return np.zeros(shape or a.shape, dtype=dtype or a.dtype, order=order)
 
 
 @dispatcher.ones_like.register
-def ones_like(a: COMPSsArray, dtype=None, order="K", subok=True, shape=None) -> COMPSsArray:
-    pass
+def ones_like(a: COMPSsArray, dtype=None, order="K", subok=True, shape=None) -> Union[np.ndarray, COMPSsArray]:
+    if subok:
+        return ones(shape or a.shape, dtype=dtype or a.dtype, order=order)
+    else:
+        return np.ones(shape or a.shape, dtype=dtype or a.dtype, order=order)
 
 
 @dispatcher.full_like.register
-def full_like(a: COMPSsArray, fill_value, dtype=None, order="K", subok=True, shape=None) -> COMPSsArray:
-    pass
+def full_like(a: COMPSsArray, fill_value, dtype=None, order="K", subok=True, shape=None) -> Union[np.ndarray, COMPSsArray]:
+    if subok:
+        return full(shape or a.shape, fill_value, dtype=dtype or a.dtype, order=order)
+    else:
+        return np.full(shape or a.shape, fill_value, dtype=dtype or a.dtype, order=order)
 
 
 @dispatcher.empty_like.register
