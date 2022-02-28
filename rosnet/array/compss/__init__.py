@@ -26,32 +26,11 @@ class COMPSsArray(np.lib.mixins.NDArrayOperatorsMixin, ArrayFunctionMixin):
     """
 
     # pylint: disable=protected-access
-    @__init__.register
-    def __init__(self, arr: ArrayConvertable):
-        "Constructor for generic arrays."
-        self.data = np.array(arr)
-        self.__shape = arr.shape
-        self.__dtype = arr.dtype
-
-    @__init__.register
-    def __init__(self, arr: np.generic):
-        "Constructor for scalars."
-        self.data = arr
-        self.__shape = ()
-        self.__dtype = arr.dtype
-
-    @__init__.register
-    def __init__(self, arr: COMPSsFuture, shape, dtype):
-        "Constructor for future result of COMPSs tasks."
-        self.data = arr
-        self.__shape = shape
-        self.__dtype = dtype
-
-    @multimethod
     def __init__(self, arr, **kwargs):
-        if not hasattr(arr, "__array__"):
-            raise TypeError(f"You must provide a numpy.ndarray or a COMPSs future to a numpy.ndarray, but a {type(arr)} was provided")
+        self.__init_dispatch(arr, **kwargs)
 
+    @functools.singledispatchmethod
+    def __init_dispatch(self, arr, **kwargs):
         self.data = arr
         self.__shape = arr.shape if hasattr(arr, "shape") else kwargs["shape"]
         self.__dtype = arr.dtype if hasattr(arr, "dtype") else kwargs["dtype"]
@@ -59,11 +38,26 @@ class COMPSsArray(np.lib.mixins.NDArrayOperatorsMixin, ArrayFunctionMixin):
         assert isinstance(self.dtype, (np.dtype, type))
         self.__dtype = np.dtype(self.__dtype)
 
-    @classmethod
-    def __infer_type_parameter__(cls, *args, **kwargs) -> Type:
-        "Returns the parameter type."
-        # TODO support more parametric types? cupy?
-        return np.ndarray
+    @__init_dispatch.register
+    def _(self, arr: ArrayConvertable):
+        "Constructor for generic arrays."
+        self.data = np.array(arr)
+        self.__shape = arr.shape
+        self.__dtype = arr.dtype
+
+    @__init_dispatch.register
+    def _(self, arr: np.generic):
+        "Constructor for scalars."
+        self.data = arr
+        self.__shape = ()
+        self.__dtype = arr.dtype
+
+    @__init_dispatch.register
+    def _(self, arr: COMPSsFuture, shape, dtype):
+        "Constructor for future result of COMPSs tasks."
+        self.data = arr
+        self.__shape = shape
+        self.__dtype = dtype
 
     def __del__(self):
         compss_delete_object(self.data)
