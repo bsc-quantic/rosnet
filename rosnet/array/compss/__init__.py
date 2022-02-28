@@ -12,6 +12,7 @@ from rosnet.core.math import result_shape
 from rosnet.core.interface import Array, ArrayConvertable
 from rosnet import tuning, dispatch as dispatcher
 from . import task
+from rosnet.array.block import BlockArray
 from rosnet.array.maybe import MaybeArray
 
 
@@ -155,16 +156,16 @@ class COMPSsArray(np.lib.mixins.NDArrayOperatorsMixin, ArrayFunctionMixin):
 
 @dispatcher.to_numpy.register
 def to_numpy(arr: BlockArray[COMPSsArray]):
-    blocks = np.empty_like(self.data, dtype=object)
+    blocks = np.empty_like(arr.data, dtype=object)
     it = np.nditer(
-        self.data,
+        arr.data,
         flags=["refs_ok", "multi_index"],
         op_flags=["readonly"],
-        op_axes=[tuple(range(self.ndim))],
+        op_axes=[tuple(range(arr.ndim))],
     )
     with it:
         for x in it:
-            blocks[it.multi_index] = compss_wait_on(np.array(x[()]))
+            blocks[it.multi_index] = dispatcher.to_numpy(np.array(x[()]))
     return np.block(blocks)
 
 
