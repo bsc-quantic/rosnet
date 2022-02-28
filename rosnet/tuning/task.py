@@ -59,7 +59,7 @@ class autotune:
         return self.generate_variant(**constraints)(*args, **kwargs)
 
 
-def tune(fn: Callable, *args, **kwargs) -> Dict[str, int]:
+def tune(fn: Callable, *args, **kwargs) -> Dict[str, str]:
     from rosnet.tuning.compss import core_count
 
     # dispatch cost function
