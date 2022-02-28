@@ -25,10 +25,10 @@ class ArrayFunctionMixin:
             cls = type(self)
             module = inspect.getmodule(cls)
 
-            if hasattr(module, func.__name__):
-                return getattr(module, func.__name__)(*args, **kwargs)
-            elif hasattr(dispatch, func.__name__):
+            if hasattr(dispatch, func.__name__):
                 return getattr(dispatch, func.__name__)(Literal[cls], *args, **kwargs)
+            elif hasattr(module, func.__name__):
+                return getattr(module, func.__name__)(*args, **kwargs)
             else:
                 return NotImplemented
 
