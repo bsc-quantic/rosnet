@@ -15,6 +15,10 @@ class ArrayConvertable(metaclass=abc.ABCMeta):
         return hasmethod(subclass, "__array__")
 
 
+for typ in [bool, int, float, complex, str, bytes]:
+    ArrayConvertable.register(typ)
+
+
 class ArrayDispatchable(metaclass=abc.ABCMeta):
     @classmethod
     def __subclasshook__(cls, subclass: type):
