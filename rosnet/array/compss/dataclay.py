@@ -29,16 +29,44 @@ class DataClayBlock(DataClayObject):
         return self.data
 
     @dclayMethod(ufunc="numpy.ufunc", method="str", inputs="list", kwargs="dict", return_="anything")
-    def __array_ufunc__(self, ufunc: np.ufunc, method: str, *inputs, **kwargs):
+    def __array_ufunc_no_expansion__(self, ufunc: np.ufunc, method: str, inputs, kwargs):
         "Bypasses computation to dataClay memory space. Uses numpy dispatch mechanism to call the correct implementation."
-        inputs = [i.data if isinstance(i, type(self)) else i for i in inputs]
-        return ufunc(*inputs, **kwargs)
 
+        # translate DataClayBlock to numpy.ndarray
+        inputs = [i.data if isinstance(i, type(self)) else i for i in inputs]
+
+        # inplace case
+        out = kwargs.get("out", None)
+        if isinstance(out, self.__class__):
+            # NOTE contact Alex Barcelo if crash
+            print("Alex was here and suspected something...")
+            kwargs["out"] = kwargs["out"].data
+
+        # call numpy function
+        result = ufunc(*inputs, **kwargs)
+
+        if isinstance(out, self.__class__):
+            return out
+
+        result = DataClayBlock(result)
+        result.make_persistent()
+        return result
+
+    # TODO use autoray for calling and selecting backend
     @dclayMethod(function="anything", types="list", inputs="list", kwargs="dict", return_="anything")
     def __array_function__(self, function, types, inputs, kwargs):
         "Bypasses computation to dataClay memory space. Uses numpy dispatch mechanism to call the correct implementation."
+
+        # translate DataClayBlock to numpy.ndarray
         inputs = [i.data if isinstance(i, type(self)) else i for i in inputs]
-        return function(*inputs, **kwargs)
+
+        # call numpy function
+        result = function(*inputs, **kwargs)
+
+        # wrap result into DataClayBlock
+        result = DataClayBlock(result)
+        result.make_persistent()
+        return result
 
 
 @dispatcher.to_numpy.register
