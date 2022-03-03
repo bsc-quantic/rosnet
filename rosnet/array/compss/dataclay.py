@@ -19,7 +19,9 @@ class DataClayBlock(DataClayObject):
         return self.data[key]
 
     @dclayMethod(key="anything", value="anything")
-    def __setitem__(self, key):
+    def __setitem__(self, key, value):
+        if key == ():
+            self.data = value
         self.data[key] = value
 
     @dclayMethod(return_="numpy.ndarray")
