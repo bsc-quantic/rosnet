@@ -2,6 +2,7 @@ from typing import Sequence, Union
 import os
 import numpy as np
 from pycompss.api.parameter import IN, COLLECTION_IN, COMMUTATIVE, Type, Depth
+from rosnet.core.interface import Array
 from rosnet.tuning.task import autotune
 from rosnet.array.maybe import MaybeArray
 
@@ -12,13 +13,13 @@ def _fix_blas_threads():
 
 
 @autotune(a={Type: COLLECTION_IN, Depth: 1}, b={Type: COLLECTION_IN, Depth: 1}, returns=np.ndarray)
-def sequential(a: Sequence[Union[np.ndarray, "DataClayBlock"]], b: Sequence[Union[np.ndarray, "DataClayBlock"]], axes):
+def sequential(a: Sequence[Array], b: Sequence[Array], axes):
     _fix_blas_threads()
     return sum(np.tensordot(ba, bb, axes) for ba, bb in zip(a, b))
 
 
 @autotune(ba=IN, bb=IN, returns=np.ndarray)
-def tensordot(ba: Union[np.ndarray, "DataClayBlock"], bb: Union[np.ndarray, "DataClayBlock"], axes):
+def tensordot(ba: Array, bb: Array, axes):
     _fix_blas_threads()
     return np.tensordot(ba, bb, axes)
 
@@ -30,6 +31,6 @@ def tensordot(ba: Union[np.ndarray, "DataClayBlock"], bb: Union[np.ndarray, "Dat
 
 
 @autotune(res=COMMUTATIVE)
-def commutative(res: Union[MaybeArray, np.ndarray], a: Union[np.ndarray, "DataClayBlock"], b: Union[np.ndarray, "DataClayBlock"], axes):
+def commutative(res: Array, a: Array, b: Array, axes):
     _fix_blas_threads()
     res += np.tensordot(a, b, axes)
