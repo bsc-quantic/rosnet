@@ -24,10 +24,18 @@ def tensordot(ba: Array, bb: Array, axes):
     return np.tensordot(ba, bb, axes)
 
 
-# @tensordot.register(processors=[{"processorType": "GPU", "computingUnits": "1"}])
-# def tensordot_gpu(ba: np.ndarray, bb: np.ndarray, axes):
+# @tensordot.register(processors=[{"processorType": "GPU"}])
+# def tensordot_gpu():
 #     _fix_blas_threads()
+#     _tensordot_gpu()
+
+# @multimethod
+# def _tensordot_gpu(ba: np.ndarray, bb: np.ndarray, axes):
 #     return do("tensordot", ba, bb, axes, like="cupy")
+
+# @_tensordot_gpu.register
+# def _tensordot_gpu(ba: DataClayBlock, bb: DataClayBlock, axes):
+#     # TODO think how to execute on gpu
 
 
 @autotune(res=COMMUTATIVE)
