@@ -1,3 +1,4 @@
+from typing import Sequence
 from math import prod
 import numpy as np
 from rosnet.core.interface import Array
@@ -12,7 +13,7 @@ def tensordot(a: Array, b: Array, axes) -> int:
     return a.nbytes + b.nbytes + prod(shape) * dtype.itemsize
 
 
-def sequential(a: list[Array], b: list[Array], axes) -> int:
+def sequential(a: Sequence[Array], b: Sequence[Array], axes) -> int:
     assert all(a[0].shape == ai.shape for ai in a)
     assert all(bi[0].shape == bi for bi in b)
 
