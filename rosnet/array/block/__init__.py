@@ -44,8 +44,8 @@ class BlockArray(np.lib.mixins.NDArrayOperatorsMixin, ArrayFunctionMixin, Generi
         # NOTE multimethod checks obj.__orig_class__ for parametric multiple-dispatch, which is a instance of GenericAlias that stores the original class and the parametric type.
         # GenericAlias is standardized in Python 3.9, which is needed for automatic parameter type detection.
         # On earlier versions, GenericAlias is a implementation detail (i.e. _GenericAlias).
-        if sys.version_info.major >= 3 and sys.version_info.minor >= 9:
-            from types import GenericAlias
+        if sys.version_info >= (3, 9, 0):
+            from types import GenericAlias  # pylint: ignore=import-outside-toplevel
 
             self.__orig_class__ = GenericAlias(self.__class__, self.data.flat[0].__class__)
         else:
