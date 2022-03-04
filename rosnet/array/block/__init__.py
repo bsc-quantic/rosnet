@@ -1,3 +1,4 @@
+import sys
 from typing import Tuple, Type, Sequence, Optional, Generic, TypeVar
 from math import prod
 from copy import deepcopy
@@ -27,6 +28,7 @@ class BlockArray(np.lib.mixins.NDArrayOperatorsMixin, ArrayFunctionMixin, Generi
     --------------------
     - All blocks are expected to have the same type and `dtype`.
     - All blocks are expected to be equally sized.
+    - Automatic parametric type detection works only on Python 3.9 or later. On earlier versions, you must
     """
 
     data: np.ndarray = None
@@ -38,6 +40,17 @@ class BlockArray(np.lib.mixins.NDArrayOperatorsMixin, ArrayFunctionMixin, Generi
             self.__init_with_array__(*args, **kwargs)
         else:
             raise ValueError("invalid constructor")
+
+        # NOTE multimethod checks obj.__orig_class__ for parametric multiple-dispatch, which is a instance of GenericAlias that stores the original class and the parametric type.
+        # GenericAlias is standardized in Python 3.9, which is needed for automatic parameter type detection.
+        # On earlier versions, GenericAlias is a implementation detail (i.e. _GenericAlias).
+        if sys.version_info.major >= 3 and sys.version_info.minor >= 9:
+            from types import GenericAlias
+
+            self.__orig_class__ = GenericAlias(self.__class__, self.data.flat[0].__class__)
+        else:
+            # TODO debug message that automatic parametric type detection does not work
+            pass
 
     def __init_with_list__(self, blocks: list, grid: Optional[Sequence[int]] = None):
         """Constructor.
