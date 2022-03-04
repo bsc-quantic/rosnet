@@ -1,13 +1,15 @@
+from typing import Sequence
 import numpy as np
 from pycompss.api.parameter import IN, COLLECTION_IN, COLLECTION_OUT, Type, Depth
+from rosnet.core.interface import Array
 from rosnet.tuning.task import autotune
 
 
 @autotune(block=IN, returns={Type: COLLECTION_OUT, Depth: 1})
-def split(block: np.ndarray, n: int, axis: int):
+def split(block: Array, n: int, axis: int):
     return map(lambda x: x.copy(), np.split(block, n, axis))
 
 
-@autotune(blocks=COLLECTION_IN, returns=np.ndarray)
-def merge(blocks, axis: int):
-    return np.stack(blocks, axis)
+@autotune(arrays={Type: COLLECTION_IN, Depth: 1}, returns=np.ndarray)
+def stack(arrays: Sequence[Array], axis=0, out=None) -> np.ndarray:
+    return np.stack(arrays, axis=axis, out=out)
