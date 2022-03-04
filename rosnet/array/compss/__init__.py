@@ -225,8 +225,8 @@ def to_numpy(arr: BlockArray[COMPSsArray]):
     )
     with it:
         for x in it:
-            blocks[it.multi_index] = dispatcher.to_numpy(np.array(x[()]))
-    return np.block(blocks)
+            blocks[it.multi_index] = dispatcher.to_numpy(x[()])
+    return np.block(blocks.tolist())
 
 
 def zeros(shape, dtype=None, order="C") -> COMPSsArray:

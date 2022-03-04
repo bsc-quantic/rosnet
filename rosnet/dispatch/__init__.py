@@ -1,9 +1,15 @@
+import numpy as np
 from multimethod import multimethod
 
 # custom
 @multimethod
 def to_numpy(*args, **kwargs):
     raise NotImplementedError()
+
+
+@to_numpy.register
+def _(a: np.ndarray):
+    return a
 
 
 from .numpy import (
