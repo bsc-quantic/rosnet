@@ -18,7 +18,7 @@ from rosnet.core.interface import Array, ArrayConvertable
 from rosnet.core.mixin import ArrayFunctionMixin
 from rosnet import dispatch as dispatcher
 
-T = TypeVar("T", Array, np.ndarray, covariant=True)
+T = TypeVar("T", Array, np.ndarray)
 
 
 class BlockArray(np.lib.mixins.NDArrayOperatorsMixin, ArrayFunctionMixin, Generic[T]):
