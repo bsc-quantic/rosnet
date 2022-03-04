@@ -30,7 +30,12 @@ class DataClayBlock(DataClayObject):
 
     @dclayMethod(ufunc="numpy.ufunc", method="str", inputs="list", kwargs="dict", return_="anything")
     def __array_ufunc_no_expansion__(self, ufunc: np.ufunc, method: str, inputs, kwargs):
-        "Bypasses computation to dataClay memory space. Uses numpy dispatch mechanism to call the correct implementation."
+        """Bypasses computation to dataClay memory space. Uses numpy dispatch mechanism to call the correct implementation.
+
+        NOTE
+        ----
+        dataClay does not support argument expansion like *args, **kwargs.
+        """
 
         # translate DataClayBlock to numpy.ndarray
         inputs = [i.data if isinstance(i, type(self)) else i for i in inputs]
