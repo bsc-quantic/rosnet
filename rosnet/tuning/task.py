@@ -44,7 +44,7 @@ class autotune:
 
     def __call__(self, *args, **kwargs):
         if self.fn is None:
-            self.fn = args[0]
+            self.__fn = args[0]
 
             # generate primer task, need to register task before any call autotune.register
             _ = self.generate_variant()
