@@ -4,20 +4,6 @@ from rosnet import BlockArray
 from rosnet.core.interface import ArrayConvertable, Array
 from test.mock import MockArray
 
-try:
-    import pycompss
-
-    incompss = True
-except ImportError:
-    incompss = False
-
-try:
-    import dataclay
-
-    indataclay = True
-except ImportError:
-    indataclay = False
-
 
 class TestArrayConvertableInterface:
     def test_mockarray(self):
