@@ -371,7 +371,8 @@ def tensordot(a: BlockArray, b: BlockArray, axes):
 
 def rand(shape, blockshape=None, inner="numpy"):
     blockshape = shape if blockshape is None else blockshape
-    blocks = np.empty_like(blocks, dtype=object)
+    grid = tuple(s // bs for s, bs in zip(shape, blockshape))
+    blocks = np.empty_like(grid, dtype=object)
     it = np.nditer(blocks, flags=["refs_ok", "multi_index"], op_flags=["writeonly"])
 
     with it:
