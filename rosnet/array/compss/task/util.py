@@ -1,6 +1,7 @@
 from pycompss.api.task import task
 from pycompss.api.parameter import IN, INOUT
 import numpy as np
+from rosnet.tuning.task import autotune
 
 
 @autotune(block=IN)
