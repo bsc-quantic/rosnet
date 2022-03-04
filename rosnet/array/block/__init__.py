@@ -196,7 +196,7 @@ class BlockArray(np.lib.mixins.NDArrayOperatorsMixin, ArrayFunctionMixin, Generi
 
     def __array__(self) -> np.ndarray:
         "Returns a numpy.ndarray. Uses class-parametric specialization with multimethod."
-        return to_numpy(self)
+        return dispatcher.to_numpy(self)
 
     @todo
     def __array_ufunc__(self, ufunc, method, *inputs, **kwargs):
