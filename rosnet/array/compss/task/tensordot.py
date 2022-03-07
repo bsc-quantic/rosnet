@@ -8,8 +8,8 @@ from rosnet.array.maybe import MaybeArray
 
 
 def _fix_blas_threads():
-    os.environ["OPENBLAS_NUM_THREADS"] = os.environ["OMP_NUM_THREADS"]
-    os.environ["MKL_NUM_THREADS"] = os.environ["OMP_NUM_THREADS"]
+    os.environ["OPENBLAS_NUM_THREADS"] = os.environ.get("OMP_NUM_THREADS", "1")
+    os.environ["MKL_NUM_THREADS"] = os.environ.get("OMP_NUM_THREADS", "1")
 
 
 @autotune(a={Type: COLLECTION_IN, Depth: 1}, b={Type: COLLECTION_IN, Depth: 1}, returns=np.ndarray)
