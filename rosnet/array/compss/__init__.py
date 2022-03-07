@@ -84,25 +84,25 @@ class COMPSsArray(np.lib.mixins.NDArrayOperatorsMixin, ArrayFunctionMixin):
         self.__dtype = np.dtype(self.__dtype)
 
     @__init_dispatch.register
-    def _(self, arr: ArrayConvertable):
+    def _(self, arr: ArrayConvertable, **kwargs):
         "Constructor for generic arrays."
         self.data = np.array(arr)
         self.__shape = arr.shape
         self.__dtype = arr.dtype
 
     @__init_dispatch.register
-    def _(self, arr: np.generic):
+    def _(self, arr: np.generic, **kwargs):
         "Constructor for scalars."
         self.data = arr
         self.__shape = ()
         self.__dtype = arr.dtype
 
     @__init_dispatch.register
-    def _(self, arr: COMPSsFuture, shape, dtype):
+    def _(self, arr: COMPSsFuture, **kwargs):
         "Constructor for future result of COMPSs tasks."
         self.data = arr
-        self.__shape = shape
-        self.__dtype = dtype
+        self.__shape = kwargs["shape"]
+        self.__dtype = kwargs["dtype"]
 
     def __del__(self):
         if isinstance(self.data, COMPSsFuture):
