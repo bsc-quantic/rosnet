@@ -2,16 +2,16 @@
 	"name": "Python 3",
 	"image": "compss/compss:rosnet-3.9",
 	"settings": {
-		"terminal.integrated.shell.linux": "/bin/bash",
+		// "terminal.integrated.shell.linux": "/bin/bash",
 		"python.pythonPath": "/usr/bin/python3.9",
 		"python.linting.enabled": true,
 		"python.linting.pylintEnabled": true
 	},
 	"containerUser": "root",
 	// "postStartCommand": "service ssh start",
-	"remoteEnv": {
-		"PYTHONPATH": "/opt/COMPSs/Bindings/python/3/:${containerEnv:PYTHONPATH}",
-	},
+	// "remoteEnv": {
+	// 	"PYTHONPATH": "/opt/COMPSs/Bindings/python/3/:${containerEnv:PYTHONPATH}",
+	// },
 	"extensions": [
 		"ms-python.python",
 		"VisualStudioExptTeam.vscodeintellicode",
