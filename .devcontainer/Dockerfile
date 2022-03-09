@@ -1,15 +1,11 @@
-FROM openjdk:8-jdk
+FROM compss/compss:latest
 
-# install COMPSSs dependencies
-RUN apt-get update; apt-get install -y graphviz xdg-utils libtool automake build-essential python python-dev libpython2.7 python3 python3-dev libboost-serialization-dev libboost-iostreams-dev  libxml2 libxml2-dev csh gfortran libgmp3-dev flex bison texinfo python3-pip libpapi-dev ssh
+RUN apt remove python3-pip python3-dev; \
+	add-apt-repository ppa:deadsnakes/ppa; \
+	apt update; \
+	DEBIAN_FRONTEND=noninteractive apt install -y python3.9 python3.9-dev python3.9-distutils
 
-# install gradle
-ADD https://services.gradle.org/distributions/gradle-5.4.1-bin.zip /opt
-RUN unzip /opt/gradle-5.4.1-bin.zip -d /opt
-
-# set environment
-ENV GRADLE_HOME="/opt/gradle-5.4.1"
-ENV PATH="/opt/gradle-5.4.1/bin:${PATH}"
-
-# install pycompss
-RUN pip3 install pycompss
+# # install pycompss
+RUN python3.9 -m pip install --upgrade pip setuptools; \
+	python3.9 -m pip install pycompss; \
+	python3.9 -m pip install numpy autoray multimethod pytest pytest-cov;
