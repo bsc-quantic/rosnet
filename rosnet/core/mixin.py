@@ -32,8 +32,8 @@ class ArrayFunctionMixin:
             else:
                 return NotImplemented
 
-        dispatcher = dispatch
+        module = dispatch
         if inspect.getmodule(func) == np.linalg:
-            dispatcher = dispatch.linalg
+            module = dispatch.linalg
 
-        return getattr(dispatcher, func.__name__)(*args, **kwargs) if hasattr(dispatcher, func.__name__) else NotImplemented
+        return getattr(module, func.__name__)(*args, **kwargs) if hasattr(module, func.__name__) else NotImplemented
