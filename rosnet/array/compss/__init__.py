@@ -348,6 +348,36 @@ def tensordot(a: Sequence[COMPSsArray], b: Sequence[COMPSsArray], axes, method="
     return COMPSsArray(ref, shape=shape, dtype=dtype)
 
 
+@dispatcher.linalg.svd.register
+def svd(a: COMPSsArray, full_matrices=True, compute_uv=True, hermitian=False) -> Union[Tuple[COMPSsArray, COMPSsArray, COMPSsArray], COMPSsArray]:
+    assert a.ndim >= 2
+    n = a.shape[-1]
+    m = a.shape[-2]
+    k = min(m, n)
+    rest = a.shape[0:-2]
+
+    if compute_uv:
+        U, s, Vh = task.svd(a.data, full_matrices=full_matrices, hermitian=hermitian)
+
+        # TODO check result dtype
+        if full_matrices:
+            U = COMPSsArray(U, shape=(*rest, m, m), dtype=a.dtype)
+            s = COMPSsArray(s, shape=(*rest, k), dtype=a.dtype)
+            Vh = COMPSsArray(Vh, shape=(*rest, n, n), dtype=a.dtype)
+        else:
+            U = COMPSsArray(U, shape=(*rest, m, k), dtype=a.dtype)
+            s = COMPSsArray(s, shape=(*rest, k), dtype=a.dtype)
+            Vh = COMPSsArray(Vh, shape=(*rest, k, n), dtype=a.dtype)
+
+        return (U, s, Vh)
+
+    else:
+        s = task.svd_vals(a.data, hermitian=hermitian)
+        s = COMPSsArray(s, shape=(*rest, k), dtype=a.dtype)
+
+        return s
+
+
 # @implements(np.block, COMPSsArray)
 # def __compss_block(arrays):
 #     return np.block(compss_wait_on([a.data for a in arrays]))
