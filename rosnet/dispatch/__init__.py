@@ -25,3 +25,5 @@ from .numpy import (
     full_like,
     empty_like,
 )
+
+from . import linalg
