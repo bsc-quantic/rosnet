@@ -6,7 +6,7 @@ import numpy as np
 from pycompss.runtime.management.classes import Future as COMPSsFuture
 from pycompss.api.api import compss_delete_object, compss_wait_on
 from rosnet.core.macros import todo
-from rosnet.core.math import result_shape
+from rosnet.core.math import result_shape, isunique
 from rosnet.core.interface import Array, ArrayConvertable
 from rosnet.core.mixin import ArrayFunctionMixin
 from rosnet import tuning, dispatch as dispatcher
