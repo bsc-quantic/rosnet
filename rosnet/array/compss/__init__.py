@@ -385,6 +385,40 @@ def svd(a: COMPSsArray, full_matrices=True, compute_uv=True, hermitian=False) ->
         return s
 
 
+@dispatcher.linalg.qr.register
+def qr(a: COMPSsArray, mode="reduced"):
+    n = a.shape[-1]
+    m = a.shape[-2]
+    k = min(m, n)
+    rest = a.shape[0:-2]
+
+    if mode == "complete":
+        q, r = task.qr.qr_complete(a)
+        q = COMPSsArray(q, shape=(*rest, m, m), dtype=a.dtype)
+        r = COMPSsArray(r, shape=(*rest, m, n), dtype=a.dtype)
+        return (q, r)
+
+    elif mode == "reduced":
+        q, r = task.qr.qr_reduced(a)
+        q = COMPSsArray(q, shape=(*rest, m, k), dtype=a.dtype)
+        r = COMPSsArray(r, shape=(*rest, k, n), dtype=a.dtype)
+        return (q, r)
+
+    elif mode == "r":
+        r = task.qr.qr_r(a)
+        r = COMPSsArray(r, shape=(*rest, k, n), dtype=a.dtype)
+        return r
+
+    elif mode == "raw":
+        h, tau = task.qr_raw(a)
+        h = COMPSsArray(h, shape=(*rest, n, m), dtype=a.dtype)
+        tau = COMPSsArray(tau, shape=(*rest, k), dtype=a.dtype)
+        return (h, tau)
+
+    else:
+        raise ValueError(f'mode must be one of "reduced", "complete", "r" or "raw" but is {mode}')
+
+
 # @implements(np.block, COMPSsArray)
 # def __compss_block(arrays):
 #     return np.block(compss_wait_on([a.data for a in arrays]))

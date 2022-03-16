@@ -40,3 +40,34 @@ def transpose(a: Array, axes=None, **kwargs) -> int:
     Maybe we could dampen this cost in the future?
     """
     return 2 * a.nbytes
+
+
+def qr_complete(a: Array) -> int:
+    n = a.shape[-1]
+    m = a.shape[-2]
+    rest = a.shape[0:-2]
+    return a.nbytes + a.itemsize * prod((*rest, m, m)) + a.itemsize * prod((*rest, m, n))
+
+
+def qr_reduced(a: Array) -> int:
+    n = a.shape[-1]
+    m = a.shape[-2]
+    k = min(m, n)
+    rest = a.shape[0:-2]
+    return a.nbytes + a.itemsize * prod((*rest, m, k)) + a.itemsize * prod((*rest, k, n))
+
+
+def qr_r(a: Array) -> int:
+    n = a.shape[-1]
+    m = a.shape[-2]
+    k = min(m, n)
+    rest = a.shape[0:-2]
+    return a.nbytes + a.itemsize * prod((*rest, k, n))
+
+
+def qr_raw(a: Array) -> int:
+    n = a.shape[-1]
+    m = a.shape[-2]
+    k = min(m, n)
+    rest = a.shape[0:-2]
+    return a.nbytes + a.itemsize * prod((*rest, n, m)) + a.itemsize * prod((*rest, k))
