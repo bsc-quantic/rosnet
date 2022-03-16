@@ -164,7 +164,7 @@ class COMPSsArray(np.lib.mixins.NDArrayOperatorsMixin, ArrayFunctionMixin):
             return NotImplemented
 
         # get COMPSs reference if COMPSsArray
-        inputs = [arg.data if isinstance(arg, self.__class__) else arg for arg in inputs]
+        inputs_unwrap = [arg.data if isinstance(arg, AsyncArray) else arg for arg in inputs]
 
         inplace = False
         if "out" in kwargs and kwargs["out"] == (self,):
@@ -175,7 +175,7 @@ class COMPSsArray(np.lib.mixins.NDArrayOperatorsMixin, ArrayFunctionMixin):
         if method == "at":
             if not np.can_cast(inputs[1], inputs[0], casting="safe"):
                 return NotImplemented
-            task.ioperate(ufunc, *inputs, **kwargs)
+            task.ioperate(ufunc, *inputs_unwrap, **kwargs)
 
         # '__call__', 'outer'
         elif method in "__call__":
@@ -183,10 +183,10 @@ class COMPSsArray(np.lib.mixins.NDArrayOperatorsMixin, ArrayFunctionMixin):
                 types = [i.dtype if hasattr(i, "dtype") else i for i in inputs]
                 if not np.can_cast(types[1], types[0], casting="safe"):
                     return NotImplemented
-                task.ioperate(ufunc, *inputs, **kwargs)
+                task.ioperate(ufunc, *inputs_unwrap, **kwargs)
                 return self
             else:
-                ref = task.operate(ufunc, *inputs, **kwargs)
+                ref = task.operate(ufunc, *inputs_unwrap, **kwargs)
                 dtype = np.result_type(*(i.dtype if hasattr(i, "dtype") else i for i in inputs))
                 return COMPSsArray(ref, shape=self.shape, dtype=dtype)
 
@@ -194,7 +194,7 @@ class COMPSsArray(np.lib.mixins.NDArrayOperatorsMixin, ArrayFunctionMixin):
             if inplace:
                 return NotImplemented
             else:
-                ref = task.operate(ufunc, *inputs, **kwargs)
+                ref = task.operate(ufunc, *inputs_unwrap, **kwargs)
                 shape = functools.reduce(tuple.__add__, (i.shape for i in inputs))
                 dtype = np.result_type(*(i.dtype for i in inputs))
                 return COMPSsArray(ref, shape=shape, dtype=dtype)
