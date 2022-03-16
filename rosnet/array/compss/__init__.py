@@ -77,8 +77,8 @@ class COMPSsArray(np.lib.mixins.NDArrayOperatorsMixin, ArrayFunctionMixin):
     @functools.singledispatchmethod
     def __init_dispatch(self, arr, **kwargs):
         self.data = arr
-        self.__shape = arr.shape if hasattr(arr, "shape") else kwargs["shape"]
-        self.__dtype = arr.dtype if hasattr(arr, "dtype") else kwargs["dtype"]
+        self.__shape = kwargs.get("shape", None) or arr.shape
+        self.__dtype = kwargs.get("dtype", None) or arr.dtype
 
         assert isinstance(self.dtype, (np.dtype, type))
         self.__dtype = np.dtype(self.__dtype)
