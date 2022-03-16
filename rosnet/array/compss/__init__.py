@@ -290,6 +290,9 @@ def reshape(a: COMPSsArray, shape, order="F", inplace=False):
 @dispatcher.transpose.register
 def transpose(a: COMPSsArray, axes=None, inplace=False):
     # pylint: disable=protected-access
+    if axes is None:
+        axes = range(a.ndim)[::-1]
+
     if not isunique(axes):
         raise ValueError("'axes' must be a unique list: %s" % axes)
 
