@@ -63,7 +63,7 @@ except ImportError:
 class COMPSsArray(np.lib.mixins.NDArrayOperatorsMixin, ArrayFunctionMixin):
     """Reference to a `numpy.ndarray` managed by COMPSs.
 
-    Unlike a `numpy.ndarray`, a `COMPSsArray` is mutable and does not return views. As such, the following methods act in-place and return nothing:
+    Unlike a `numpy.ndarray`, a `COMPSsArray` is mutable and does not return views. As such, the following methods may act in-place and return themselves:
     - `reshape`
     - `transpose`
     """
@@ -276,26 +276,29 @@ def empty_like(prototype: COMPSsArray, dtype=None, order="K", subok=True, shape=
 
 
 @dispatcher.reshape.register
-def reshape(a: COMPSsArray, shape, order="F", inplace=True):
+def reshape(a: COMPSsArray, shape, order="F", inplace=False):
     # pylint: disable=protected-access
     a = a if inplace else deepcopy(a)
 
     # TODO support order?
     task.reshape(a.data, shape)
-    a.shape = shape
+    a = COMPSsArray(a.data, shape=shape, dtype=a.dtype)
+
     return a
 
 
 @dispatcher.transpose.register
-def transpose(a: COMPSsArray, axes=None, inplace=True):
+def transpose(a: COMPSsArray, axes=None, inplace=False):
     # pylint: disable=protected-access
     if not isunique(axes):
         raise ValueError("'axes' must be a unique list: %s" % axes)
 
-    a = a if inplace else deepcopy(a)
+    if not inplace:
+        shape = tuple(a.shape[i] for i in axes)
+        a = deepcopy(a)
+        a = COMPSsArray(a.data, shape=shape, dtype=a.dtype)
 
     task.transpose(a.data, axes)
-    a.__shape = tuple(a.__shape[i] for i in axes)
 
     return a
 
