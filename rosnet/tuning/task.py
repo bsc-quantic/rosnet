@@ -1,7 +1,7 @@
 from typing import Callable, Dict
 import functools
 from math import ceil
-from rosnet.core.interface import Future
+from rosnet.core.interface import AsyncArray
 from rosnet.core.macros import todo
 from . import mem
 
@@ -54,7 +54,7 @@ class autotune:
         constraints = tune(self.fn, *args, **kwargs)
 
         # automatic unpacking of wrapper objects
-        args = [arg.data if isinstance(arg, Future) else arg for arg in args]
+        args = [arg.data if isinstance(arg, AsyncArray) else arg for arg in args]
 
         return self.generate_variant(**constraints)(*args, **kwargs)
 

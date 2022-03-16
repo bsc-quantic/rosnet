@@ -1,5 +1,6 @@
 import abc
-from typing import TYPE_CHECKING
+import importlib.util
+from typing import TYPE_CHECKING, Union
 
 # interfaces
 def hasmethod(cls, name) -> bool:
@@ -92,3 +93,7 @@ try:
     Future.register(COMPSsFuture)
 except:
     pass
+
+
+class AsyncArray(metaclass=abc.ABCMeta):
+    data: Union[Array, Future]

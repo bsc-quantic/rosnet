@@ -7,7 +7,7 @@ from pycompss.runtime.management.classes import Future as COMPSsFuture
 from pycompss.api.api import compss_delete_object, compss_wait_on
 from rosnet.core.macros import todo
 from rosnet.core.math import result_shape, isunique
-from rosnet.core.interface import Array, ArrayConvertable
+from rosnet.core.interface import Array, ArrayConvertable, AsyncArray
 from rosnet.core.mixin import ArrayFunctionMixin
 from rosnet import tuning, dispatch as dispatcher
 from . import task
@@ -202,6 +202,10 @@ class COMPSsArray(np.lib.mixins.NDArrayOperatorsMixin, ArrayFunctionMixin):
         # 'reduce', 'accumulate', 'reduceat' not supported yet
         else:
             return NotImplemented
+
+
+# COMPSsArray is an async array
+AsyncArray.register(COMPSsArray)
 
 
 @dispatcher.to_numpy.register
