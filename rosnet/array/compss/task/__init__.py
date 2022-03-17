@@ -8,3 +8,4 @@ from .slicing import split, stack
 from .kron import kron
 from .functional import operate, ioperate
 from .cumsum import cumsum, cumsum_out
+from .astype import astype_copy

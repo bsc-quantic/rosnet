@@ -203,6 +203,15 @@ class COMPSsArray(np.lib.mixins.NDArrayOperatorsMixin, ArrayFunctionMixin):
         else:
             return NotImplemented
 
+    def astype(self, dtype: np.dtype, order="K", casting="unsafe", subok=True, copy=True) -> "COMPSsArray":
+        # TODO support order, subok
+        if not copy:
+            raise NotImplementedError()
+
+        ref = task.astype_copy(self.data, dtype=dtype, order=order, casting=casting, subok=subok)
+
+        return COMPSsArray(ref, shape=self.shape, dtype=dtype)
+
 
 # COMPSsArray is an async array
 AsyncArray.register(COMPSsArray)
