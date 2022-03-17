@@ -6,3 +6,4 @@ from .svd import svd, svd_matrix, svd_vals
 from .slicing import split, stack
 from .kron import kron
 from .functional import operate, ioperate
+from .cumsum import cumsum, cumsum_out
