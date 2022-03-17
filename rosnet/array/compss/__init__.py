@@ -290,7 +290,7 @@ def reshape(a: COMPSsArray, shape, order="F", inplace=False):
     elif -1 in shape:
         assert sum(1 if d == -1 else 0 for d in shape)
 
-        inferred_value = -prod(a.shape) / prod(shape)
+        inferred_value = -prod(a.shape) // prod(shape)
         shape = tuple(inferred_value if d == -1 else d for d in shape)
 
     a = COMPSsArray(a.data, shape=shape, dtype=a.dtype)
