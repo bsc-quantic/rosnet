@@ -24,6 +24,7 @@ from .numpy import (
     ones_like,
     full_like,
     empty_like,
+    cumsum,
 )
 
 from . import linalg

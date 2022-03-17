@@ -7,3 +7,4 @@ from .qr import qr_complete, qr_reduced, qr_r, qr_raw
 from .slicing import split, stack
 from .kron import kron
 from .functional import operate, ioperate
+from .cumsum import cumsum, cumsum_out

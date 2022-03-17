@@ -54,3 +54,9 @@ def full_like(*args, **kwargs):
 @multimethod
 def empty_like(*args, **kwargs):
     raise NotImplementedError()
+
+
+# math
+@multimethod
+def cumsum(*args, **kwargs):
+    raise NotImplementedError()

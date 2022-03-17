@@ -422,6 +422,18 @@ def qr(a: COMPSsArray, mode="reduced"):
         raise ValueError(f'mode must be one of "reduced", "complete", "r" or "raw" but is {mode}')
 
 
+@dispatcher.cumsum.register
+def cumsum(a: COMPSsArray, axis=None, dtype=None, out=None):
+    if out:
+        assert isinstance(out, COMPSsArray)
+        task.cumsum_out(out.data, a.data, axis=axis, dtype=dtype)
+    else:
+        ref = task.cumsum(a.data, axis=axis, dtype=dtype)
+        shape = tuple(filter(lambda x: x[0] != axis, enumerate(a.shape)))
+        dtype = dtype or a.dtype
+        return COMPSsArray(ref, shape=shape, dtype=dtype)
+
+
 # @implements(np.block, COMPSsArray)
 # def __compss_block(arrays):
 #     return np.block(compss_wait_on([a.data for a in arrays]))
