@@ -279,9 +279,6 @@ def empty_like(prototype: COMPSsArray, dtype=None, order="K", subok=True, shape=
 def reshape(a: COMPSsArray, shape, order="F", inplace=False):
     a = a if inplace else deepcopy(a)
 
-    # TODO support order?
-    task.reshape(a.data, shape)
-
     # reshape to 1-D array
     if isinstance(shape, int):
         shape = (shape,)
@@ -292,6 +289,9 @@ def reshape(a: COMPSsArray, shape, order="F", inplace=False):
 
         inferred_value = -prod(a.shape) // prod(shape)
         shape = tuple(inferred_value if d == -1 else d for d in shape)
+
+    # TODO support order?
+    task.reshape(a.data, shape)
 
     a = COMPSsArray(a.data, shape=shape, dtype=a.dtype)
 
