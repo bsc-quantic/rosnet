@@ -277,11 +277,22 @@ def empty_like(prototype: COMPSsArray, dtype=None, order="K", subok=True, shape=
 
 @dispatcher.reshape.register
 def reshape(a: COMPSsArray, shape, order="F", inplace=False):
-    # pylint: disable=protected-access
     a = a if inplace else deepcopy(a)
 
     # TODO support order?
     task.reshape(a.data, shape)
+
+    # reshape to 1-D array
+    if isinstance(shape, int):
+        shape = (shape,)
+
+    # infer shape dimensions
+    elif -1 in shape:
+        assert sum(1 if d == -1 else 0 for d in shape)
+
+        inferred_value = -prod(a.shape) / prod(shape)
+        shape = tuple(inferred_value if d == -1 else d for d in shape)
+
     a = COMPSsArray(a.data, shape=shape, dtype=a.dtype)
 
     return a
