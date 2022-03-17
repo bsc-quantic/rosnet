@@ -1,6 +1,5 @@
 import numpy as np
 from pycompss.api.parameter import IN, INOUT
-from rosnet.array.compss import COMPSsArray
 from rosnet.tuning.task import autotune
 from rosnet.core.interface import Array
 
