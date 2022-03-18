@@ -416,24 +416,24 @@ def qr(a: COMPSsArray, mode="reduced"):
     rest = a.shape[0:-2]
 
     if mode == "complete":
-        q, r = task.qr.qr_complete(a)
+        q, r = task.qr.qr_complete(a.data)
         q = COMPSsArray(q, shape=(*rest, m, m), dtype=a.dtype)
         r = COMPSsArray(r, shape=(*rest, m, n), dtype=a.dtype)
         return (q, r)
 
     elif mode == "reduced":
-        q, r = task.qr.qr_reduced(a)
+        q, r = task.qr.qr_reduced(a.data)
         q = COMPSsArray(q, shape=(*rest, m, k), dtype=a.dtype)
         r = COMPSsArray(r, shape=(*rest, k, n), dtype=a.dtype)
         return (q, r)
 
     elif mode == "r":
-        r = task.qr.qr_r(a)
+        r = task.qr.qr_r(a.data)
         r = COMPSsArray(r, shape=(*rest, k, n), dtype=a.dtype)
         return r
 
     elif mode == "raw":
-        h, tau = task.qr_raw(a)
+        h, tau = task.qr_raw(a.data)
         h = COMPSsArray(h, shape=(*rest, n, m), dtype=a.dtype)
         tau = COMPSsArray(tau, shape=(*rest, k), dtype=a.dtype)
         return (h, tau)
