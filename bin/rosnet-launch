@@ -8,6 +8,7 @@ BASE_LOG_DIR=/gpfs/scratch/$GROUP/$USER
 WORKER_WD=/gpfs/scratch/$GROUP/$USER
 MASTER_WD=/gpfs/scratch/$GROUP/$USER
 QOS=debug
+IMPORTER_WRAPPER=false
 
 FLAGS=()
 PARAMS=()
@@ -71,6 +72,10 @@ while (( "$#" )); do
 			FLAGS+=(--python_interpreter=$(pyenv which python))
 			shift 1
 			;;
+		--importer-wrapper)
+			IMPORTER_WRAPPER=1
+			shift 1
+			;;
 		-*=*|--*=*)
 			echo "Error: Unsupported '=' syntax"
 			exit 1
@@ -87,4 +92,8 @@ if [[ "${PARAMS[0]}" != /* ]]; then
 	PARAMS[0]=$PWD/${PARAMS[0]}
 fi
 
-enqueue_compss --num_nodes=$NUM_NODES --qos=$QOS --base_log_dir=$BASE_LOG_DIR --worker_working_dir=$WORKER_WD --master_working_dir=$MASTER_WD --pythonpath=$PWD --summary ${FLAGS[*]} ${PARAMS[*]}
+if $IMPORTER_WRAPPER ; then
+	enqueue_compss --num_nodes=$NUM_NODES --qos=$QOS --base_log_dir=$BASE_LOG_DIR --worker_working_dir=$WORKER_WD --master_working_dir=$MASTER_WD --pythonpath=$PWD --summary ${FLAGS[*]} $(which rosnet-libimporter-wrapper.py) ${PARAMS[*]}
+elif
+	enqueue_compss --num_nodes=$NUM_NODES --qos=$QOS --base_log_dir=$BASE_LOG_DIR --worker_working_dir=$WORKER_WD --master_working_dir=$MASTER_WD --pythonpath=$PWD --summary ${FLAGS[*]} ${PARAMS[*]}
+fi
