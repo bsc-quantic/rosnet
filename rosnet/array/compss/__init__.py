@@ -121,10 +121,13 @@ class COMPSsArray(np.lib.mixins.NDArrayOperatorsMixin, ArrayFunctionMixin):
     def shape(self) -> Tuple[int]:
         return self.__shape
 
-    @todo
     @shape.setter
-    def _(self, value: Tuple[int]):
-        raise NotImplementedError("reshape call from shape.setter not implemented")
+    def _(self, shape: Tuple[int]):
+        if prod(shape) != prod(self.shape):
+            raise ValueError("number of elements of new shape does not match")
+
+        self.__shape = shape
+        task.reshape(self.data, shape)
 
     @property
     def size(self) -> int:
