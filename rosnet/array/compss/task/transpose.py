@@ -1,10 +1,15 @@
 import numpy as np
 from rosnet.tuning.task import autotune
-from pycompss.api.parameter import IN
+from pycompss.api.parameter import IN, INOUT
 
 
 @autotune(block=IN, returns=np.ndarray)
 def transpose(block: np.ndarray, axes):
+    return np.transpose(block, axes)
+
+
+@autotune(block=INOUT)
+def transpose_inplace(block: np.ndarray, axes):
     # WARNING unsafe
     # TODO before was np.asfortranarray
     tmp = np.ascontiguousarray(np.transpose(block, axes))

@@ -1,4 +1,3 @@
-from pycompss.api.task import task
 from pycompss.api.parameter import IN, INOUT
 import numpy as np
 from rosnet.tuning.task import autotune
@@ -14,8 +13,13 @@ def setitem(block: np.ndarray, idx, value):
     block[idx] = value
 
 
-@autotune(block=INOUT, returns=np.ndarray)
-def reshape(block: np.ndarray, shape):
+@autotune(block=IN, returns=np.ndarray)
+def reshape(block: np.ndarray, shape, order):
+    return np.reshape(block, shape, order=order)
+
+
+@autotune(block=INOUT)
+def reshape_inplace(block: np.ndarray, shape):
     # WARNING unsafe
     block.shape = shape
 

@@ -127,7 +127,7 @@ class COMPSsArray(np.lib.mixins.NDArrayOperatorsMixin, ArrayFunctionMixin):
             raise ValueError("number of elements of new shape does not match")
 
         self.__shape = shape
-        task.reshape(self.data, shape)
+        task.reshape_inplace(self.data, shape)
 
     @property
     def size(self) -> int:
@@ -302,10 +302,13 @@ def reshape(a: COMPSsArray, shape, order="F", inplace=False):
         inferred_value = -prod(a.shape) // prod(shape)
         shape = tuple(inferred_value if d == -1 else d for d in shape)
 
-    # TODO support order?
-    task.reshape(a.data, shape)
-
-    return COMPSsArray(a.data, shape=shape, dtype=a.dtype)
+    if inplace:
+        # TODO support order
+        task.reshape_inplace(a.data, shape)
+        return a
+    else:
+        ref = task.reshape(a.data, shape, order)
+        return COMPSsArray(ref, shape=shape, dtype=a.dtype)
 
 
 @dispatcher.transpose.register
@@ -319,16 +322,15 @@ def transpose(a: COMPSsArray, axes=None, inplace=False):
     shape = tuple(a.shape[i] for i in axes)
     if inplace:
         ref = a.data
-        task.transpose(ref, axes)
+        task.transpose_inplace(ref, axes)
 
         # fix inplace reshape
         a._COMPSsArray__shape = shape  # type: ignore
         return a
 
     else:
-        ref = task.copy(a.data)
-        task.transpose(ref, axes)
-        return COMPSsArray(a.data, shape=shape, dtype=a.dtype)
+        ref = task.transpose(a.data, axes)
+        return COMPSsArray(ref, shape=shape, dtype=a.dtype)
 
 
 @todo
