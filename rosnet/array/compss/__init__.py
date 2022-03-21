@@ -461,6 +461,11 @@ def cumsum(a: COMPSsArray, axis=None, dtype=None, out=None):
         return COMPSsArray(ref, shape=shape, dtype=dtype)
 
 
+@dispatcher.count_nonzero.register
+def count_nonzero(a: COMPSsArray, axis=None, keepdims=False):
+    return compss_wait_on(task.count_nonzero(a.data, axis, keepdims))
+
+
 # @implements(np.block, COMPSsArray)
 # def __compss_block(arrays):
 #     return np.block(compss_wait_on([a.data for a in arrays]))

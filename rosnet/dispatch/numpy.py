@@ -60,3 +60,9 @@ def empty_like(*args, **kwargs):
 @multimethod
 def cumsum(*args, **kwargs):
     raise NotImplementedError()
+
+
+# sorting, searching and counting
+@multimethod
+def count_nonzero(*args, **kwargs):
+    raise NotImplementedError()
