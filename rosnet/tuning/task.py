@@ -20,6 +20,7 @@ class autotune:
 
     @functools.lru_cache
     def generate_variant(self, **kwargs):
+        # TODO generate a variant for each function specialization (i.e. GPU)
         from pycompss.api.task import task
         from pycompss.api.constraint import constraint
 
