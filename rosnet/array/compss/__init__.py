@@ -302,28 +302,30 @@ def reshape(a: COMPSsArray, shape, order="F", inplace=False):
     # TODO support order?
     task.reshape(a.data, shape)
 
-    a = COMPSsArray(a.data, shape=shape, dtype=a.dtype)
-
-    return a
+    return COMPSsArray(a.data, shape=shape, dtype=a.dtype)
 
 
 @dispatcher.transpose.register
 def transpose(a: COMPSsArray, axes=None, inplace=False):
-    # pylint: disable=protected-access
     if axes is None:
         axes = range(a.ndim)[::-1]
 
     if not isunique(axes):
         raise ValueError("'axes' must be a unique list: %s" % axes)
 
-    if not inplace:
-        shape = tuple(a.shape[i] for i in axes)
-        a = deepcopy(a)
-        a = COMPSsArray(a.data, shape=shape, dtype=a.dtype)
+    shape = tuple(a.shape[i] for i in axes)
+    if inplace:
+        ref = a.data
+        task.transpose(ref, axes)
 
-    task.transpose(a.data, axes)
+        # fix inplace reshape
+        a._COMPSsArray__shape = shape  # type: ignore
+        return a
 
-    return a
+    else:
+        ref = task.copy(a.data)
+        task.transpose(ref, axes)
+        return COMPSsArray(a.data, shape=shape, dtype=a.dtype)
 
 
 @todo
