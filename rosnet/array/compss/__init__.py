@@ -288,7 +288,7 @@ def empty_like(prototype: COMPSsArray, dtype=None, order="K", subok=True, shape=
 
 
 @dispatcher.reshape.register
-def reshape(a: COMPSsArray, shape, order="F", inplace=False):
+def reshape(a: COMPSsArray, shape, order="C", inplace=False):
     a = a if inplace else deepcopy(a)
 
     # reshape to 1-D array
