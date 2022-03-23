@@ -330,7 +330,7 @@ def transpose(a: COMPSsArray, axes=None, inplace=False):
         axes = range(a.ndim)[::-1]
 
     # case: n-ints
-    elif isinstance(axes, tuple) and all(isinstance(i, int) for i in axes):
+    elif isinstance(axes, Sequence) and all(isinstance(i, int) for i in axes):
         if set(range(a.ndim)) != set(axes):
             raise ValueError(f"axes don't match array: axes={axes}")
 
