@@ -312,7 +312,7 @@ def reshape(a: COMPSsArray, shape, order="C", inplace=False):
         inferred_value = -prod(a.shape) // prod(shape)
         shape = tuple(inferred_value if d == -1 else d for d in shape)
 
-    assert prod(a.shape) == shape
+    assert prod(a.shape) == prod(shape)
 
     if inplace:
         # TODO support order
