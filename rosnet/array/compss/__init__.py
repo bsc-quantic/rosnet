@@ -486,8 +486,20 @@ def cumsum(a: COMPSsArray, axis=None, dtype=None, out=None):
 
 
 @dispatcher.count_nonzero.register
-def count_nonzero(a: COMPSsArray, axis=None, keepdims=False):
-    return compss_wait_on(task.count_nonzero(a.data, axis, keepdims))
+def count_nonzero(a: COMPSsArray, axis=None, keepdims=False) -> Union[int, COMPSsArray]:
+    ref = task.count_nonzero(a.data, axis, keepdims)
+
+    if axis is None:
+        return compss_wait_on(ref)
+    else:
+        shape = list(a.shape)
+        if keepdims:
+            shape[axis] = 1
+        else:
+            del shape[axis]
+
+        shape = tuple(shape)
+        return COMPSsArray(ref, shape=shape, dtype=np.int0)
 
 
 # @implements(np.block, COMPSsArray)
