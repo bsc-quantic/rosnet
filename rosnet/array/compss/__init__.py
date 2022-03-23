@@ -315,11 +315,23 @@ def reshape(a: COMPSsArray, shape, order="C", inplace=False):
 
 @dispatcher.transpose.register
 def transpose(a: COMPSsArray, axes=None, inplace=False):
+    # case: reverse axes
     if axes is None:
         axes = range(a.ndim)[::-1]
 
-    if not isunique(axes):
-        raise ValueError("'axes' must be a unique list: %s" % axes)
+    # case: n-ints
+    elif isinstance(axes, tuple) and all(isinstance(i, int) for i in axes):
+        if set(range(a.ndim)) != set(axes):
+            raise ValueError(f"axes don't match array: axes={axes}")
+
+    # case: tuple[int,...]
+    elif isinstance(axes, Sequence) and len(axes) == 1 and isinstance(axes[0], Sequence):
+        axes = axes[0]
+        if set(range(a.ndim)) != set(axes):
+            raise ValueError(f"axes don't match array: axes={axes}")
+
+    else:
+        raise ValueError(f"axes don't match array: axes={axes}")
 
     shape = tuple(a.shape[i] for i in axes)
     if inplace:
