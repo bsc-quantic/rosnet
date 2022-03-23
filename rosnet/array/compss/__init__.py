@@ -231,7 +231,7 @@ AsyncArray.register(COMPSsArray)
 
 
 @dispatcher.to_numpy.register
-def to_numpy(arr: COMPSsFuture):
+def _(arr: COMPSsFuture):
     return compss_wait_on(arr)
 
 
@@ -241,7 +241,7 @@ def to_numpy(arr: COMPSsArray):
 
 
 @dispatcher.to_numpy.register
-def to_numpy(arr: BlockArray[COMPSsArray]):
+def _(arr: BlockArray[COMPSsArray]):
     blocks = np.empty_like(arr.data, dtype=object)
     it = np.nditer(
         arr.data,
