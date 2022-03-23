@@ -111,6 +111,12 @@ class COMPSsArray(np.lib.mixins.NDArrayOperatorsMixin, ArrayFunctionMixin):
             if isinstance(self.data, DataClayBlock):
                 self.data.session_detach()  # TODO is this call ok?
 
+    def __str__(self) -> str:
+        return f"COMPSsArray<data=id({id(self.data)}), shape={self.shape}, dtype={self.dtype}>"
+
+    def __repr__(self) -> str:
+        return f"COMPSsArray<data=id({id(self.data)}), shape={self.shape}, dtype={self.dtype}>"
+
     def __getitem__(self, idx) -> COMPSsFuture:
         return compss_wait_on(task.getitem(self.data, idx))
 
