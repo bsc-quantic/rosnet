@@ -21,29 +21,33 @@ class TestTensordot:
 
 class TestTranspose:
     a = np.random.rand(2, 1, 4, 8)
+    axes = [
+        # identity
+        tuple(range(a.ndim)),
+        list(range(a.ndim)),
+        # singleton dim
+        (1, 0, 2, 3),
+        (0, 2, 1, 3),
+        (0, 3, 2, 1),
+        # reverse
+        (3, 2, 1, 0),
+        # random
+        (2, 1, 3, 0),
+    ]
 
-    @pytest.mark.parametrize(
-        "axes",
-        [
-            None,
-            # identity
-            tuple(range(a.ndim)),
-            list(range(a.ndim)),
-            # singleton dim
-            (1, 0, 2, 3),
-            (0, 2, 1, 3),
-            (0, 3, 2, 1),
-            # reverse
-            (3, 2, 1, 0),
-            # random
-            (2, 1, 3, 0),
-        ],
-    )
+    @pytest.mark.parametrize("axes", [None] + axes)
     def test_transpose(self, axes):
         a = COMPSsArray(self.a)
         b = np.array(do("transpose", a, axes))
 
         assert np.array_equal(b, np.transpose(self.a, axes))
+
+    @pytest.mark.parametrize("axes", axes)
+    def test_transpose_expansion(self, axes):
+        a = COMPSsArray(self.a)
+        b = np.array(a.transpose(*axes))
+
+        assert np.array_equal(b, self.a.transpose(*axes))
 
 
 class TestReshape:
