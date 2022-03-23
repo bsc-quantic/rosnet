@@ -1,3 +1,6 @@
+import gc
+import logging
+import sys
 from typing import Tuple, Sequence, Union
 import functools
 from copy import deepcopy
@@ -13,6 +16,12 @@ from rosnet import tuning, dispatch as dispatcher
 from . import task
 from rosnet.array.block import BlockArray
 from rosnet.array.maybe import MaybeArray
+
+handler = logging.StreamHandler()
+handler.setLevel(logging.DEBUG)
+logger = logging.getLogger("COMPSsArray")
+logger.setLevel(logging.DEBUG)
+logger.addHandler(handler)
 
 try:
     from rosnet.array.compss.dataclay import DataClayBlock
@@ -105,6 +114,7 @@ class COMPSsArray(np.lib.mixins.NDArrayOperatorsMixin, ArrayFunctionMixin):
         self.__dtype = kwargs["dtype"]
 
     def __del__(self):
+        logger.debug(f"__del__: id={id(self)}, self={self}, count={sys.getrefcount(self.data)-1}, referers={gc.get_referrers(self.data)}")
         if isinstance(self.data, COMPSsFuture):
             compss_delete_object(self.data)
         elif DATACLAY:
@@ -118,9 +128,11 @@ class COMPSsArray(np.lib.mixins.NDArrayOperatorsMixin, ArrayFunctionMixin):
         return f"COMPSsArray<data=id({id(self.data)}), shape={self.shape}, dtype={self.dtype}>"
 
     def __getitem__(self, idx) -> COMPSsFuture:
+        logger.debug(f"__getitem__: self={self}, shape={self.shape}, idx={idx}")
         return compss_wait_on(task.getitem(self.data, idx))
 
     def __setitem__(self, key, value):
+        logger.debug(f"__setitem__: self={self}, key={key}, value={value}")
         task.setitem(self.data, key, value)
 
     @property
@@ -175,6 +187,9 @@ class COMPSsArray(np.lib.mixins.NDArrayOperatorsMixin, ArrayFunctionMixin):
         # get COMPSs reference if COMPSsArray
         inputs_unwrap = [arg.data if isinstance(arg, AsyncArray) else arg for arg in inputs]
 
+        logger.debug(f"__array_ufunc__:\n\tufunc={ufunc},\n\tmethod={method},\n\tinputs={inputs},\n\tkwargs={kwargs}")
+
+        # TODO fix
         inplace = False
         if "out" in kwargs and kwargs["out"] == (self,):
             inplace = True
@@ -197,6 +212,8 @@ class COMPSsArray(np.lib.mixins.NDArrayOperatorsMixin, ArrayFunctionMixin):
             else:
                 ref = task.operate(ufunc, *inputs_unwrap, **kwargs)
                 dtype = np.result_type(*(i.dtype if hasattr(i, "dtype") else i for i in inputs))
+
+                logger.debug(f"ref={ref}, dtype={dtype}")
                 return COMPSsArray(ref, shape=self.shape, dtype=dtype)
 
         elif method == "outer":
@@ -305,6 +322,7 @@ def empty_like(prototype: COMPSsArray, dtype=None, order="K", subok=True, shape=
 
 @dispatcher.reshape.register
 def reshape(a: COMPSsArray, shape, order="C", inplace=False):
+    logger.debug(f"reshape: a={a}, shape={shape}, order={order}, inplace={inplace}")
     a = a if inplace else deepcopy(a)
 
     # reshape to 1-D array
@@ -331,6 +349,7 @@ def reshape(a: COMPSsArray, shape, order="C", inplace=False):
 
 @dispatcher.transpose.register
 def transpose(a: COMPSsArray, axes=None, inplace=False):
+    logger.debug(f"transpose: a={a}, axes={axes}, inplace={inplace}")
     # case: reverse axes
     if axes is None:
         axes = range(a.ndim)[::-1]
@@ -496,7 +515,9 @@ def count_nonzero(a: COMPSsArray, axis=None, keepdims=False) -> Union[int, COMPS
     ref = task.count_nonzero(a.data, axis, keepdims)
 
     if axis is None:
-        return compss_wait_on(ref)
+        ret = compss_wait_on(ref)
+        logger.debug(f"count_nonzero: a={a}, axis={axis}, keepdims={keepdims}, result={ret}")
+        return ret
     else:
         shape = list(a.shape)
         if keepdims:
@@ -505,7 +526,10 @@ def count_nonzero(a: COMPSsArray, axis=None, keepdims=False) -> Union[int, COMPS
             del shape[axis]
 
         shape = tuple(shape)
-        return COMPSsArray(ref, shape=shape, dtype=np.int0)
+
+        ret = COMPSsArray(ref, shape=shape, dtype=np.int0)
+        logger.debug(f"count_nonzero: a={a}, axis={axis}, keepdims={keepdims}, result={ret}")
+        return ret
 
 
 # @implements(np.block, COMPSsArray)
