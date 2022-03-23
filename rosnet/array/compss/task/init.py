@@ -13,11 +13,6 @@ def rand(shape, order="F"):
 
 
 @autotune(returns=np.ndarray)
-def upload(block):
-    return block
-
-
-@autotune(returns=np.ndarray)
 def identity(block_shape, n, i, j, dtype):
     block = np.zeros(block_shape, dtype)
 

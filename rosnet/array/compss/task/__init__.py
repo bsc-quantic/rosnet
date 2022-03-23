@@ -1,5 +1,5 @@
 from . import tensordot
-from .init import full, rand, upload
+from .init import full, rand
 from .util import reshape, reshape_inplace, setitem, getitem, copy
 from .transpose import transpose, transpose_inplace
 from .svd import svd, svd_matrix, svd_vals
