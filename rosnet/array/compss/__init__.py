@@ -219,7 +219,7 @@ class COMPSsArray(np.lib.mixins.NDArrayOperatorsMixin, ArrayFunctionMixin):
         return dispatcher.reshape[(COMPSsArray,)](self, shape, order=order)
 
     def transpose(self, *axes):
-        return dispatcher.transpose[(COMPSsArray,)](self, *axes)
+        return dispatcher.transpose[(COMPSsArray,)](self, axes=axes)
 
     @property
     def T(self) -> "COMPSsArray":
