@@ -25,7 +25,9 @@ class TestTranspose:
     @pytest.mark.parametrize(
         "axes",
         [
+            None,
             # identity
+            tuple(range(a.ndim)),
             list(range(a.ndim)),
             # singleton dim
             (1, 0, 2, 3),
