@@ -215,6 +215,16 @@ class COMPSsArray(np.lib.mixins.NDArrayOperatorsMixin, ArrayFunctionMixin):
 
         return COMPSsArray(ref, shape=self.shape, dtype=dtype)
 
+    def reshape(self, shape, order="C") -> "COMPSsArray":
+        return dispatcher.reshape[(COMPSsArray,)](self, shape, order=order)
+
+    def transpose(self, *axes):
+        return dispatcher.transpose[(COMPSsArray,)](self, *axes)
+
+    @property
+    def T(self) -> "COMPSsArray":
+        return self.transpose()
+
 
 # COMPSsArray is an async array
 AsyncArray.register(COMPSsArray)
