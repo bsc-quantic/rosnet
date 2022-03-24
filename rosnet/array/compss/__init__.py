@@ -10,6 +10,7 @@ from rosnet.core.macros import todo
 from rosnet.core.math import result_shape, isunique
 from rosnet.core.interface import Array, ArrayConvertable, AsyncArray
 from rosnet.core.mixin import ArrayFunctionMixin
+from rosnet.core.log import log_args
 from rosnet import tuning, dispatch as dispatcher
 from . import task
 from rosnet.array.block import BlockArray
@@ -121,12 +122,12 @@ class COMPSsArray(np.lib.mixins.NDArrayOperatorsMixin, ArrayFunctionMixin):
     def __repr__(self) -> str:
         return f"COMPSsArray<data=id({id(self.data)}), shape={self.shape}, dtype={self.dtype}>"
 
+    @log_args(logger)
     def __getitem__(self, idx) -> COMPSsFuture:
-        logger.debug(f"self={self}, shape={self.shape}, idx={idx}")
         return compss_wait_on(task.getitem(self.data, idx))
 
+    @log_args(logger)
     def __setitem__(self, key, value):
-        logger.debug(f"self={self}, key={key}, value={value}")
         task.setitem(self.data, key, value)
 
     @property
@@ -161,6 +162,7 @@ class COMPSsArray(np.lib.mixins.NDArrayOperatorsMixin, ArrayFunctionMixin):
     def dtype(self) -> np.dtype:
         return self.__dtype
 
+    @log_args(logger)
     def __deepcopy__(self, memo):
         if isinstance(self.data, COMPSsFuture):
             ref = task.copy(self.data)
@@ -171,9 +173,11 @@ class COMPSsArray(np.lib.mixins.NDArrayOperatorsMixin, ArrayFunctionMixin):
             ref = deepcopy(self.data)
         return COMPSsArray(ref, shape=self.shape, dtype=self.dtype)
 
+    @log_args(logger)
     def __array__(self) -> np.ndarray:
         return dispatcher.to_numpy(self.data)
 
+    @log_args(logger)
     def __array_ufunc__(self, ufunc: np.ufunc, method: str, *inputs, **kwargs):
         if ufunc.nin > 2:
             return NotImplemented
@@ -223,6 +227,7 @@ class COMPSsArray(np.lib.mixins.NDArrayOperatorsMixin, ArrayFunctionMixin):
         else:
             return NotImplemented
 
+    @log_args(logger)
     def astype(self, dtype: np.dtype, order="K", casting="unsafe", subok=True, copy=True) -> "COMPSsArray":
         # TODO support order, subok
         if not copy:
@@ -248,16 +253,19 @@ AsyncArray.register(COMPSsArray)
 
 
 @dispatcher.to_numpy.register
+@log_args(logger)
 def _(arr: COMPSsFuture):
     return compss_wait_on(arr)
 
 
 @dispatcher.to_numpy.register
+@log_args(logger)
 def to_numpy(arr: COMPSsArray):
     return dispatcher.to_numpy(arr.data)
 
 
 @dispatcher.to_numpy.register
+@log_args(logger)
 def _(arr: BlockArray[COMPSsArray]):
     blocks = np.empty_like(arr.data, dtype=object)
     it = np.nditer(
@@ -272,20 +280,24 @@ def _(arr: BlockArray[COMPSsArray]):
     return np.block(blocks.tolist())
 
 
+@log_args(logger)
 def zeros(shape, dtype=None, order="C") -> COMPSsArray:
     return full(shape, 0, dtype=dtype, order=order)
 
 
+@log_args(logger)
 def ones(shape, dtype=None, order="C") -> COMPSsArray:
     return full(shape, 1, dtype=dtype, order=order)
 
 
+@log_args(logger)
 def full(shape, fill_value, dtype=None, order="C") -> COMPSsArray:
     ref = task.full(shape, fill_value, dtype=dtype, order=order)
     return COMPSsArray(ref, shape=shape, dtype=dtype or np.dtype(type(fill_value)))
 
 
 @dispatcher.zeros_like.register
+@log_args(logger)
 def zeros_like(a: COMPSsArray, dtype=None, order="K", subok=True, shape=None) -> Union[np.ndarray, COMPSsArray]:
     if subok:
         return zeros(shape or a.shape, dtype=dtype or a.dtype, order=order)
@@ -294,6 +306,7 @@ def zeros_like(a: COMPSsArray, dtype=None, order="K", subok=True, shape=None) ->
 
 
 @dispatcher.ones_like.register
+@log_args(logger)
 def ones_like(a: COMPSsArray, dtype=None, order="K", subok=True, shape=None) -> Union[np.ndarray, COMPSsArray]:
     if subok:
         return ones(shape or a.shape, dtype=dtype or a.dtype, order=order)
@@ -302,6 +315,7 @@ def ones_like(a: COMPSsArray, dtype=None, order="K", subok=True, shape=None) -> 
 
 
 @dispatcher.full_like.register
+@log_args(logger)
 def full_like(a: COMPSsArray, fill_value, dtype=None, order="K", subok=True, shape=None) -> Union[np.ndarray, COMPSsArray]:
     if subok:
         return full(shape or a.shape, fill_value, dtype=dtype or a.dtype, order=order)
@@ -310,13 +324,14 @@ def full_like(a: COMPSsArray, fill_value, dtype=None, order="K", subok=True, sha
 
 
 @dispatcher.empty_like.register
+@log_args(logger)
 def empty_like(prototype: COMPSsArray, dtype=None, order="K", subok=True, shape=None) -> COMPSsArray:
     pass
 
 
 @dispatcher.reshape.register
+@log_args(logger)
 def reshape(a: COMPSsArray, shape, order="C", inplace=False):
-    logger.debug(f"a={a}, shape={shape}, order={order}, inplace={inplace}")
     a = a if inplace else deepcopy(a)
 
     # reshape to 1-D array
@@ -342,8 +357,8 @@ def reshape(a: COMPSsArray, shape, order="C", inplace=False):
 
 
 @dispatcher.transpose.register
+@log_args(logger)
 def transpose(a: COMPSsArray, axes=None, inplace=False):
-    logger.debug(f"a={a}, axes={axes}, inplace={inplace}")
     # case: reverse axes
     if axes is None:
         axes = range(a.ndim)[::-1]
@@ -378,12 +393,14 @@ def transpose(a: COMPSsArray, axes=None, inplace=False):
 
 @todo
 @dispatcher.stack.register
+@log_args(logger)
 def stack(arrays: Sequence[COMPSsArray], axis=0, out=None) -> COMPSsArray:
     pass
 
 
 @todo
 @dispatcher.split.register
+@log_args(logger)
 def split(array: COMPSsArray, indices_or_sections, axis=0) -> Sequence[COMPSsArray]:
     pass
 
@@ -397,6 +414,7 @@ def tensordot(a: Union[COMPSsArray, ArrayConvertable], b: Union[COMPSsArray, Arr
 
 
 @dispatcher.tensordot.register
+@log_args(logger)
 def tensordot(a: COMPSsArray, b: COMPSsArray, axes) -> COMPSsArray:
     dtype = np.result_type(a.dtype, b.dtype)
     shape = result_shape(a.shape, b.shape, axes)
@@ -406,6 +424,7 @@ def tensordot(a: COMPSsArray, b: COMPSsArray, axes) -> COMPSsArray:
 
 
 @dispatcher.tensordot.register
+@log_args(logger)
 def tensordot(a: Sequence[COMPSsArray], b: Sequence[COMPSsArray], axes, method="sequential") -> COMPSsArray:
     dtype = np.result_type(a[0].dtype, b[0].dtype)
     shape = result_shape(a[0].shape, b[0].shape, axes)
@@ -429,6 +448,7 @@ def tensordot(a: Sequence[COMPSsArray], b: Sequence[COMPSsArray], axes, method="
 
 
 @dispatcher.linalg.svd.register
+@log_args(logger)
 def svd(a: COMPSsArray, full_matrices=True, compute_uv=True, hermitian=False) -> Union[Tuple[COMPSsArray, COMPSsArray, COMPSsArray], COMPSsArray]:
     assert a.ndim >= 2
     n = a.shape[-1]
@@ -459,6 +479,7 @@ def svd(a: COMPSsArray, full_matrices=True, compute_uv=True, hermitian=False) ->
 
 
 @dispatcher.linalg.qr.register
+@log_args(logger)
 def qr(a: COMPSsArray, mode="reduced"):
     n = a.shape[-1]
     m = a.shape[-2]
@@ -493,6 +514,7 @@ def qr(a: COMPSsArray, mode="reduced"):
 
 
 @dispatcher.cumsum.register
+@log_args(logger)
 def cumsum(a: COMPSsArray, axis=None, dtype=None, out=None):
     if out:
         assert isinstance(out, COMPSsArray)
@@ -505,12 +527,12 @@ def cumsum(a: COMPSsArray, axis=None, dtype=None, out=None):
 
 
 @dispatcher.count_nonzero.register
+@log_args(logger)
 def count_nonzero(a: COMPSsArray, axis=None, keepdims=False) -> Union[int, COMPSsArray]:
     ref = task.count_nonzero(a.data, axis, keepdims)
 
     if axis is None:
         ret = compss_wait_on(ref)
-        logger.debug(f"a={a}, axis={axis}, keepdims={keepdims}, result={ret}")
         return ret
     else:
         shape = list(a.shape)
@@ -522,7 +544,6 @@ def count_nonzero(a: COMPSsArray, axis=None, keepdims=False) -> Union[int, COMPS
         shape = tuple(shape)
 
         ret = COMPSsArray(ref, shape=shape, dtype=np.int0)
-        logger.debug(f"a={a}, axis={axis}, keepdims={keepdims}, result={ret}")
         return ret
 
 
@@ -531,6 +552,7 @@ def count_nonzero(a: COMPSsArray, axis=None, keepdims=False) -> Union[int, COMPS
 #     return np.block(compss_wait_on([a.data for a in arrays]))
 
 
+@log_args(logger)
 def rand(shape):
     # TODO support inner as in BlockArray
     dtype = np.dtype(np.float64)
