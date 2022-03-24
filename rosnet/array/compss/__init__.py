@@ -185,8 +185,6 @@ class COMPSsArray(np.lib.mixins.NDArrayOperatorsMixin, ArrayFunctionMixin):
         # get COMPSs reference if COMPSsArray
         inputs_unwrap = [arg.data if isinstance(arg, AsyncArray) else arg for arg in inputs]
 
-        logger.debug(f"ufunc={ufunc.__name__},\n\tmethod={method},\n\tinputs={inputs},\n\tkwargs={kwargs}")
-
         # TODO fix
         inplace = False
         if "out" in kwargs and kwargs["out"] == (self,):
@@ -211,7 +209,6 @@ class COMPSsArray(np.lib.mixins.NDArrayOperatorsMixin, ArrayFunctionMixin):
                 ref = task.operate(ufunc, *inputs_unwrap, **kwargs)
                 dtype = np.result_type(*(i.dtype if hasattr(i, "dtype") else i for i in inputs))
 
-                logger.debug(f"ref={ref}, dtype={dtype}")
                 return COMPSsArray(ref, shape=self.shape, dtype=dtype)
 
         elif method == "outer":
