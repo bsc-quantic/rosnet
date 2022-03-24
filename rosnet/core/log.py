@@ -29,19 +29,24 @@ class ArgumentLog:
         self.level = level
 
     def __call__(self, f: Callable) -> Callable:
-        spec = inspect.getfullargspec(f)
-        if spec.varargs is not None:
-            raise NotImplementedError("varargs not supported in Log decorator yet")
-
-        msg = str.join(", ", ("%s={}" % arg for arg in spec.args))
+        signature = inspect.signature(f)
 
         @functools.wraps(f)
-        def wrapper(self, *args, **kwargs):
+        def wrapper(*args, **kwargs):
+            ret = None
             try:
                 ret = f(*args, **kwargs)
+                return ret
+
             finally:
-                # TODO use Log.level
-                logger.debug(msg.format(*args))
+                ba = signature.bind(*args, **kwargs)
+                ba.apply_defaults()
+
+                msg = str.join(", ", (f"{arg}={value}" for arg, value in ba.arguments.items()))
+                if ret is not None:
+                    msg += f" -> {ret}"
+
+                logger.log(self.level, msg)
 
         return wrapper
 
