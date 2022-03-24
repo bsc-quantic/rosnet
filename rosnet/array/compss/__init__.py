@@ -1,6 +1,4 @@
-import gc
 import logging
-import sys
 from typing import Tuple, Sequence, Union
 import functools
 from copy import deepcopy
@@ -17,11 +15,7 @@ from . import task
 from rosnet.array.block import BlockArray
 from rosnet.array.maybe import MaybeArray
 
-handler = logging.StreamHandler()
-handler.setLevel(logging.DEBUG)
-logger = logging.getLogger("COMPSsArray")
-logger.setLevel(logging.DEBUG)
-logger.addHandler(handler)
+logger = logging.getLogger(__name__)
 
 try:
     from rosnet.array.compss.dataclay import DataClayBlock
@@ -114,7 +108,7 @@ class COMPSsArray(np.lib.mixins.NDArrayOperatorsMixin, ArrayFunctionMixin):
         self.__dtype = kwargs["dtype"]
 
     def __del__(self):
-        logger.debug(f"__del__: id={id(self)}, self={self}, count={sys.getrefcount(self.data)-1}, referers={gc.get_referrers(self.data)}")
+        logger.debug(f"__del__: id={id(self)}, self={self}")
         if isinstance(self.data, COMPSsFuture):
             compss_delete_object(self.data)
         elif DATACLAY:
