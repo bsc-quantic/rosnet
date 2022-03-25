@@ -12,3 +12,5 @@ from rosnet.array.block import (
     full,
     rand,
 )
+
+from rosnet.extra import *
