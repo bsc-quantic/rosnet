@@ -244,6 +244,10 @@ class COMPSsArray(np.lib.mixins.NDArrayOperatorsMixin, ArrayFunctionMixin):
     def T(self) -> "COMPSsArray":
         return self.transpose()
 
+    def conj(self) -> "COMPSsArray":
+        # redirect execution to __array_ufunc__
+        return np.conj(self)  # type: ignore
+
 
 # COMPSsArray is an async array
 AsyncArray.register(COMPSsArray)
