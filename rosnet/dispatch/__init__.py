@@ -29,3 +29,9 @@ from .numpy import (
 )
 
 from . import linalg
+
+# import ufuncs
+__ufuncs = filter(lambda x: isinstance(x[1], np.ufunc), {attr: getattr(np, attr) for attr in np.__dict__}.items())
+
+for attr, ufunc in __ufuncs:
+    globals()[attr] = ufunc
