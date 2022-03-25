@@ -120,7 +120,7 @@ class COMPSsArray(np.lib.mixins.NDArrayOperatorsMixin, ArrayFunctionMixin):
         return f"COMPSsArray<data=id({id(self.data)}), shape={self.shape}, dtype={self.dtype}>"
 
     def __repr__(self) -> str:
-        return f"COMPSsArray<data=id({id(self.data)}), shape={self.shape}, dtype={self.dtype}>"
+        return f"COMPSsArray<id={id(self)}, data=id({id(self.data)}), shape={self.shape}, dtype={self.dtype}>"
 
     @log_args(logger)
     def __getitem__(self, idx) -> COMPSsFuture:
