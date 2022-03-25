@@ -3,6 +3,7 @@ import functools
 import logging
 import sys
 import inspect
+from contextlib import contextmanager
 
 logging.getLogger("rosnet").addHandler(logging.NullHandler())
 
@@ -28,6 +29,22 @@ class ArgumentLog:
         self.logger = logger
         self.level = level
 
+    @contextmanager
+    def _fix_funcName(self, fn: str):
+        store = {}
+        formatter = logging.Formatter(f"[%(name)-12s][%(levelname)-8s] @ {fn:20}: %(message)s")
+        logger = logging.getLogger("rosnet")
+
+        for i, handler in filter(lambda x: not isinstance(x[1], logging.NullHandler), enumerate(logger.handlers)):
+            print(f"LOGGER: {handler}")
+            store[i] = handler.formatter
+            handler.formatter = formatter
+
+        yield
+
+        for i, fmt in store.items():
+            logger.handlers[i].formatter = fmt
+
     def __call__(self, f: Callable) -> Callable:
         signature = inspect.signature(f)
 
@@ -46,7 +63,8 @@ class ArgumentLog:
                 if ret is not None:
                     msg += f" -> {ret}"
 
-                logger.log(self.level, msg)
+                with self._fix_funcName(f.__name__):
+                    self.logger.log(self.level, msg)
 
         return wrapper
 
