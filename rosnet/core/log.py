@@ -36,7 +36,6 @@ class ArgumentLog:
         logger = logging.getLogger("rosnet")
 
         for i, handler in filter(lambda x: not isinstance(x[1], logging.NullHandler), enumerate(logger.handlers)):
-            print(f"LOGGER: {handler}")
             store[i] = handler.formatter
             handler.formatter = formatter
 
