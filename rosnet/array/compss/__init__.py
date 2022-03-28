@@ -1,9 +1,10 @@
 import logging
-from typing import Tuple, Sequence, Union
+from typing import Optional, Tuple, Sequence, Union
 import functools
 from copy import deepcopy
 from math import prod
 import numpy as np
+from opt_einsum.parser import parse_einsum_input, find_output_shape
 from pycompss.runtime.management.classes import Future as COMPSsFuture
 from pycompss.api.api import compss_delete_object, compss_wait_on
 from rosnet.core.macros import todo
@@ -546,6 +547,23 @@ def count_nonzero(a: COMPSsArray, axis=None, keepdims=False) -> Union[int, COMPS
 
         ret = COMPSsArray(ref, shape=shape, dtype=np.int0)
         return ret
+
+
+@dispatcher.einsum.register
+@log_args(logger)
+def einsum(pattern: str, *operands: COMPSsArray, out: Optional[COMPSsArray] = None, dtype=None, order="K", casting="safe", optimize=False):
+    if out is None:
+        inputs, output, _ = parse_einsum_input((pattern, *operands))
+
+        shape = find_output_shape(inputs, [op.shape for op in operands], output)
+        dtype = np.result_type(*[op.dtype for op in operands])
+        data = task.einsum(pattern, *operands, dtype=dtype, order=order, casting=casting, optimize=optimize)
+
+        return COMPSsArray(data, shape=shape, dtype=dtype)
+
+    else:
+        task.einsum(pattern, *operands, out=out.data, dtype=dtype, order=order, casting=casting, optimize=optimize)
+        return out
 
 
 # @implements(np.block, COMPSsArray)

@@ -1,6 +1,7 @@
 from typing import Sequence
 from math import prod
 import numpy as np
+from opt_einsum.parser import parse_einsum_input, find_output_shape
 from rosnet.core.interface import Array
 from rosnet.core.math import result_shape
 
@@ -71,3 +72,11 @@ def qr_raw(a: Array) -> int:
     k = min(m, n)
     rest = a.shape[0:-2]
     return a.nbytes + a.itemsize * prod((*rest, n, m)) + a.itemsize * prod((*rest, k))
+
+
+def einsum(pattern: str, *operands: Array, **kwargs) -> int:
+    inputs, output, arrays = parse_einsum_input((pattern, *operands))
+    output_shape = find_output_shape(inputs, [op.shape for op in operands], output)
+    dtype = np.result_type(*[op.dtype for op in operands])
+
+    return sum(a.nbytes for a in arrays) + dtype * prod(output_shape)
