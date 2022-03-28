@@ -16,7 +16,7 @@ def tensordot(a: Array, b: Array, axes) -> int:
 
 def sequential(a: Sequence[Array], b: Sequence[Array], axes) -> int:
     assert all(a[0].shape == ai.shape for ai in a)
-    assert all(bi[0].shape == bi for bi in b)
+    assert all(b[0].shape == bi.shape for bi in b)
 
     shape = result_shape(a.shape, b.shape, axes)
     dtype = np.result_type(a.dtype, b.dtype)
