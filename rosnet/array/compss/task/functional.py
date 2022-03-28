@@ -17,3 +17,8 @@ def operate(func, *args, **kwargs):
 def ioperate(func, a, *args, **kwargs):
     "Apply in-place operator."
     func(a, *args, **kwargs)
+
+
+@autotune(out=INOUT, returns=0)
+def ufunc_out(out, ufunc, *args, **kwargs):
+    ufunc(*args, out=out, **kwargs)

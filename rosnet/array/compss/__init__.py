@@ -187,16 +187,16 @@ class COMPSsArray(np.lib.mixins.NDArrayOperatorsMixin, ArrayFunctionMixin):
         inputs_unwrap = [arg.data if isinstance(arg, AsyncArray) else arg for arg in inputs]
 
         # TODO fix
-        inplace = False
-        if "out" in kwargs and kwargs["out"] == (self,):
-            inplace = True
-            kwargs["out"] = (self.data,)
+        out = kwargs.pop("out", None)
+        if out is not None:
+            out = tuple(i.data for i in out)
+        inplace = out is not None
 
         # 'at' operates in-place
         if method == "at":
             if not np.can_cast(inputs[1], inputs[0], casting="safe"):
                 return NotImplemented
-            task.ioperate(ufunc, *inputs_unwrap, **kwargs)
+            task.ufunc_out(out, ufunc, *inputs_unwrap, **kwargs)
 
         # '__call__', 'outer'
         elif method in "__call__":
@@ -204,7 +204,7 @@ class COMPSsArray(np.lib.mixins.NDArrayOperatorsMixin, ArrayFunctionMixin):
                 types = [i.dtype if hasattr(i, "dtype") else i for i in inputs]
                 if not np.can_cast(types[1], types[0], casting="safe"):
                     return NotImplemented
-                task.ioperate(ufunc, *inputs_unwrap, **kwargs)
+                task.ufunc_out(out, ufunc, *inputs_unwrap, **kwargs)
                 return self
             else:
                 ref = task.operate(ufunc, *inputs_unwrap, **kwargs)
