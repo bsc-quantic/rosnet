@@ -10,6 +10,7 @@ def einsum(pattern: str, *operands, dtype=None, order="K", casting="safe", optim
 
 
 # TODO what if operands[i] == out?
+# TODO out = OUT dependency?
 @autotune(operands=IN, out=INOUT)
 def einsum_out(pattern: str, *operands, dtype=None, order="K", casting="safe", optimize=False):
     return np.einsum(pattern, *operands, dtype=dtype, order=order, casting=casting, optimize=optimize)
