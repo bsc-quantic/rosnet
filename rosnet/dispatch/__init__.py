@@ -7,8 +7,9 @@ def to_numpy(*args, **kwargs):
     raise NotImplementedError()
 
 
-@to_numpy.register
-def _(a: np.ndarray):
+@to_numpy.register(np.ndarray)
+@to_numpy.register(np.generic)
+def _(a):
     return a
 
 

@@ -176,7 +176,7 @@ class COMPSsArray(np.lib.mixins.NDArrayOperatorsMixin, ArrayFunctionMixin):
 
     @log_args(logger)
     def __array__(self) -> np.ndarray:
-        return dispatcher.to_numpy(self.data)
+        return np.array(dispatcher.to_numpy(self.data))
 
     @log_args(logger)
     def __array_ufunc__(self, ufunc: np.ufunc, method: str, *inputs, **kwargs):
