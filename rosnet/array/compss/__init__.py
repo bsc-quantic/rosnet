@@ -186,7 +186,6 @@ class COMPSsArray(np.lib.mixins.NDArrayOperatorsMixin, ArrayFunctionMixin):
         # get COMPSs reference if COMPSsArray
         inputs_unwrap = [arg.data if isinstance(arg, AsyncArray) else arg for arg in inputs]
 
-        # TODO fix
         out = kwargs.pop("out", None)
         if out is not None:
             out = tuple(i.data for i in out)
