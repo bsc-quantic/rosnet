@@ -22,7 +22,7 @@ copyright = "2022, Sergio Sánchez Ramírez"
 author = "Sergio Sánchez Ramírez"
 
 # The full version, including alpha/beta/rc tags
-release = "Apache License 2.0"
+release = "0.3.dev"
 
 
 # -- General configuration ---------------------------------------------------
