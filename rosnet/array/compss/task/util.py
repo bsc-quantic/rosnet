@@ -20,7 +20,6 @@ def reshape(block: np.ndarray, shape, order):
 
 @autotune(block=INOUT)
 def reshape_inplace(block: np.ndarray, shape):
-    # WARNING unsafe
     block.shape = shape
 
 
