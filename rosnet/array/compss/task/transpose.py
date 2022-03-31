@@ -11,12 +11,10 @@ def transpose(block: Array, axes) -> Array:
 
 @autotune(block=INOUT)
 def transpose_inplace(block: Array, axes):
-    # WARNING unsafe
-    # TODO before was np.asfortranarray
-    tmp = np.ascontiguousarray(np.transpose(block, axes))
-    # TODO PROBLEMA DE DOBLE SERIALIZACION
-    block.shape = tmp.shape
-    block.data = tmp.data
+    block_aux = np.transpose(block, axes)
+    
+    block.shape = block_aux.shape
+    np.copyto(block, block_aux)
 
 
 # @transpose.register(app_software="hptt")
