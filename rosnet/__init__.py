@@ -1,4 +1,4 @@
-__version__ = "0.3"
+__version__ = "0.3.dev"
 
 from rosnet.array import *
 from rosnet.dispatch import *

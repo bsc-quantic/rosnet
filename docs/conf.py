@@ -22,7 +22,8 @@ copyright = "2021-2022, Barcelona Supercomputing Center - Centro Nacional de Sup
 author = "Sergio Sánchez Ramírez"
 
 # The full version, including alpha/beta/rc tags
-release = "0.3.dev"
+# release = ""
+from rosnet import __version__ as release
 
 
 # -- General configuration ---------------------------------------------------
