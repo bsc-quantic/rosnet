@@ -14,6 +14,13 @@ help:
 
 .PHONY: help Makefile
 
+clean-autosummary:
+	rm -r _autosummary
+
+fresh: clean clean-autosummary
+
+.PHONY: clean-autosummary fresh
+
 # Catch-all target: route all unknown targets to Sphinx using the new
 # "make mode" option.  $(O) is meant as a shortcut for $(SPHINXOPTS).
 %: Makefile
