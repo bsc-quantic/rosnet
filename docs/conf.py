@@ -18,7 +18,7 @@
 # -- Project information -----------------------------------------------------
 
 project = "rosnet"
-copyright = "2021-2022, Barcelona Supercomputing Center - QUANTIC"
+copyright = "2021-2022, Barcelona Supercomputing Center - Centro Nacional de Supercomputación"
 author = "Sergio Sánchez Ramírez"
 
 # The full version, including alpha/beta/rc tags
