@@ -1,5 +1,6 @@
 from typing import Literal
 import inspect
+from typing_extensions import Self
 import numpy as np
 from rosnet import dispatch
 
@@ -37,3 +38,22 @@ class ArrayFunctionMixin:
             module = dispatch.linalg
 
         return getattr(module, func.__name__)(*args, **kwargs) if hasattr(module, func.__name__) else NotImplemented
+
+
+class ArrayAttributeMixin:
+    def reshape(self, shape, order="C") -> Self:
+        return dispatch.reshape[(self.__class__,)](self, shape, order=order)
+
+    def transpose(self, *axes) -> Self:
+        return dispatch.transpose[(self.__class__,)](self, axes=axes)
+
+    @property
+    def T(self) -> Self:
+        return self.transpose()
+
+    def conj(self) -> Self:
+        # redirect execution to __array_ufunc__
+        return np.conj(self)
+
+    def flatten(self, order="C") -> Self:
+        return dispatch.ravel[(self.__class__,)](self, order=order)
