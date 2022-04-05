@@ -377,6 +377,6 @@ def rand(shape, blockshape=None, inner="numpy"):
 
     with it:
         for block in it:
-            block[()] = autoray.do("random.rand", blockshape, like=inner)
+            block[()] = autoray.do("random.rand", *blockshape, like=inner)
 
     return BlockArray(blocks)
