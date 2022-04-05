@@ -23,6 +23,12 @@ Current dependencies are:
 - `docs`
 - `test`
 
-## Docker images
+## Docker
 
-<!-- TODO -->
+```{note}
+There are some issues with the `compss/compss` image when using a different Python version. While the COMPSs team fixes it, use the `Dockerfile` located inside `.devcontainer` folder.
+
+```{code-block}
+docker build -f .devcontainer/Dockerfile -t compss/compss:rosnet-3.9 .
+```
+
