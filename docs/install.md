@@ -26,9 +26,10 @@ Current dependencies are:
 ## Docker
 
 ```{note}
-There are some issues with the `compss/compss` image when using a different Python version. While the COMPSs team fixes it, use the `Dockerfile` located inside `.devcontainer` folder.
+A `rosnet` Docker image has not been released yet. Meanwhile, use one of the `mofeing/pycompss` images that already have all the dependencies installed to run distributed.
 
+e.g.
 ```{code-block}
-docker build -f .devcontainer/Dockerfile -t compss/compss:rosnet-3.9 .
+docker pull mofeing/pycompss:2.10
 ```
 
