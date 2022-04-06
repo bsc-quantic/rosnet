@@ -2,17 +2,6 @@ ARG PYTHON_VERSION=3.9
 FROM python:${PYTHON_VERSION}-bullseye
 
 ARG DEBIAN_FRONTEND=noninteractive
-ARG COMPSS_TAG=stable
-ARG COMPSS_BINDING_C=true
-ARG COMPSS_BINDING_PYTHON=true
-ARG COMPSS_EXTRAE=false
-ARG COMPSS_AUTOPARALLEL=false
-ARG COMPSS_MONITOR=false
-ARG COMPSS_STREAM=false
-ARG COMPSS_JACOCO=false
-ARG COMPSS_KAFKA=false
-ARG COMPSS_CLI=true
-ARG COMPSS_SKIP_TESTS=true
 
 # install system dependencies
 RUN apt update; apt upgrade -y; \
@@ -28,6 +17,11 @@ RUN apt update; apt upgrade -y; \
 		# COMPSs misc
 		openmpi-bin libopenmpi-dev uuid-runtime bc; \
 	apt-get autoclean;
+
+ARG COMPSS_BINDING_C=true
+ARG COMPSS_BINDING_PYTHON=true
+ARG COMPSS_EXTRAE=false
+ARG COMPSS_AUTOPARALLEL=false
 
 # optional features
 # COMPSs C-binding
@@ -74,6 +68,14 @@ ENV COMPSS_HOME=/opt/COMPSs/
 ENV PATH=$PATH:/opt/COMPSs/Runtime/scripts/user:/opt/COMPSs/Bindings/c/bin:/opt/COMPSs/Runtime/scripts/utils:/opt/gradle/bin
 ENV LD_LIBRARY_PATH=/opt/COMPSs/Bindings/bindings-common/lib:$JAVA_HOME/jre/lib/amd64/server:/usr/lib/openmpi/lib
 ENV CLASSPATH=$CLASSPATH:/opt/COMPSs/Runtime/compss-engine.jar
+
+ARG COMPSS_TAG=stable
+ARG COMPSS_CLI=true
+ARG COMPSS_SKIP_TESTS=true
+ARG COMPSS_MONITOR=false
+ARG COMPSS_STREAM=false
+ARG COMPSS_JACOCO=false
+ARG COMPSS_KAFKA=false
 
 # build COMPSs
 COPY build-compss.sh /
