@@ -1,4 +1,5 @@
 import functools
+
 from pycompss.api.parameter import IN, INOUT
 from rosnet.core import log
 from rosnet.tuning.task import autotune

@@ -1,8 +1,9 @@
-from typing import Literal
 import inspect
-from typing_extensions import Self
+from typing import Literal
+
 import numpy as np
 from rosnet import dispatch
+from typing_extensions import Self
 
 EXPLICITLY_DISPATCH = [
     np.zeros,

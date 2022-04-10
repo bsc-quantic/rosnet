@@ -1,7 +1,7 @@
 import numpy as np
-from rosnet.tuning.task import autotune
 from rosnet.core import log
 from rosnet.core.interface import Array
+from rosnet.tuning.task import autotune
 
 
 @autotune(returns=np.ndarray)

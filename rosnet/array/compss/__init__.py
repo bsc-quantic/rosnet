@@ -1,28 +1,31 @@
-import logging
-from typing import Optional, Tuple, Sequence, Union
 import functools
+import logging
 from copy import deepcopy
 from math import prod
+from typing import Optional, Sequence, Tuple, Union
+
 import numpy as np
-from opt_einsum.parser import parse_einsum_input, find_output_shape
-from pycompss.runtime.management.classes import Future as COMPSsFuture
+from opt_einsum.parser import find_output_shape, parse_einsum_input
 from pycompss.api.api import compss_delete_object, compss_wait_on
-from rosnet.core.macros import todo
-from rosnet.core.math import result_shape, isunique
-from rosnet.core.interface import Array, ArrayConvertable, AsyncArray
-from rosnet.core.mixin import ArrayFunctionMixin
-from rosnet.core.log import log_args
-from rosnet import tuning, dispatch as dispatcher
-from . import task
+from pycompss.runtime.management.classes import Future as COMPSsFuture
+from rosnet import dispatch as dispatcher
+from rosnet import tuning
 from rosnet.array.block import BlockArray
 from rosnet.array.maybe import MaybeArray
+from rosnet.core.interface import Array, ArrayConvertable, AsyncArray
+from rosnet.core.log import log_args
+from rosnet.core.macros import todo
+from rosnet.core.util import isunique, result_shape
+from rosnet.core.mixin import ArrayFunctionMixin
+
+from . import task
 
 logger = logging.getLogger(__name__)
 
 try:
-    from rosnet.array.compss.dataclay import DataClayBlock
     from numpy.core import umath as um
     from numpy.lib.mixins import _binary_method, _numeric_methods, _reflected_binary_method, _unary_method
+    from rosnet.array.compss.dataclay import DataClayBlock
 
     DATACLAY = True
 

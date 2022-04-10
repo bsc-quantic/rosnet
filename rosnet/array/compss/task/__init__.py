@@ -1,13 +1,13 @@
 from . import tensordot
-from .init import full, rand
-from .util import reshape, reshape_inplace, setitem, getitem, copy
-from .transpose import transpose, transpose_inplace
-from .svd import svd, svd_matrix, svd_vals
-from .qr import qr_complete, qr_reduced, qr_r, qr_raw
-from .slicing import split, stack
-from .kron import kron
-from .functional import operate, ioperate, ufunc_out
-from .cumsum import cumsum, cumsum_out
 from .astype import astype_copy
 from .count_nonzero import count_nonzero
+from .cumsum import cumsum, cumsum_out
 from .einsum import einsum, einsum_out
+from .functional import ioperate, operate, ufunc_out
+from .init import full, rand
+from .kron import kron
+from .qr import qr_complete, qr_r, qr_raw, qr_reduced
+from .slicing import split, stack
+from .svd import svd, svd_matrix, svd_vals
+from .transpose import transpose, transpose_inplace
+from .util import copy, getitem, reshape, reshape_inplace, setitem

@@ -7,10 +7,10 @@ else:
     from typing_extensions import ParamSpec
 
 import functools
-import logging
-import sys
 import inspect
+import logging
 from contextlib import contextmanager
+
 from multimethod import multimethod
 
 T = TypeVar("T")

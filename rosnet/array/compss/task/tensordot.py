@@ -1,11 +1,12 @@
-from typing import Sequence, Union
 import os
+from typing import Sequence, Union
+
 import numpy as np
-from pycompss.api.parameter import IN, COLLECTION_IN, COMMUTATIVE, Type, Depth
+from pycompss.api.parameter import COLLECTION_IN, COMMUTATIVE, IN, Depth, Type
+from rosnet.array.maybe import MaybeArray
 from rosnet.core import log
 from rosnet.core.interface import Array
 from rosnet.tuning.task import autotune
-from rosnet.array.maybe import MaybeArray
 
 
 def _fix_blas_threads():

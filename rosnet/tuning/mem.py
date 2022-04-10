@@ -1,9 +1,10 @@
-from typing import Sequence
 from math import prod
+from typing import Sequence
+
 import numpy as np
-from opt_einsum.parser import parse_einsum_input, find_output_shape
+from opt_einsum.parser import find_output_shape, parse_einsum_input
 from rosnet.core.interface import Array
-from rosnet.core.math import result_shape
+from rosnet.core.util import result_shape
 
 
 def tensordot(a: Array, b: Array, axes) -> int:

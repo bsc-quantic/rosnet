@@ -1,7 +1,9 @@
 import abc
 import importlib.util
 from typing import TYPE_CHECKING, Any, Callable, Tuple, Union
+
 import numpy as np
+
 
 # interfaces
 def hasmethod(cls, name) -> bool:

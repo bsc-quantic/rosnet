@@ -1,4 +1,5 @@
 from typing import Tuple
+
 import numpy as np
 from pycompss.api.parameter import IN
 from rosnet.core import log
