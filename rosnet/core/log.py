@@ -1,9 +1,20 @@
-from typing import Callable
+import sys
+from typing import Callable, TypeVar
+
+if sys.version_info >= (3, 10):
+    from typing import ParamSpec
+else:
+    from typing_extensions import ParamSpec
+
 import functools
 import logging
 import sys
 import inspect
 from contextlib import contextmanager
+from multimethod import multimethod
+
+T = TypeVar("T")
+P = ParamSpec("P")
 
 logging.getLogger("rosnet").addHandler(logging.NullHandler())
 
@@ -19,6 +30,46 @@ if __debug__:
         handler.setFormatter(formatter)
 
         logger.addHandler(handler)
+
+
+@multimethod
+def trace(*args, **kwargs):
+    raise NotImplementedError()
+
+
+@trace.register()  # default
+def trace_in_stderr(f: Callable[P, T]) -> Callable[P, T]:
+    if not __debug__:
+        return f
+
+    signature = inspect.signature(f)
+
+    @functools.wraps(f)
+    def wrapper(*args, **kwargs) -> T:
+        ret = None
+        try:
+            sys.stderr.write(f"[rosnet] args={args}, kwargs={kwargs}\n")
+            sys.stderr.flush()
+            ret = f(*args, **kwargs)
+            return ret
+
+        finally:
+            ba = signature.bind(*args, **kwargs)
+            ba.apply_defaults()
+
+            msg = str.join(", ", (f"{arg}={value}" for arg, value in ba.arguments.items()))
+            if ret is not None:
+                msg += f" -> {ret}"
+
+            sys.stderr.write(f"[rosnet][{f.__name__}] @ {msg}\n")
+            sys.stderr.flush()
+
+    return wrapper
+
+
+@trace.register
+def trace_in_logger(logger: logging.Logger, /, level: int = logging.DEBUG):
+    return ArgumentLog(logger, level=level)
 
 
 class ArgumentLog:
@@ -44,11 +95,11 @@ class ArgumentLog:
         for i, fmt in store.items():
             logger.handlers[i].formatter = fmt
 
-    def __call__(self, f: Callable) -> Callable:
+    def __call__(self, f: Callable[P, T]) -> Callable[P, T]:
         signature = inspect.signature(f)
 
         @functools.wraps(f)
-        def wrapper(*args, **kwargs):
+        def wrapper(*args, **kwargs) -> T:
             ret = None
             try:
                 ret = f(*args, **kwargs)
