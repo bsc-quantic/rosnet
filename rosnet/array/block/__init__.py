@@ -1,3 +1,4 @@
+import logging
 import sys
 from copy import deepcopy
 from math import prod
@@ -9,8 +10,19 @@ from multimethod import multimethod
 from rosnet import dispatch as dispatcher
 from rosnet.core.interface import Array, ArrayConvertable
 from rosnet.core.macros import todo
-from rosnet.core.util import isunique, join_idx, measure_shape, nest_level, result_shape, space
 from rosnet.core.mixin import ArrayFunctionMixin
+from rosnet.core.util import isunique, join_idx, measure_shape, nest_level, result_shape, space
+
+logger = logging.getLogger(__name__)
+
+# NOTE multimethod checks obj.__orig_class__ for parametric multiple-dispatch, which is a instance of GenericAlias that stores the original class and the parametric type.
+# GenericAlias is standardized in Python 3.9, which is needed for automatic parameter type detection.
+# On earlier versions, GenericAlias is a implementation detail (i.e. _GenericAlias).
+if sys.version_info >= (3, 9, 0):
+    from types import GenericAlias
+else:
+    logging.warning("GenericAlias is introduced in Python 3.9. Using implementation detail typing._GenericAlias")
+    from typing import _GenericAlias as GenericAlias
 
 T = TypeVar("T", Array, np.ndarray)
 
@@ -35,16 +47,7 @@ class BlockArray(np.lib.mixins.NDArrayOperatorsMixin, ArrayFunctionMixin, Generi
         else:
             raise ValueError("invalid constructor")
 
-        # NOTE multimethod checks obj.__orig_class__ for parametric multiple-dispatch, which is a instance of GenericAlias that stores the original class and the parametric type.
-        # GenericAlias is standardized in Python 3.9, which is needed for automatic parameter type detection.
-        # On earlier versions, GenericAlias is a implementation detail (i.e. _GenericAlias).
-        if sys.version_info >= (3, 9, 0):
-            from types import GenericAlias  # pylint: ignore=import-outside-toplevel
-
-            self.__orig_class__ = GenericAlias(self.__class__, self.data.flat[0].__class__)
-        else:
-            # TODO debug message that automatic parametric type detection does not work
-            pass
+        self.__orig_class__ = GenericAlias(self.__class__, self.data.flat[0].__class__)
 
     def __init_with_list__(self, blocks: list, grid: Optional[Sequence[int]] = None):
         """Constructor.
