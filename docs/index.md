@@ -1,8 +1,9 @@
-# Welcome to rosnet's documentation!
+# Welcome to `rosnet`'s documentation!
 
 <center style="font-family: monospace">
 rosnet | ɟɘnƨoɿ
 </center>
+<br/>
 
 `rosnet` is a Python library for distributed execution of tensor operations. It was designed for simulation of quantum circuits and tensor networks, but it may be used as a generic array backend.
 
