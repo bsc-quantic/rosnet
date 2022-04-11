@@ -11,7 +11,7 @@ rosnet | ɟɘnƨoɿ
 ```
 
 ```{toctree}
-:maxdepth: 2
+:hidden:
 install
 integration
 examples/index
