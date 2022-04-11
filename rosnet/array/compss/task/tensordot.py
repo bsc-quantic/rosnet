@@ -1,10 +1,12 @@
-from typing import Sequence, Union
 import os
+from typing import Sequence, Union
+
 import numpy as np
-from pycompss.api.parameter import IN, COLLECTION_IN, COMMUTATIVE, Type, Depth
+from pycompss.api.parameter import COLLECTION_IN, COMMUTATIVE, IN, Depth, Type
+from rosnet.array.maybe import MaybeArray
+from rosnet.core import log
 from rosnet.core.interface import Array
 from rosnet.tuning.task import autotune
-from rosnet.array.maybe import MaybeArray
 
 
 def _fix_blas_threads():
@@ -12,13 +14,15 @@ def _fix_blas_threads():
     os.environ["MKL_NUM_THREADS"] = os.environ.get("OMP_NUM_THREADS", "1")
 
 
-@autotune(a={Type: COLLECTION_IN, Depth: 1}, b={Type: COLLECTION_IN, Depth: 1}, returns=np.ndarray)
+@autotune(a={Type: COLLECTION_IN, Depth: 1}, b={Type: COLLECTION_IN, Depth: 1}, returns=1)
+@log.trace
 def sequential(a: Sequence[Array], b: Sequence[Array], axes):
     _fix_blas_threads()
     return sum(np.tensordot(ba, bb, axes) for ba, bb in zip(a, b))
 
 
-@autotune(ba=IN, bb=IN, returns=np.ndarray)
+@autotune(ba=IN, bb=IN, returns=1)
+@log.trace
 def tensordot(ba: Array, bb: Array, axes):
     _fix_blas_threads()
     return np.tensordot(ba, bb, axes)
@@ -38,7 +42,8 @@ def tensordot(ba: Array, bb: Array, axes):
 #     # TODO think how to execute on gpu
 
 
-@autotune(res=COMMUTATIVE)
+@autotune(res=COMMUTATIVE, returns=0)
+@log.trace
 def commutative(res: Array, a: Array, b: Array, axes):
     _fix_blas_threads()
     res += np.tensordot(a, b, axes)

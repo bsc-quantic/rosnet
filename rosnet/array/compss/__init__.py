@@ -1,23 +1,31 @@
-from typing import Tuple, Sequence, Union
 import functools
+import logging
 from copy import deepcopy
 from math import prod
+from typing import Optional, Sequence, Tuple, Union
+
 import numpy as np
-from pycompss.runtime.management.classes import Future as COMPSsFuture
+from opt_einsum.parser import find_output_shape, parse_einsum_input
 from pycompss.api.api import compss_delete_object, compss_wait_on
-from rosnet.core.macros import todo
-from rosnet.core.math import result_shape
-from rosnet.core.interface import Array, ArrayConvertable
-from rosnet.core.mixin import ArrayFunctionMixin
-from rosnet import tuning, dispatch as dispatcher
-from . import task
+from pycompss.runtime.management.classes import Future as COMPSsFuture
+from rosnet import dispatch as dispatcher
+from rosnet import tuning
 from rosnet.array.block import BlockArray
 from rosnet.array.maybe import MaybeArray
+from rosnet.core.interface import Array, ArrayConvertable, AsyncArray
+from rosnet.core.log import log_args
+from rosnet.core.macros import todo
+from rosnet.core.util import isunique, result_shape
+from rosnet.core.mixin import ArrayFunctionMixin
+
+from . import task
+
+logger = logging.getLogger(__name__)
 
 try:
-    from rosnet.array.compss.dataclay import DataClayBlock
     from numpy.core import umath as um
     from numpy.lib.mixins import _binary_method, _numeric_methods, _reflected_binary_method, _unary_method
+    from rosnet.array.compss.dataclay import DataClayBlock
 
     DATACLAY = True
 
@@ -63,7 +71,7 @@ except ImportError:
 class COMPSsArray(np.lib.mixins.NDArrayOperatorsMixin, ArrayFunctionMixin):
     """Reference to a `numpy.ndarray` managed by COMPSs.
 
-    Unlike a `numpy.ndarray`, a `COMPSsArray` is mutable and does not return views. As such, the following methods act in-place and return nothing:
+    Unlike a `numpy.ndarray`, a `COMPSsArray` is mutable and does not return views. As such, the following methods may act in-place and return themselves:
     - `reshape`
     - `transpose`
     """
@@ -77,8 +85,8 @@ class COMPSsArray(np.lib.mixins.NDArrayOperatorsMixin, ArrayFunctionMixin):
     @functools.singledispatchmethod
     def __init_dispatch(self, arr, **kwargs):
         self.data = arr
-        self.__shape = arr.shape if hasattr(arr, "shape") else kwargs["shape"]
-        self.__dtype = arr.dtype if hasattr(arr, "dtype") else kwargs["dtype"]
+        self._shape = kwargs.get("shape", None) or arr.shape
+        self.__dtype = kwargs.get("dtype", None) or arr.dtype
 
         assert isinstance(self.dtype, (np.dtype, type))
         self.__dtype = np.dtype(self.__dtype)
@@ -87,44 +95,56 @@ class COMPSsArray(np.lib.mixins.NDArrayOperatorsMixin, ArrayFunctionMixin):
     def _(self, arr: ArrayConvertable, **kwargs):
         "Constructor for generic arrays."
         self.data = np.array(arr)
-        self.__shape = arr.shape
+        self._shape = arr.shape
         self.__dtype = arr.dtype
 
     @__init_dispatch.register
     def _(self, arr: np.generic, **kwargs):
         "Constructor for scalars."
         self.data = arr
-        self.__shape = ()
+        self._shape = ()
         self.__dtype = arr.dtype
 
     @__init_dispatch.register
     def _(self, arr: COMPSsFuture, **kwargs):
         "Constructor for future result of COMPSs tasks."
         self.data = arr
-        self.__shape = kwargs["shape"]
+        self._shape = kwargs["shape"]
         self.__dtype = kwargs["dtype"]
 
     def __del__(self):
+        logger.debug(f"id={id(self)}, self={self}")
         if isinstance(self.data, COMPSsFuture):
             compss_delete_object(self.data)
         elif DATACLAY:
             if isinstance(self.data, DataClayBlock):
                 self.data.session_detach()  # TODO is this call ok?
 
+    def __str__(self) -> str:
+        return f"COMPSsArray<data=id({id(self.data)}), shape={self.shape}, dtype={self.dtype}>"
+
+    def __repr__(self) -> str:
+        return f"COMPSsArray<id={id(self)}, data=id({id(self.data)}), shape={self.shape}, dtype={self.dtype}>"
+
+    @log_args(logger)
     def __getitem__(self, idx) -> COMPSsFuture:
         return compss_wait_on(task.getitem(self.data, idx))
 
+    @log_args(logger)
     def __setitem__(self, key, value):
         task.setitem(self.data, key, value)
 
     @property
     def shape(self) -> Tuple[int]:
-        return self.__shape
+        return self._shape
 
-    @todo
     @shape.setter
-    def _(self, value: Tuple[int]):
-        raise NotImplementedError("reshape call from shape.setter not implemented")
+    def _(self, shape: Tuple[int]):
+        if prod(shape) != prod(self.shape):
+            raise ValueError("number of elements of new shape does not match")
+
+        self._shape = shape
+        task.reshape_inplace(self.data, shape)
 
     @property
     def size(self) -> int:
@@ -140,12 +160,13 @@ class COMPSsArray(np.lib.mixins.NDArrayOperatorsMixin, ArrayFunctionMixin):
 
     @property
     def ndim(self) -> int:
-        return len(self.__shape)
+        return len(self._shape)
 
     @property
     def dtype(self) -> np.dtype:
         return self.__dtype
 
+    @log_args(logger)
     def __deepcopy__(self, memo):
         if isinstance(self.data, COMPSsFuture):
             ref = task.copy(self.data)
@@ -156,26 +177,28 @@ class COMPSsArray(np.lib.mixins.NDArrayOperatorsMixin, ArrayFunctionMixin):
             ref = deepcopy(self.data)
         return COMPSsArray(ref, shape=self.shape, dtype=self.dtype)
 
+    @log_args(logger)
     def __array__(self) -> np.ndarray:
-        return dispatcher.to_numpy(self.data)
+        return np.array(dispatcher.to_numpy(self.data))
 
+    @log_args(logger)
     def __array_ufunc__(self, ufunc: np.ufunc, method: str, *inputs, **kwargs):
         if ufunc.nin > 2:
             return NotImplemented
 
         # get COMPSs reference if COMPSsArray
-        inputs = [arg.data if isinstance(arg, self.__class__) else arg for arg in inputs]
+        inputs_unwrap = [arg.data if isinstance(arg, AsyncArray) else arg for arg in inputs]
 
-        inplace = False
-        if "out" in kwargs and kwargs["out"] == (self,):
-            inplace = True
-            kwargs["out"] = (self.data,)
+        out = kwargs.pop("out", None)
+        if out is not None:
+            out = tuple(i.data for i in out)
+        inplace = out is not None
 
         # 'at' operates in-place
         if method == "at":
             if not np.can_cast(inputs[1], inputs[0], casting="safe"):
                 return NotImplemented
-            task.ioperate(ufunc, *inputs, **kwargs)
+            task.ufunc_out(out, ufunc, *inputs_unwrap, **kwargs)
 
         # '__call__', 'outer'
         elif method in "__call__":
@@ -183,18 +206,19 @@ class COMPSsArray(np.lib.mixins.NDArrayOperatorsMixin, ArrayFunctionMixin):
                 types = [i.dtype if hasattr(i, "dtype") else i for i in inputs]
                 if not np.can_cast(types[1], types[0], casting="safe"):
                     return NotImplemented
-                task.ioperate(ufunc, *inputs, **kwargs)
+                task.ufunc_out(out, ufunc, *inputs_unwrap, **kwargs)
                 return self
             else:
-                ref = task.operate(ufunc, *inputs, **kwargs)
+                ref = task.operate(ufunc, *inputs_unwrap, **kwargs)
                 dtype = np.result_type(*(i.dtype if hasattr(i, "dtype") else i for i in inputs))
+
                 return COMPSsArray(ref, shape=self.shape, dtype=dtype)
 
         elif method == "outer":
             if inplace:
                 return NotImplemented
             else:
-                ref = task.operate(ufunc, *inputs, **kwargs)
+                ref = task.operate(ufunc, *inputs_unwrap, **kwargs)
                 shape = functools.reduce(tuple.__add__, (i.shape for i in inputs))
                 dtype = np.result_type(*(i.dtype for i in inputs))
                 return COMPSsArray(ref, shape=shape, dtype=dtype)
@@ -203,19 +227,50 @@ class COMPSsArray(np.lib.mixins.NDArrayOperatorsMixin, ArrayFunctionMixin):
         else:
             return NotImplemented
 
+    @log_args(logger)
+    def astype(self, dtype: np.dtype, order="K", casting="unsafe", subok=True, copy=True) -> "COMPSsArray":
+        # TODO support order, subok
+        if not copy:
+            raise NotImplementedError()
+
+        ref = task.astype_copy(self.data, dtype=dtype, order=order, casting=casting, subok=subok)
+
+        return COMPSsArray(ref, shape=self.shape, dtype=dtype)
+
+    def reshape(self, shape, order="C") -> "COMPSsArray":
+        return dispatcher.reshape[(COMPSsArray,)](self, shape, order=order)
+
+    def transpose(self, *axes):
+        return dispatcher.transpose[(COMPSsArray,)](self, axes=axes)
+
+    @property
+    def T(self) -> "COMPSsArray":
+        return self.transpose()
+
+    def conj(self) -> "COMPSsArray":
+        # redirect execution to __array_ufunc__
+        return np.conj(self)  # type: ignore
+
+
+# COMPSsArray is an async array
+AsyncArray.register(COMPSsArray)
+
 
 @dispatcher.to_numpy.register
-def to_numpy(arr: COMPSsFuture):
+@log_args(logger)
+def _(arr: COMPSsFuture):
     return compss_wait_on(arr)
 
 
 @dispatcher.to_numpy.register
+@log_args(logger)
 def to_numpy(arr: COMPSsArray):
     return dispatcher.to_numpy(arr.data)
 
 
 @dispatcher.to_numpy.register
-def to_numpy(arr: BlockArray[COMPSsArray]):
+@log_args(logger)
+def _(arr: BlockArray[COMPSsArray]):
     blocks = np.empty_like(arr.data, dtype=object)
     it = np.nditer(
         arr.data,
@@ -229,20 +284,24 @@ def to_numpy(arr: BlockArray[COMPSsArray]):
     return np.block(blocks.tolist())
 
 
+@log_args(logger)
 def zeros(shape, dtype=None, order="C") -> COMPSsArray:
     return full(shape, 0, dtype=dtype, order=order)
 
 
+@log_args(logger)
 def ones(shape, dtype=None, order="C") -> COMPSsArray:
     return full(shape, 1, dtype=dtype, order=order)
 
 
+@log_args(logger)
 def full(shape, fill_value, dtype=None, order="C") -> COMPSsArray:
     ref = task.full(shape, fill_value, dtype=dtype, order=order)
     return COMPSsArray(ref, shape=shape, dtype=dtype or np.dtype(type(fill_value)))
 
 
 @dispatcher.zeros_like.register
+@log_args(logger)
 def zeros_like(a: COMPSsArray, dtype=None, order="K", subok=True, shape=None) -> Union[np.ndarray, COMPSsArray]:
     if subok:
         return zeros(shape or a.shape, dtype=dtype or a.dtype, order=order)
@@ -251,6 +310,7 @@ def zeros_like(a: COMPSsArray, dtype=None, order="K", subok=True, shape=None) ->
 
 
 @dispatcher.ones_like.register
+@log_args(logger)
 def ones_like(a: COMPSsArray, dtype=None, order="K", subok=True, shape=None) -> Union[np.ndarray, COMPSsArray]:
     if subok:
         return ones(shape or a.shape, dtype=dtype or a.dtype, order=order)
@@ -259,6 +319,7 @@ def ones_like(a: COMPSsArray, dtype=None, order="K", subok=True, shape=None) -> 
 
 
 @dispatcher.full_like.register
+@log_args(logger)
 def full_like(a: COMPSsArray, fill_value, dtype=None, order="K", subok=True, shape=None) -> Union[np.ndarray, COMPSsArray]:
     if subok:
         return full(shape or a.shape, fill_value, dtype=dtype or a.dtype, order=order)
@@ -267,43 +328,83 @@ def full_like(a: COMPSsArray, fill_value, dtype=None, order="K", subok=True, sha
 
 
 @dispatcher.empty_like.register
+@log_args(logger)
 def empty_like(prototype: COMPSsArray, dtype=None, order="K", subok=True, shape=None) -> COMPSsArray:
     pass
 
 
 @dispatcher.reshape.register
-def reshape(a: COMPSsArray, shape, order="F", inplace=True):
-    # pylint: disable=protected-access
+@log_args(logger)
+def reshape(a: COMPSsArray, shape, order="C", inplace=False):
     a = a if inplace else deepcopy(a)
 
-    # TODO support order?
-    task.reshape(a.data, shape)
-    a.shape = shape
-    return a
+    # reshape to 1-D array
+    if isinstance(shape, int):
+        shape = (shape,)
+
+    # infer shape dimensions
+    elif -1 in shape:
+        assert sum(1 if d == -1 else 0 for d in shape) <= 1
+
+        inferred_value = -prod(a.shape) // prod(shape)
+        shape = tuple(inferred_value if d == -1 else d for d in shape)
+
+    assert prod(a.shape) == prod(shape)
+
+    if inplace:
+        # TODO support order
+        task.reshape_inplace(a.data, shape)
+        return a
+    else:
+        ref = task.reshape(a.data, shape, order)
+        return COMPSsArray(ref, shape=shape, dtype=a.dtype)
 
 
 @dispatcher.transpose.register
-def transpose(a: COMPSsArray, axes=None, inplace=True):
-    # pylint: disable=protected-access
-    if not isunique(axes):
-        raise ValueError("'axes' must be a unique list: %s" % axes)
+@log_args(logger)
+def transpose(a: COMPSsArray, axes=None, inplace=False):
+    # case: reverse axes
+    if axes is None:
+        axes = range(a.ndim)[::-1]
 
-    a = a if inplace else deepcopy(a)
+    # case: n-ints
+    elif isinstance(axes, Sequence) and all(isinstance(i, int) for i in axes):
+        if set(range(a.ndim)) != set(axes):
+            raise ValueError(f"axes don't match array: axes={axes}")
 
-    task.transpose(a.data, axes)
-    a.__shape = tuple(a.__shape[i] for i in axes)
+    # case: tuple[int,...]
+    elif isinstance(axes, Sequence) and len(axes) == 1 and isinstance(axes[0], Sequence):
+        axes = axes[0]
+        if set(range(a.ndim)) != set(axes):
+            raise ValueError(f"axes don't match array: axes={axes}")
 
-    return a
+    else:
+        raise ValueError(f"axes don't match array: axes={axes}")
+
+    shape = tuple(a.shape[i] for i in axes)
+    if inplace:
+        ref = a.data
+        task.transpose_inplace(ref, axes)
+
+        # fix inplace reshape
+        a._shape = shape
+        return a
+
+    else:
+        ref = task.transpose(a.data, axes)
+        return COMPSsArray(ref, shape=shape, dtype=a.dtype)
 
 
 @todo
 @dispatcher.stack.register
+@log_args(logger)
 def stack(arrays: Sequence[COMPSsArray], axis=0, out=None) -> COMPSsArray:
     pass
 
 
 @todo
 @dispatcher.split.register
+@log_args(logger)
 def split(array: COMPSsArray, indices_or_sections, axis=0) -> Sequence[COMPSsArray]:
     pass
 
@@ -317,6 +418,7 @@ def tensordot(a: Union[COMPSsArray, ArrayConvertable], b: Union[COMPSsArray, Arr
 
 
 @dispatcher.tensordot.register
+@log_args(logger)
 def tensordot(a: COMPSsArray, b: COMPSsArray, axes) -> COMPSsArray:
     dtype = np.result_type(a.dtype, b.dtype)
     shape = result_shape(a.shape, b.shape, axes)
@@ -326,6 +428,7 @@ def tensordot(a: COMPSsArray, b: COMPSsArray, axes) -> COMPSsArray:
 
 
 @dispatcher.tensordot.register
+@log_args(logger)
 def tensordot(a: Sequence[COMPSsArray], b: Sequence[COMPSsArray], axes, method="sequential") -> COMPSsArray:
     dtype = np.result_type(a[0].dtype, b[0].dtype)
     shape = result_shape(a[0].shape, b[0].shape, axes)
@@ -349,6 +452,7 @@ def tensordot(a: Sequence[COMPSsArray], b: Sequence[COMPSsArray], axes, method="
 
 
 @dispatcher.linalg.svd.register
+@log_args(logger)
 def svd(a: COMPSsArray, full_matrices=True, compute_uv=True, hermitian=False) -> Union[Tuple[COMPSsArray, COMPSsArray, COMPSsArray], COMPSsArray]:
     assert a.ndim >= 2
     n = a.shape[-1]
@@ -378,7 +482,43 @@ def svd(a: COMPSsArray, full_matrices=True, compute_uv=True, hermitian=False) ->
         return s
 
 
+@dispatcher.linalg.qr.register
+@log_args(logger)
+def qr(a: COMPSsArray, mode="reduced"):
+    n = a.shape[-1]
+    m = a.shape[-2]
+    k = min(m, n)
+    rest = a.shape[0:-2]
+
+    if mode == "complete":
+        q, r = task.qr.qr_complete(a.data)
+        q = COMPSsArray(q, shape=(*rest, m, m), dtype=a.dtype)
+        r = COMPSsArray(r, shape=(*rest, m, n), dtype=a.dtype)
+        return (q, r)
+
+    elif mode == "reduced":
+        q, r = task.qr.qr_reduced(a.data)
+        q = COMPSsArray(q, shape=(*rest, m, k), dtype=a.dtype)
+        r = COMPSsArray(r, shape=(*rest, k, n), dtype=a.dtype)
+        return (q, r)
+
+    elif mode == "r":
+        r = task.qr.qr_r(a.data)
+        r = COMPSsArray(r, shape=(*rest, k, n), dtype=a.dtype)
+        return r
+
+    elif mode == "raw":
+        h, tau = task.qr_raw(a.data)
+        h = COMPSsArray(h, shape=(*rest, n, m), dtype=a.dtype)
+        tau = COMPSsArray(tau, shape=(*rest, k), dtype=a.dtype)
+        return (h, tau)
+
+    else:
+        raise ValueError(f'mode must be one of "reduced", "complete", "r" or "raw" but is {mode}')
+
+
 @dispatcher.cumsum.register
+@log_args(logger)
 def cumsum(a: COMPSsArray, axis=None, dtype=None, out=None):
     if out:
         assert isinstance(out, COMPSsArray)
@@ -390,11 +530,50 @@ def cumsum(a: COMPSsArray, axis=None, dtype=None, out=None):
         return COMPSsArray(ref, shape=shape, dtype=dtype)
 
 
+@dispatcher.count_nonzero.register
+@log_args(logger)
+def count_nonzero(a: COMPSsArray, axis=None, keepdims=False) -> Union[int, COMPSsArray]:
+    ref = task.count_nonzero(a.data, axis, keepdims)
+
+    if axis is None:
+        ret = compss_wait_on(ref)
+        return ret
+    else:
+        shape = list(a.shape)
+        if keepdims:
+            shape[axis] = 1
+        else:
+            del shape[axis]
+
+        shape = tuple(shape)
+
+        ret = COMPSsArray(ref, shape=shape, dtype=np.int0)
+        return ret
+
+
+@dispatcher.einsum.register
+@log_args(logger)
+def einsum(pattern: str, *operands: COMPSsArray, out: Optional[COMPSsArray] = None, dtype=None, order="K", casting="safe", optimize=False):
+    if out is None:
+        inputs, output, _ = parse_einsum_input((pattern, *operands))
+
+        shape = find_output_shape(inputs, [op.shape for op in operands], output)
+        dtype = np.result_type(*[op.dtype for op in operands])
+        data = task.einsum(pattern, *operands, dtype=dtype, order=order, casting=casting, optimize=optimize)
+
+        return COMPSsArray(data, shape=shape, dtype=dtype)
+
+    else:
+        task.einsum(pattern, *operands, out=out.data, dtype=dtype, order=order, casting=casting, optimize=optimize)
+        return out
+
+
 # @implements(np.block, COMPSsArray)
 # def __compss_block(arrays):
 #     return np.block(compss_wait_on([a.data for a in arrays]))
 
 
+@log_args(logger)
 def rand(shape):
     # TODO support inner as in BlockArray
     dtype = np.dtype(np.float64)

@@ -1,19 +1,98 @@
-FROM compss/compss:latest
+ARG PYTHON_VERSION=3.9
+FROM python:${PYTHON_VERSION}-bullseye
 
-# install Python 3.9
-RUN add-apt-repository ppa:deadsnakes/ppa; \
-	apt update; \
-	DEBIAN_FRONTEND=noninteractive apt install -y python3.9 python3.9-dev python3.9-distutils; \
-	update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.6 1; \
-	update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.9 2
+ARG DEBIAN_FRONTEND=noninteractive
 
-# install Python dependencies
-RUN python3.9 -m pip install --upgrade pip setuptools; \
-	python3.9 -m pip install numpy autoray multimethod dill pycodestyle;
+# install system dependencies
+RUN apt update; apt upgrade -y; \
+	apt install -y --no-install-recommends git vim wget jq curl openssh-server sudo software-properties-common unzip; \
+	# add-apt-repository universe; \
+	git config --global core.compression 9; \
+	apt install -y --no-install-recommends \
+		maven \
+		# COMPSs runtime
+		openjdk-11-jdk graphviz xdg-utils \
+		# COMPSs bindings-common
+		libtool automake build-essential \
+		# COMPSs misc
+		openmpi-bin libopenmpi-dev uuid-runtime bc; \
+	apt-get autoclean;
 
-# build COMPSs from source
-RUN rm -r /opt/COMPSs; \
-	git clone https://github.com/bsc-wdc/compss.git /compss; \
-	cd /compss; \
-	./submodules_get.sh; ./submodules_patch.sh; \
-	cd builders; ./buildlocal --no-monitor --pycompss --no-tracing --no-autoparallel --no-kafka --no-jacoco --cli --skip-tests /opt/COMPSs/
+ARG COMPSS_BINDING_C=true
+ARG COMPSS_BINDING_PYTHON=true
+ARG COMPSS_EXTRAE=false
+ARG COMPSS_AUTOPARALLEL=false
+
+# optional features
+# COMPSs C-binding
+RUN if [ "$COMPSS_BINDING_C" = "true" ]; then \
+		apt install -y --no-install-recommends libboost-all-dev libxml2-dev; \
+	fi;
+
+# COMPSs Python-binding
+RUN	if [ "$COMPSS_BINDING_PYTHON" = "true" ]; then \
+		pip install --upgrade pip; \
+		pip install --no-cache-dir wheel dill guppy3 decorator mpi4py \
+		# Pycodestyle
+		pycodestyle \
+		# Numba
+		llvmlite>=0.31.0 numba \
+		# Testing
+		nose matplotlib pytest pytest-cov coverage; \
+		# pytest-notebook nbval \
+	fi;
+
+# COMPSS Extrae
+RUN	if [ "$COMPSS_EXTRAE" = "true" ]; then \
+		apt-install -y --no-install-recommends libxml2 gfortran libpapi-dev papi-tools; \
+	fi;
+
+# COMPSs AutoParallel
+RUN	if [ "$COMPSS_AUTOPARALLEL" = "true" ]; then \
+		apt install -y --no-install-recommends libgmp3-dev flex bison libbison-dev texinfo libffi-dev; \
+		if [ "$COMPSS_BINDING_PYTHON" = "true" ]; then \
+			pip install --no-cache-dir astor sympy enum34 islpy; \
+		fi; \
+	fi;
+
+# config ssh
+RUN yes yes | ssh-keygen -f /root/.ssh/id_rsa -t rsa -N '' > /dev/null; \
+	cat /root/.ssh/id_rsa.pub > /root/.ssh/authorized_keys; \
+	mkdir /run/sshd
+
+# configure user environment
+ENV GRADLE_HOME=/opt/gradle
+ENV JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64/
+ENV MPI_HOME=/usr/lib/openmpi
+ENV COMPSS_HOME=/opt/COMPSs/
+ENV PATH=$PATH:/opt/COMPSs/Runtime/scripts/user:/opt/COMPSs/Bindings/c/bin:/opt/COMPSs/Runtime/scripts/utils:/opt/gradle/bin
+ENV LD_LIBRARY_PATH=/opt/COMPSs/Bindings/bindings-common/lib:$JAVA_HOME/jre/lib/amd64/server:/usr/lib/openmpi/lib
+ENV CLASSPATH=$CLASSPATH:/opt/COMPSs/Runtime/compss-engine.jar
+
+ARG COMPSS_TAG=stable
+ARG COMPSS_CLI=true
+ARG COMPSS_SKIP_TESTS=true
+ARG COMPSS_MONITOR=false
+ARG COMPSS_STREAM=false
+ARG COMPSS_JACOCO=false
+ARG COMPSS_KAFKA=false
+
+# build COMPSs
+COPY build-compss.sh /
+RUN bash -x /build-compss.sh $COMPSS_TAG $COMPSS_BINDING_C $COMPSS_BINDING_PYTHON $COMPSS_EXTRAE $COMPSS_AUTOPARALLEL $COMPSS_SKIP_TESTS $COMPSS_MONITOR $COMPSS_STREAM $COMPSS_JACOCO $COMPSS_KAFKA $COMPSS_CLI
+
+# save args as a receipt of the build configuration
+ENV COMPSS_TAG=$COMPSS_TAG
+ENV COMPSS_BINDING_C=$COMPSS_BINDING_C
+ENV COMPSS_BINDING_PYTHON=$COMPSS_BINDING_PYTHON
+ENV COMPSS_EXTRAE=$COMPSS_EXTRAE
+ENV COMPSS_AUTOPARALLEL=$COMPSS_AUTOPARALLEL
+ENV COMPSS_SKIP_TESTS=$COMPSS_SKIP_TESTS
+ENV COMPSS_MONITOR=$COMPSS_MONITOR
+ENV COMPSS_STREAM=$COMPSS_STREAM
+ENV COMPSS_JACOCO=$COMPSS_JACOCO
+ENV COMPSS_KAFKA=$COMPSS_KAFKA
+ENV COMPSS_CLI=$COMPSS_CLI
+
+EXPOSE 22
+CMD ["/usr/sbin/sshd", "-D"]

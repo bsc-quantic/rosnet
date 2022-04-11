@@ -1,22 +1,28 @@
+import logging
 import sys
-from typing import Tuple, Type, Sequence, Optional, Generic, TypeVar
-from math import prod
 from copy import deepcopy
+from math import prod
+from typing import Generic, Optional, Sequence, Tuple, Type, TypeVar
+
+import autoray
 import numpy as np
 from multimethod import multimethod
-import autoray
-from rosnet.core.math import (
-    isunique,
-    space,
-    result_shape,
-    join_idx,
-    measure_shape,
-    nest_level,
-)
-from rosnet.core.macros import todo
-from rosnet.core.interface import Array, ArrayConvertable
-from rosnet.core.mixin import ArrayFunctionMixin
 from rosnet import dispatch as dispatcher
+from rosnet.core.interface import Array, ArrayConvertable
+from rosnet.core.macros import todo
+from rosnet.core.mixin import ArrayFunctionMixin
+from rosnet.core.util import isunique, join_idx, measure_shape, nest_level, result_shape, space
+
+logger = logging.getLogger(__name__)
+
+# NOTE multimethod checks obj.__orig_class__ for parametric multiple-dispatch, which is a instance of GenericAlias that stores the original class and the parametric type.
+# GenericAlias is standardized in Python 3.9, which is needed for automatic parameter type detection.
+# On earlier versions, GenericAlias is a implementation detail (i.e. _GenericAlias).
+if sys.version_info >= (3, 9, 0):
+    from types import GenericAlias
+else:
+    logging.warning("GenericAlias is introduced in Python 3.9. Using implementation detail typing._GenericAlias")
+    from typing import _GenericAlias as GenericAlias
 
 T = TypeVar("T", Array, np.ndarray)
 
@@ -31,7 +37,7 @@ class BlockArray(np.lib.mixins.NDArrayOperatorsMixin, ArrayFunctionMixin, Generi
     - Automatic parametric type detection works only on Python 3.9 or later. On earlier versions, you must
     """
 
-    data: np.ndarray = None
+    data: np.ndarray = None  # type: ignore
 
     def __init__(self, *args, **kwargs):
         if isinstance(args[0], list):
@@ -41,16 +47,7 @@ class BlockArray(np.lib.mixins.NDArrayOperatorsMixin, ArrayFunctionMixin, Generi
         else:
             raise ValueError("invalid constructor")
 
-        # NOTE multimethod checks obj.__orig_class__ for parametric multiple-dispatch, which is a instance of GenericAlias that stores the original class and the parametric type.
-        # GenericAlias is standardized in Python 3.9, which is needed for automatic parameter type detection.
-        # On earlier versions, GenericAlias is a implementation detail (i.e. _GenericAlias).
-        if sys.version_info >= (3, 9, 0):
-            from types import GenericAlias  # pylint: ignore=import-outside-toplevel
-
-            self.__orig_class__ = GenericAlias(self.__class__, self.data.flat[0].__class__)
-        else:
-            # TODO debug message that automatic parametric type detection does not work
-            pass
+        self.__orig_class__ = GenericAlias(self.__class__, self.data.flat[0].__class__)
 
     def __init_with_list__(self, blocks: list, grid: Optional[Sequence[int]] = None):
         """Constructor.
@@ -377,6 +374,6 @@ def rand(shape, blockshape=None, inner="numpy"):
 
     with it:
         for block in it:
-            block[()] = autoray.do("random.rand", blockshape, like=inner)
+            block[()] = autoray.do("random.rand", *blockshape, like=inner)
 
     return BlockArray(blocks)

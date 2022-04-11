@@ -1,7 +1,7 @@
 import pytest
 from typing import Tuple
 import numpy as np
-from rosnet.core.math import recurse, nest_level, measure_shape
+from rosnet.core.util import recurse, nest_level, measure_shape
 
 
 class MockArray:

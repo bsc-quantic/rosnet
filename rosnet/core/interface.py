@@ -1,5 +1,9 @@
 import abc
-from typing import TYPE_CHECKING
+import importlib.util
+from typing import TYPE_CHECKING, Any, Callable, Tuple, Union
+
+import numpy as np
+
 
 # interfaces
 def hasmethod(cls, name) -> bool:
@@ -27,6 +31,9 @@ for typ in [bool, int, float, complex, str, bytes]:
 class ArrayDispatchable(metaclass=abc.ABCMeta):
     """Formal interface for classes that implement the numpy dispatch mechanism."""
 
+    __array_ufunc__: Callable
+    __array_function__: Callable
+
     @classmethod
     def __subclasshook__(cls, subclass: type):
         return hasmethod(subclass, "__array_ufunc__") and hasmethod(subclass, "__array_function__")
@@ -34,6 +41,10 @@ class ArrayDispatchable(metaclass=abc.ABCMeta):
 
 class Array(metaclass=abc.ABCMeta):
     """Formal interface for classes that fulfill the ArrayConvertable and ArrayDispatchable interfaces."""
+
+    shape: Tuple[int, ...]
+    dtype: Union[type, np.dtype]
+    data: Any
 
     if TYPE_CHECKING:
 
@@ -92,3 +103,7 @@ try:
     Future.register(COMPSsFuture)
 except:
     pass
+
+
+class AsyncArray(metaclass=abc.ABCMeta):
+    data: Union[Array, Future]

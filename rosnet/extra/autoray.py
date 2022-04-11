@@ -1,0 +1,9 @@
+from autoray import autoray
+from rosnet.dispatch import to_numpy
+
+# TODO finish
+autoray._FUNCS["rosnet", "to_numpy"] = to_numpy
+# autoray._FUNCS["rosnet", "complex"] = ...
+autoray._CUSTOM_WRAPPERS["rosnet", "linalg.svd"] = autoray.svd_not_full_matrices_wrapper
+# autoray._CUSTOM_WRAPPERS["rosnet", "random.normal"] = ...
+# autoray._CUSTOM_WRAPPERS["rosnet", "random.uniform"] = ...

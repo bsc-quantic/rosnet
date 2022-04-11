@@ -1,8 +1,8 @@
-from typing import Sequence
 import functools
 import itertools
 import operator as op
-from math import prod
+from typing import Sequence
+
 import numpy as np
 from multimethod import multimethod
 from rosnet.core.interface import Array

@@ -1,7 +1,8 @@
 from math import prod
+
 import numpy as np
 from rosnet.core.interface import Array
-from rosnet.core.math import result_shape
+from rosnet.core.util import result_shape
 
 
 def tensordot(a: Array, b: Array, axes) -> int:

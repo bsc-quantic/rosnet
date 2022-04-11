@@ -1,6 +1,7 @@
-import numpy as np
-import autoray
 from itertools import chain
+
+import autoray
+import numpy as np
 
 try:
     from .dataclay import DataClayBlock
@@ -23,7 +24,6 @@ try:
                 return caller.__array_function__(fn, ..., args, kwargs)
 
         return fn(*args, **kwargs)
-
 
 except ImportError:
     do = autoray.do
