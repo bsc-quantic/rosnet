@@ -70,3 +70,21 @@ def nest_level(x):
 
 def measure_shape(x):
     return tuple(len(i) for i in recurse(x))
+
+
+def nd_split(x: np.ndarray, blockshape: Sequence[int]) -> np.ndarray:
+    assert x.ndim == len(blockshape)
+
+    grid = tuple(s // bs for s, bs in zip(x.shape, blockshape))
+    data = np.empty(grid, dtype=object)
+
+    it = np.nditer(data, flags=["multi_index", "refs_ok"], op_flags=["writeonly"])
+    with it:
+        for block in it:
+            start = tuple(itertools.starmap(op.mul, zip(it.multi_index, blockshape)))
+            end = tuple(itertools.starmap(op.add, zip(start, blockshape)))
+            r = tuple(slice(s, e) for s, e in zip(start, end))
+
+            block[()] = x[r]
+
+    return data
