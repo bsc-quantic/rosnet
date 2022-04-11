@@ -13,7 +13,7 @@ def split(block: Array, n: int, axis: int):
     return map(lambda x: x.copy(), np.split(block, n, axis))
 
 
-@autotune(arrays={Type: COLLECTION_IN, Depth: 1}, returns=np.ndarray)
+@autotune(arrays={Type: COLLECTION_IN, Depth: 1}, returns=1)
 @log.trace
 def stack(arrays: Sequence[Array], axis=0, out=None) -> np.ndarray:
     return np.stack(arrays, axis=axis, out=out)

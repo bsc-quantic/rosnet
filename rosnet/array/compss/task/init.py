@@ -3,19 +3,19 @@ from rosnet.core import log
 from rosnet.tuning.task import autotune
 
 
-@autotune(returns=np.ndarray)
+@autotune(returns=1)
 @log.trace
 def full(shape, value, dtype, order="F"):
     return np.full(shape, value, dtype, order)
 
 
-@autotune(returns=np.array)
+@autotune(returns=1)
 @log.trace
 def rand(shape, order="F"):
     return np.asarray(np.random.random_sample(shape), order=order)
 
 
-@autotune(returns=np.ndarray)
+@autotune(returns=1)
 @log.trace
 def identity(block_shape, n, i, j, dtype):
     block = np.zeros(block_shape, dtype)

@@ -5,13 +5,13 @@ from rosnet.core.interface import Array
 from rosnet.tuning.task import autotune
 
 
-@autotune(block=IN, returns=Array)
+@autotune(block=IN, returns=1)
 @log.trace
 def transpose(block: Array, axes) -> Array:
     return np.transpose(block, axes)
 
 
-@autotune(block=INOUT)
+@autotune(block=INOUT, returns=0)
 @log.trace
 def transpose_inplace(block: Array, axes):
     block_aux = np.transpose(block, axes)

@@ -4,7 +4,7 @@ from rosnet.tuning.task import autotune
 from rosnet.core import log
 
 
-@autotune(block=IN)
+@autotune(block=IN, returns=1)
 @log.trace
 def getitem(block: np.ndarray, idx):
     return block[idx]
@@ -16,19 +16,19 @@ def setitem(block: np.ndarray, idx, value):
     block[idx] = value
 
 
-@autotune(block=IN, returns=np.ndarray)
+@autotune(block=IN, returns=1)
 @log.trace
-def reshape(block: np.ndarray, shape, order):
+def reshape(block: np.ndarray, shape, order) -> np.ndarray:
     return np.reshape(block, shape, order=order)
 
 
-@autotune(block=INOUT)
+@autotune(block=INOUT, returns=0)
 @log.trace
 def reshape_inplace(block: np.ndarray, shape):
     block.shape = shape
 
 
-@autotune(block=IN, returns=np.ndarray)
+@autotune(block=IN, returns=1)
 @log.trace
-def copy(block: np.ndarray):
+def copy(block: np.ndarray) -> np.ndarray:
     return np.copy(block)
