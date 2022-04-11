@@ -37,7 +37,7 @@ class BlockArray(np.lib.mixins.NDArrayOperatorsMixin, ArrayFunctionMixin, Generi
     - Automatic parametric type detection works only on Python 3.9 or later. On earlier versions, you must
     """
 
-    data: np.ndarray = None
+    data: np.ndarray = None  # type: ignore
 
     def __init__(self, *args, **kwargs):
         if isinstance(args[0], list):
