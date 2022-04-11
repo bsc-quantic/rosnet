@@ -48,8 +48,8 @@ def trace_in_stderr(f: Callable[P, T]) -> Callable[P, T]:
     def wrapper(*args, **kwargs) -> T:
         ret = None
         try:
-            sys.stderr.write(f"[rosnet] args={args}, kwargs={kwargs}\n")
-            sys.stderr.flush()
+            sys.stdout.write(f"[rosnet] args={args}, kwargs={kwargs}\n")
+            sys.stdout.flush()
             ret = f(*args, **kwargs)
             return ret
 
@@ -61,8 +61,8 @@ def trace_in_stderr(f: Callable[P, T]) -> Callable[P, T]:
             if ret is not None:
                 msg += f" -> {ret}"
 
-            sys.stderr.write(f"[rosnet][{f.__name__}] @ {msg}\n")
-            sys.stderr.flush()
+            sys.stdout.write(f"[rosnet][{f.__name__}] @ {msg}\n")
+            sys.stdout.flush()
 
     return wrapper
 
