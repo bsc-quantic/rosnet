@@ -1,6 +1,7 @@
 import operator as op
 from types import GetSetDescriptorType
-from typing import TypeVar, Callable, Union
+import typing
+from typing import Generic, TypeVar, Callable, Union
 import sys
 import itertools
 import inspect
@@ -10,13 +11,15 @@ if sys.version_info >= (3, 10):
 else:
     from typing_extensions import ParamSpec, Self
 
+import pytypes
 import numpy as np
 
 T = TypeVar("T")
 P = ParamSpec("P")
 
 
-class Deferred:
+# TODO automatic return type inference (i.e. override __new__? use pytypes)
+class Deferred(Generic[T]):
     """A deferred execution."""
 
     def __init__(self, func: Callable[P, T], *args: P.args, **kwargs: P.kwargs):
@@ -30,7 +33,10 @@ class Deferred:
 
     @property
     def type(self) -> type:
-        return infer_return_type(self.func, *self.args, **self.kwargs)
+        try:
+            return typing.get_args(pytypes.get_orig_class(self))[0]
+        except AttributeError:
+            return infer_return_type(self.func, *self.args, **self.kwargs)
 
     def deps(self) -> "tuple[Self, ...]":
         """Lists all `Deferred` dependencies.
