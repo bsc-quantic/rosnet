@@ -77,6 +77,15 @@ class Deferred(Generic[T]):
     def __abs__(self) -> Self:
         return Deferred(op.abs, self)  # type: ignore
 
+    def __pos__(self) -> Self:
+        return Deferred(op.pos, self)  # type: ignore
+
+    def __neg__(self) -> Self:
+        return Deferred(op.neg, self)  # type: ignore
+
+    def __inv__(self) -> Self:
+        return Deferred(op.inv, self)  # type: ignore
+
     def __add__(self, other) -> Self:
         return Deferred(op.add, self, other)
 
