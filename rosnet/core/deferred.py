@@ -47,6 +47,9 @@ class Deferred(Generic[T]):
         """
         return tuple(filter(lambda x: isinstance(x, Deferred), itertools.chain(self.args, self.kwargs)))
 
+    def __getitem__(self, key) -> Self:
+        return Deferred(op.getitem, self, key)  # type: ignore
+
     def __getattr__(self, name: str) -> Union[Callable[P, "Deferred"], "Deferred"]:
         """Defers instance method if type can be inferred.
 
