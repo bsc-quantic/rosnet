@@ -73,7 +73,7 @@ def tune(fn: Callable, *args, **kwargs) -> Dict[str, str]:
         mem_usage = 1
 
     # TODO get memory space from COMPSs
-    available_memory_per_node = 92 * 1024 ** 3
+    available_memory_per_node = 92 * 1024**3
 
     # conservative parallelization: with uniform mem/core, min #cores that fulfill the task
     par = min(int(ceil(core_count() * mem_usage / available_memory_per_node)), 1)
