@@ -32,7 +32,7 @@ class Deferred:
     def type(self) -> type:
         return infer_return_type(self.func, *self.args, **self.kwargs)
 
-    def deps(self) -> tuple[Self, ...]:
+    def deps(self) -> "tuple[Self, ...]":
         """Lists all `Deferred` dependencies.
 
         ### Returns
