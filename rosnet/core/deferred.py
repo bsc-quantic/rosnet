@@ -1,6 +1,6 @@
 import operator as op
 from types import GetSetDescriptorType
-from typing import Any, Generic, TypeVar, Callable, Union
+from typing import TypeVar, Callable, Union
 import sys
 import itertools
 import inspect
@@ -16,7 +16,7 @@ T = TypeVar("T")
 P = ParamSpec("P")
 
 
-class Deferred(Generic[T]):
+class Deferred:
     """A deferred execution."""
 
     def __init__(self, func: Callable[P, T], *args: P.args, **kwargs: P.kwargs):
@@ -41,7 +41,7 @@ class Deferred(Generic[T]):
         """
         return tuple(filter(lambda x: isinstance(x, Deferred), itertools.chain(self.args, self.kwargs)))
 
-    def __getattr__(self, name: str) -> Union[Callable[P, "Deferred[Any]"], "Deferred[Any]"]:
+    def __getattr__(self, name: str) -> Union[Callable[P, "Deferred"], "Deferred"]:
         """Defers instance method if type can be inferred.
 
         ### Parameters
@@ -49,7 +49,7 @@ class Deferred(Generic[T]):
             Name of the attribute or instance method.
 
         ### Return
-        Union[Callable[P, Deferred[Any]], Deferred[Any]]
+        Union[Callable[P, Deferred], Deferred]
         """
         if self.type is None:
             raise AttributeError("can't infer return type or None")
@@ -153,8 +153,8 @@ class Deferred(Generic[T]):
         return Deferred(op.or_, other, self)
 
 
-def defer(func: Callable[P, T]) -> Callable[P, Deferred[T]]:
-    def call_defer(*args: P.args, **kwargs: P.kwargs) -> Deferred[T]:
+def defer(func: Callable[P, T]) -> Callable[P, Deferred]:
+    def call_defer(*args: P.args, **kwargs: P.kwargs) -> Deferred:
         return Deferred(func, *args, **kwargs)
 
     return call_defer
