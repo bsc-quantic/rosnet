@@ -3,7 +3,7 @@ from typing import Sequence
 
 import numpy as np
 from opt_einsum.parser import find_output_shape, parse_einsum_input
-from rosnet.core.interface import Array
+from rosnet.core.abc import Array
 from rosnet.core.util import result_shape
 
 

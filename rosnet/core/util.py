@@ -5,7 +5,7 @@ from typing import Sequence
 
 import numpy as np
 from multimethod import multimethod
-from rosnet.core.interface import Array
+from rosnet.core.abc import Array
 
 
 def isunique(l: Sequence) -> bool:

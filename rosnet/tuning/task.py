@@ -2,7 +2,7 @@ import functools
 from math import ceil
 from typing import Callable, Dict
 
-from rosnet.core.interface import AsyncArray
+from rosnet.core.abc import AsyncArray
 from rosnet.core.macros import todo
 
 from . import mem

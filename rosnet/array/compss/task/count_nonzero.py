@@ -3,7 +3,7 @@ from typing import Union
 import numpy as np
 from pycompss.api.parameter import IN
 from rosnet.core import log
-from rosnet.core.interface import Array
+from rosnet.core.abc import Array
 from rosnet.tuning.task import autotune
 
 

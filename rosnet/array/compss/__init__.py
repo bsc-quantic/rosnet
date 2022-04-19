@@ -12,7 +12,7 @@ from rosnet import dispatch as dispatcher
 from rosnet import tuning
 from rosnet.array.block import BlockArray
 from rosnet.array.maybe import MaybeArray
-from rosnet.core.interface import Array, ArrayConvertable, AsyncArray
+from rosnet.core.abc import Array, ArrayConvertable, AsyncArray
 from rosnet.core.log import log_args
 from rosnet.core.macros import todo
 from rosnet.core.util import isunique, result_shape

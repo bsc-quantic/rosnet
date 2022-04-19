@@ -8,7 +8,7 @@ import autoray
 import numpy as np
 from multimethod import multimethod
 from rosnet import dispatch as dispatcher
-from rosnet.core.interface import Array, ArrayConvertable
+from rosnet.core.abc import Array, ArrayConvertable
 from rosnet.core.macros import todo
 from rosnet.core.mixin import ArrayFunctionMixin
 from rosnet.core.util import isunique, join_idx, measure_shape, nest_level, result_shape, space
