@@ -119,46 +119,46 @@ class Deferred(Generic[T]):
     def __rmod__(self, other) -> Self:
         return Deferred(op.mod, other, self)
 
-    def __divmod__(self, other):
+    def __divmod__(self, other) -> Self:
         return Deferred(divmod, self, other)  # type: ignore
 
-    def __rdivmod__(self, other):
+    def __rdivmod__(self, other) -> Self:
         return Deferred(divmod, other, self)  # type: ignore
 
-    def __pow__(self, other):
+    def __pow__(self, other) -> Self:
         return Deferred(op.pow, self, other)
 
-    def __rpow__(self, other):
+    def __rpow__(self, other) -> Self:
         return Deferred(op.pow, other, self)
 
-    def __lshift__(self, other):
+    def __lshift__(self, other) -> Self:
         return Deferred(op.lshift, self, other)
 
-    def __rlshift__(self, other):
+    def __rlshift__(self, other) -> Self:
         return Deferred(op.lshift, other, self)
 
-    def __rshift__(self, other):
+    def __rshift__(self, other) -> Self:
         return Deferred(op.rshift, self, other)
 
-    def __rrshift__(self, other):
+    def __rrshift__(self, other) -> Self:
         return Deferred(op.rshift, other, self)
 
-    def __and__(self, other):
+    def __and__(self, other) -> Self:
         return Deferred(op.and_, self, other)
 
-    def __rand__(self, other):
+    def __rand__(self, other) -> Self:
         return Deferred(op.and_, other, self)
 
-    def __xor__(self, other):
+    def __xor__(self, other) -> Self:
         return Deferred(op.xor, self, other)
 
-    def __rxor__(self, other):
+    def __rxor__(self, other) -> Self:
         return Deferred(op.xor, other, self)
 
-    def __or__(self, other):
+    def __or__(self, other) -> Self:
         return Deferred(op.or_, self, other)
 
-    def __ror__(self, other):
+    def __ror__(self, other) -> Self:
         return Deferred(op.or_, other, self)
 
 
