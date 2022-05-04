@@ -69,7 +69,7 @@ def full_qualname(obj) -> list[str]:
         # ufuncs or function objects
         # e.g. numpy.add => ["numpy", "ufunc"]
         mod = obj.__class__.__module__.split(".")
-        qualname = getattr(obj.__class__, "__qualname__", obj.__class__.__name__).split(".")
+        qualname = getattr(obj.__class__, "__qualname__", obj.__class__.__name__).split(".")  # type: ignore
 
     return mod + qualname
 
