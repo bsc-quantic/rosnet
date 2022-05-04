@@ -36,8 +36,9 @@ class Future(PyFuture):
 
 class COMPSsExecutor(Executor):
     def submit(self, fn: Callable[P, T], *args: P.args, **kwargs: P.kwargs) -> Future[T]:  # type: ignore
-        resources = ... # TODO call tuner
-        task = COMPSsExecutor.variant_task(fn, args, kwargs)
+        # TODO infer output type
+        resources = {} # TODO call tuner
+        task = COMPSsExecutor.variant_task(fn, args, kwargs, resources) # type: ignore
         return task(*args, **kwargs)
 
     @staticmethod
