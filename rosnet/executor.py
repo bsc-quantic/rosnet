@@ -91,11 +91,11 @@ def task_directions(fn: Callable, *args, **kwargs) -> dict[str, int | _Param]:
             # NOTE just in case, not sure if useful
             return {"returns": 0, "dst": INOUT}
 
-        case ["numpy", x, "at"] if isinstance(x, np.ufunc):
-            raise NotImplementedError()
+        case ["numpy", "ufunc", "at"]:
+            raise NotImplementedError(f"'{fn.__self__}' acts in-place but COMPSs direction cannot be mark correctly as it is a built-in method.")
 
-        case ["numpy", x, "reduceat"] if isinstance(x, np.ufunc):
-            raise NotImplementedError()
+        case ["numpy", "ufunc", "reduceat"]:
+            raise NotImplementedError(f"'{fn.__self__}' acts in-place but COMPSs direction cannot be mark correctly as it is a built-in method.")
 
         # inplace methods: cumsum, einsum, dot, linalg.multi_dot, outer, trace, Universal Functions (ufunc), all, any, around, round_, fix, [nan][cum]prod, [nan][cum]sum, diff, ediff1d, gradient, cross, trapz, amax, nanmax, amin, nanmin, clip, random.Generator.random, random.Generator.permuted, random.Generator.standard_[exponential|gamma|normal], some ma and ma.MaskedArray methods
         case ["numpy", _] if "out" in kwargs and kwargs["out"] is not None:
