@@ -20,6 +20,7 @@ else:
 T = TypeVar("T")
 P = ParamSpec("P")
 
+
 class Future(PyFuture):
     def __init__(self, future):
         if not isinstance(future, COMPSsFuture):
@@ -37,13 +38,13 @@ class Future(PyFuture):
 class COMPSsExecutor(Executor):
     def submit(self, fn: Callable[P, T], *args: P.args, **kwargs: P.kwargs) -> Future[T]:  # type: ignore
         # TODO infer output type
-        resources = {} # TODO call tuner
-        task = COMPSsExecutor.variant_task(fn, args, kwargs, resources) # type: ignore
+        resources = {}  # TODO call tuner
+        task = COMPSsExecutor.variant_task(fn, args, kwargs, resources)  # type: ignore
         return task(*args, **kwargs)
 
     @staticmethod
     @functools.lru_cache(maxsize=0)
-    def variant_task(fn: Callable[P, T], args, kwargs, resources) -> Callable[P, Future[T]]: # type: ignore
+    def variant_task(fn: Callable[P, T], args, kwargs, resources) -> Callable[P, Future[T]]:  # type: ignore
         directions = task_directions(fn, *args, **kwargs)
         return constraint(**resources)(task(**directions)(fn))  # type: ignore
 
