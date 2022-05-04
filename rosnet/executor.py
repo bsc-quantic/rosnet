@@ -49,7 +49,7 @@ class COMPSsExecutor(Executor):
         return constraint(**resources)(task(**directions)(fn))  # type: ignore
 
 
-def full_qualname(obj) -> list[str]:
+def modulepath(obj) -> list[str]:
     # NOTE design decision: forget ufunc instance and inform that it is a ufunc, because for pattern matching we are more interested in that it is a ufunc that in the semantics (interface should be nevertheless the same because they are ufuncs)
 
     assert hasattr(obj, "__call__"), "'obj' has to be Callable"
@@ -77,7 +77,7 @@ def full_qualname(obj) -> list[str]:
 
 # TODO do numpy's built-in methods (impl. in Cython) work?
 def task_directions(fn: Callable, *args, **kwargs) -> dict[str, int | _Param]:
-    module_path = full_qualname(fn)
+    module_path = modulepath(fn)
     qualname = ".".join(module_path)
     match module_path:
         # builtins
