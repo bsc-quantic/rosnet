@@ -49,12 +49,30 @@ class COMPSsExecutor(Executor):
 
 
 def full_qualname(obj) -> list[str]:
-    name: list[str] = [obj.__name__]
-    while (module := inspect.getmodule(name)) is not None:
-        name.append(module.__name__)
+    # NOTE design decision: forget ufunc instance and inform that it is a ufunc, because for pattern matching we are more interested in that it is a ufunc that in the semantics (interface should be nevertheless the same because they are ufuncs)
 
-    name.reverse()
-    return name
+    assert hasattr(obj, "__call__"), "'obj' has to be Callable"
+
+    if inspect.isfunction(obj) or inspect.ismethod(obj):
+        # functions
+        # e.g. numpy.tensordot => ["numpy", "tensordot"]
+        mod = obj.__module__.split(".")
+        qualname = getattr(obj, "__qualname__", obj.__name__).split(".")
+
+    elif inspect.isbuiltin(obj) and hasattr(obj, "__self__"):
+        # ufunc methods
+        # e.g. numpy.add.at => ["numpy", "ufunc", "at"]
+        mod = obj.__self__.__class__.__module__.split(".")
+        qualname = obj.__qualname__.split(".")
+
+    else:
+        # ufuncs or function objects
+        # e.g. numpy.add => ["numpy", "ufunc"]
+        mod = obj.__class__.__module__.split(".")
+        qualname = getattr(obj.__class__, "__qualname__", obj.__class__.__name__).split(".")
+
+    return mod + qualname
+
 
 # TODO do numpy's built-in methods (impl. in Cython) work?
 def task_directions(fn: Callable, *args, **kwargs) -> dict[str, int | _Param]:
