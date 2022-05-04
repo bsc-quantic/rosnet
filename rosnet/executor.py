@@ -82,11 +82,10 @@ def task_directions(fn: Callable, *args, **kwargs) -> dict[str, int | _Param]:
     match module_path:
         # builtins
         case ["builtins", "setitem"]:
-            return {"returns": 0}
+            return {"returns": 0, "a": INOUT}
 
-        case ["builtins", x] if x.startswith("i"):
-            # NOTE in-place builtin operators return the value too
-            raise NotImplementedError(f"'{fn}' acts in-place but COMPSs direction cannot be mark correctly as it is a built-in method.")
+        case ["builtins", x] if x in ["iadd", "iand", "iconcat", "ifloordiv", "ilshift", "imod", "imul", "imatmul", "ior", "ipow", "irshift", "isub", "itruediv", "ixor"]:
+            return {"returns": 1, "a": INOUT}
 
         case ["builtins", _]:
             return {"returns": 1}
