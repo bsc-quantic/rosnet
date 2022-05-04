@@ -45,7 +45,7 @@ class COMPSsExecutor(Executor):
     @functools.lru_cache(maxsize=0)
     def variant_task(fn: Callable[P, T], args, kwargs, resources) -> Callable[P, Future[T]]: # type: ignore
         directions = task_directions(fn, *args, **kwargs)
-        return constraint(**resources, task(**directions)(fn)) # type: ignore
+        return constraint(**resources)(task(**directions)(fn))  # type: ignore
 
 
 def full_qualname(obj) -> list[str]:
