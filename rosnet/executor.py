@@ -79,12 +79,16 @@ def task_directions(fn: Callable, *args, **kwargs) -> dict[str, int | _Param]:
     module_path = full_qualname(fn)
     qualname = ".".join(module_path)
     match module_path:
-        # object
-        case [_, "__getitem__"]:
-            return {"returns": 1}
-
-        case [_, "__setitem__"]:
+        # builtins
+        case ["builtins", "setitem"]:
             return {"returns": 0}
+
+        case ["builtins", x] if x.startswith("i"):
+            # NOTE in-place builtin operators return the value too
+            raise NotImplementedError(f"'{fn}' acts in-place but COMPSs direction cannot be mark correctly as it is a built-in method.")
+
+        case ["builtins", _]:
+            return {"returns": 1}
 
         # numpy
         case ["numpy", "copyto"]:
