@@ -83,3 +83,28 @@ class TestModulePathNumpy:
     @pytest.mark.parametrize("function", np_linalg_functions)
     def test_numpy_linalg_functions(self, function):
         assert modulepath(function) == ["numpy", "linalg", function.__name__]
+
+
+class TestTaskDirectionsNumpy:
+    def test_copyto(self):
+        assert task_directions(np.copyto) == {"returns": 0, "dst": INOUT}
+
+    @pytest.mark.parametrize("ufunc", ufuncs)
+    def test_ufunc(self, ufunc):
+        assert task_directions(ufunc) == {"returns": 1}
+        assert ufunc.nout == 1
+
+    @pytest.mark.parametrize("ufunc", ufuncs)
+    @pytest.mark.parametrize(
+        "method",
+        [
+            "reduce",
+            "accumulate",
+            "outer",
+            pytest.param("reduceat", marks=pytest.mark.xfail),
+            pytest.param("at", marks=pytest.mark.xfail),
+        ],
+    )
+    def test_ufunc_methods(self, ufunc, method):
+        assert task_directions(getattr(ufunc, method)) == {"returns": 1}
+        assert ufunc.nout == 1
