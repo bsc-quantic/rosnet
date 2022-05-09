@@ -7,7 +7,7 @@ pycompss = pytest.importorskip("pycompss")
 from rosnet import COMPSsArray
 
 
-@pytest.mark.xfail()
+@pytest.mark.skip()
 class TestTensordot:
     def test_tensordot(self):
         pass
@@ -87,16 +87,16 @@ class TestReshape:
         assert np.array_equal(b, np.reshape(self.a, shape))
 
 
-@pytest.mark.xfail()
+@pytest.mark.skip()
 class TestSlicing:
     pass
 
 
-@pytest.mark.xfail()
+@pytest.mark.skip()
 class TestSVD:
     pass
 
 
-@pytest.mark.xfail()
+@pytest.mark.skip()
 class TestQR:
     pass
