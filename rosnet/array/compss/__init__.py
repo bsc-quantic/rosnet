@@ -134,9 +134,8 @@ class COMPSsArray(np.lib.mixins.NDArrayOperatorsMixin, ArrayFunctionMixin):
     def __deepcopy__(self, memo):
         if isinstance(self.data, COMPSsFuture):
             ref = task.copy(self.data)
-        elif DATACLAY:
-            if isinstance(self.data, DataClayBlock):
-                ref = self.data.dc_clone()
+        elif DATACLAY and isinstance(self.data, DataClayBlock):
+            ref = self.data.dc_clone()
         else:
             ref = deepcopy(self.data)
         return COMPSsArray(ref, shape=self.shape, dtype=self.dtype)
