@@ -52,34 +52,33 @@ class TestTranspose:
 
 class TestReshape:
     a = np.random.rand(2, 1, 4, 8)
+    shapes = [
+        # identity
+        a.shape,
+        # vector
+        (prod(a.shape),),
+        # vector passed by int
+        prod(a.shape),
+        # shrink dims
+        (2, 4, 8),
+        (2, 32),
+        (8, 8),
+        # expand dims
+        (2, 1, 2, 2, 8),
+        (2, 1, 2, 2, 2, 4),
+        (2, 1, 2, 2, 2, 2, 2),
+        # add singleton dims
+        (*a.shape, 1, 1),
+        (1, 1, *a.shape),
+        # -1 inference
+        (-1, *a.shape[0:1]),
+        (*a.shape[0:1], -1),
+        (*a.shape[0:1], -1, 2),
+        # must fail
+        pytest.param((2, -1, 4, -1, 2), marks=pytest.mark.xfail()),
+    ]
 
-    @pytest.mark.parametrize(
-        "shape",
-        [
-            # identity
-            a.shape,
-            # vector
-            (prod(a.shape),),
-            # vector passed by int
-            prod(a.shape),
-            # shrink dims
-            (2, 4, 8),
-            (2, 32),
-            (8, 8),
-            # expand dims
-            (2, 1, 2, 2, 8),
-            (2, 1, 2, 2, 2, 4),
-            (2, 1, 2, 2, 2, 2, 2),
-            # add singleton dims
-            (*a.shape, 1, 1),
-            (1, 1, *a.shape),
-            # -1 inference
-            (-1, *a.shape[0:1]),
-            (*a.shape[0:1], -1),
-            (*a.shape[0:1], -1, 2),
-            # TODO (2, -1, 4, -1, 2), must fail
-        ],
-    )
+    @pytest.mark.parametrize("shape", shapes)
     def test_reshape(self, shape):
         a = COMPSsArray(self.a)
         b = np.array(do("reshape", a, shape))
