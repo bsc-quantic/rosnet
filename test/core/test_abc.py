@@ -21,12 +21,6 @@ class TestArrayConvertableInterface:
 
         assert issubclass(COMPSsArray, ArrayConvertable)
 
-    def test_dataclayarray(self):
-        pytest.importorskip("dataclay")
-        from rosnet import DataClayArray
-
-        assert issubclass(DataClayArray, ArrayConvertable)
-
 
 class TestArrayInterface:
     def test_mockarray(self):
@@ -43,9 +37,3 @@ class TestArrayInterface:
         from rosnet import COMPSsArray
 
         assert issubclass(COMPSsArray, Array)
-
-    def test_dataclayarray(self):
-        pytest.importorskip("dataclay")
-        from rosnet import DataClayArray
-
-        assert issubclass(DataClayArray, Array)
