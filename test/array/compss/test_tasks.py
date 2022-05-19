@@ -5,6 +5,10 @@ from autoray import do
 
 pycompss = pytest.importorskip("pycompss")
 from rosnet import COMPSsArray
+from rosnet.array.compss import DATACLAY as DATACLAY_ENABLED
+
+if DATACLAY_ENABLED:
+    from rosnet.array.compss import DataClayBlock
 
 
 @pytest.mark.skip()
@@ -81,6 +85,14 @@ class TestReshape:
     @pytest.mark.parametrize("shape", shapes)
     def test_reshape(self, shape):
         a = COMPSsArray(self.a)
+        b = np.array(do("reshape", a, shape))
+
+        assert np.array_equal(b, np.reshape(self.a, shape))
+
+    @pytest.mark.skipif(not DATACLAY_ENABLED, reason="DataClay not installed")
+    @pytest.mark.parametrize("shape", shapes)
+    def test_reshape_dataclay(self, shape):
+        a = COMPSsArray(DataClayBlock(self.a))
         b = np.array(do("reshape", a, shape))
 
         assert np.array_equal(b, np.reshape(self.a, shape))
