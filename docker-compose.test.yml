@@ -1,26 +1,7 @@
-version: "3.4"
+version: '3.5'
 services:
-  dcinitializer:
-    image: "bscdataclay/initializer"
-    command: "--wait-for-python-ds 1 --wait-for-java-ds 1"
-    depends_on:
-      - logicmodule
-      - dsjava
-      - dspython
-    environment:
-      - LOGICMODULE_PORT_TCP=11034
-      - LOGICMODULE_HOST=logicmodule
-      - USER=${USER:-defaultUser}
-      - PASS=${PASS:-defaultPass}
-      - DATASET=${DATASET:-defaultDS}
-      - GIT_PYTHON_MODELS_URLS=https://gitlab.bsc.es/model.git
-      - PYTHON_NAMESPACES=Namespace
-    healthcheck:
-      interval: 5s
-      retries: 10
-      test: [ "CMD-SHELL", "/dataclay-initializer/health_check.sh" ]
   logicmodule:
-    image: "bscdataclay/logicmodule"
+    image: "bscdataclay/logicmodule:2.7.dev"
     ports:
       - "11034:11034"
     environment:
@@ -28,16 +9,9 @@ services:
       - LOGICMODULE_HOST=logicmodule
       - DATACLAY_ADMIN_USER=admin
       - DATACLAY_ADMIN_PASSWORD=admin
-    healthcheck:
-      interval: 5s
-      retries: 10
-      test:
-        [
-          "CMD-SHELL",
-          "/usr/src/dataclay/javaclay/health_check.sh"
-        ]
+
   dsjava:
-    image: "bscdataclay/dsjava"
+    image: "bscdataclay/dsjava:2.7.dev"
     ports:
       - "2127:2127"
     depends_on:
@@ -47,18 +21,9 @@ services:
       - DATASERVICE_JAVA_PORT_TCP=2127
       - LOGICMODULE_PORT_TCP=11034
       - LOGICMODULE_HOST=logicmodule
-    healthcheck:
-      interval: 5s
-      retries: 10
-      test:
-        [
-          "CMD-SHELL",
-          "/usr/src/dataclay/javaclay/health_check.sh"
-        ]
+
   dspython:
-    image: "bscdataclay/dspython"
-    ports:
-      - "6867:6867"
+    image: "bscdataclay/dspython:2.7.py38.dev"
     depends_on:
       - logicmodule
       - dsjava
@@ -66,8 +31,3 @@ services:
       - DATASERVICE_NAME=DS1
       - LOGICMODULE_PORT_TCP=11034
       - LOGICMODULE_HOST=logicmodule
-      - DATASERVICE_PYTHON_PORT_TCP=6867
-    healthcheck:
-      interval: 5s
-      retries: 10
-      test: [ "CMD-SHELL", "/usr/src/dataclay/pyclay/health_check.sh" ]

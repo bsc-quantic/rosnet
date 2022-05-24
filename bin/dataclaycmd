@@ -1,0 +1,8 @@
+#!/bin/bash
+
+docker run \
+    --network host -it -u $UID:$GID \
+    -v $PWD/cfgfiles/:/home/dataclayusr/dataclay/cfgfiles/:ro \
+    -v $PWD/:/workdir/ \
+    -e DEBUG=1 \
+    bscdataclay/client:2.7.dev $@

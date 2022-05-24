@@ -1,6 +1,12 @@
 from numpy.core import umath as um
 from numpy.lib.mixins import _binary_method, _numeric_methods, _reflected_binary_method, _unary_method
-from rosnet.array.compss.dataclay.internal import DataClayBlock
+
+# NOTE If launch from COMPSs, this should already managed by them
+from dataclay.api import init
+
+init()
+
+from rosnet_dclaymodel.model import DataClayBlock
 
 
 # NOTE monkey-patch to implement np.lib.mixins.NDArrayOperatorsMixin for DataClayBlock. please contact Alex, Javi and Sergio for explanations.

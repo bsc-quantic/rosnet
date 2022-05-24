@@ -1,6 +1,4 @@
-import numpy as np
 from dataclay import DataClayObject, dclayMethod
-from rosnet import dispatch as dispatcher
 
 
 class DataClayBlock(DataClayObject):
@@ -25,11 +23,11 @@ class DataClayBlock(DataClayObject):
         self.data[key] = value
 
     @dclayMethod(return_="numpy.ndarray")
-    def __array__(self) -> np.ndarray:
+    def __array__(self):
         return self.data
 
     @dclayMethod(ufunc="numpy.ufunc", method="str", inputs="list", kwargs="dict", return_="anything")
-    def __array_ufunc_no_expansion__(self, ufunc: np.ufunc, method: str, inputs, kwargs):
+    def __array_ufunc_no_expansion__(self, ufunc, method, inputs, kwargs):
         """Bypasses computation to dataClay memory space. Uses numpy dispatch mechanism to call the correct implementation.
 
         NOTE
@@ -72,8 +70,3 @@ class DataClayBlock(DataClayObject):
         result = DataClayBlock(result)
         result.make_persistent()
         return result
-
-
-@dispatcher.to_numpy.register
-def to_numpy(arr: DataClayBlock):
-    return np.array(arr)
