@@ -252,3 +252,6 @@ trace
 .COMPSs
 .COMPSsWorker
 docs/_autosummary/
+
+# dataClay
+stubs/
