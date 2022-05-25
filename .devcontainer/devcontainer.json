@@ -1,17 +1,21 @@
 {
 	"name": "Python 3",
-	"image": "mofeing/pycompss:2.10-python3.10",
+	"dockerComposeFile": [
+		"../docker-compose.dev.yml",
+		"../docker-compose.test.yml"
+	],
+	"service": "pycompss",
 	"settings": {
 		"python.linting.enabled": true,
 		"python.linting.pylintEnabled": true
 	},
-	"containerUser": "root",
+	// "containerUser": "root",
 	// VSCode overwrites entrypoint
 	"postStartCommand": "service ssh start",
 	// Lint pycompss
-	"remoteEnv": {
-		"PYTHONPATH": "/opt/COMPSs/Bindings/python/3/:${containerEnv:PYTHONPATH}",
-	},
+	// "remoteEnv": {
+	// 	"PYTHONPATH": "/opt/COMPSs/Bindings/python/3/:${containerEnv:PYTHONPATH}",
+	// },
 	"extensions": [
 		"ms-python.python",
 		"VisualStudioExptTeam.vscodeintellicode",

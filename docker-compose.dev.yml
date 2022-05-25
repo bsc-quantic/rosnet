@@ -1,0 +1,6 @@
+version: "3"
+services:
+  pycompss:
+    image: mofeing/pycompss:2.10-python3.10,
+    environment:
+      - PYTHONPATH=/opt/COMPSs/Bindings/python/3/:$PYTHONPATH

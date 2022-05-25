@@ -4,7 +4,7 @@ import numpy as np
 from autoray import do
 
 pycompss = pytest.importorskip("pycompss")
-from rosnet import COMPSsArray
+from rosnet.array.compss import COMPSsArray
 from rosnet.array.compss import DATACLAY as DATACLAY_ENABLED
 
 if DATACLAY_ENABLED:
