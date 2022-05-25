@@ -16,4 +16,5 @@
 ```{toctree}
 multimethod
 profiling
+testing
 ```
